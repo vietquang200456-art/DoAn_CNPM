@@ -1,0 +1,677 @@
+﻿@model IEnumerable<PharmaCheckApp.Models.Drug>
+
+@{
+    ViewData["Title"] = "Tra Cứu Tương Tác Thuốc - Bệnh | PharmaCheck";
+}
+
+<!-- Hero Section -->
+<section class="bg-gradient-to-r from-medical-700 to-medical-600 text-white py-16">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="grid md:grid-cols-2 gap-8 items-center">
+            <!-- Text Content -->
+            <div>
+                <h1 class="text-4xl md:text-5xl font-bold mb-4 flex items-center gap-3">
+                    <i class="fas fa-stethoscope"></i>
+                    PharmaCheck
+                </h1>
+                <p class="text-xl text-blue-100 mb-6">
+                    Hệ thống tra cứu tương tác thuốc - bệnh an toàn, nhanh chóng dành cho phòng khám chuyên nghiệp.
+                </p>
+                <div class="flex flex-col sm:flex-row gap-3">
+                    <button onclick="document.getElementById('searchSection').scrollIntoView({behavior: 'smooth'})"
+                            class="bg-white text-medical-700 px-6 py-3 rounded-lg font-semibold hover:bg-blue-50 transition-colors flex items-center justify-center gap-2">
+                        <i class="fas fa-search"></i> Bắt Đầu Tra Cứu
+                    </button>
+                    <a href="#features" class="border-2 border-white text-white px-6 py-3 rounded-lg font-semibold hover:bg-white hover:text-medical-700 transition-colors flex items-center justify-center gap-2">
+                        <i class="fas fa-arrow-down"></i> Tìm Hiểu Thêm
+                    </a>
+                </div>
+            </div>
+            <!-- Icon Illustration -->
+            <div class="hidden md:flex justify-center">
+                <div class="relative w-64 h-64">
+                    <div class="absolute inset-0 bg-white rounded-full opacity-10 animate-pulse"></div>
+                    <div class="absolute inset-8 bg-white rounded-full opacity-20"></div>
+                    <i class="fas fa-pills text-9xl text-white opacity-70 flex items-center justify-center absolute inset-0"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Search & Check Section -->
+<section id="searchSection" class="py-12 bg-white border-b border-slate-200">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="max-w-4xl mx-auto">
+            <h2 class="text-3xl font-bold text-center mb-8 text-gray-900">
+                <i class="fas fa-search text-medical-700 mr-3"></i>Tra Cứu Tương Tác Thuốc & Bệnh
+            </h2>
+            <!-- Search Card -->
+            <div class="bg-white rounded-xl shadow-lg border border-slate-200 p-8">
+                <div x-data="searchApp()" class="space-y-6">
+                    <!-- Drug Search Section -->
+                    <div>
+                        <label class="block text-lg font-semibold text-gray-900 mb-3">
+                            <i class="fas fa-pills text-medical-700 mr-2"></i>Danh Sách Thuốc (Hoạt Chất)
+                        </label>
+                        <div class="relative">
+                            <input type="text" 
+                                   x-model="drugSearch"
+                                   @@input="filterDrugs()"
+                                   placeholder="Nhập tên thuốc, hoạt chất hoặc mã... (VD: Amoxicillin, Paracetamol)"
+                                   class="w-full px-4 py-3 border-2 border-slate-300 rounded-lg focus:outline-none focus:border-medical-600 transition-colors">
+                            <i class="fas fa-pills absolute right-4 top-4 text-medical-600"></i>
+                        </div>
+                        <!-- Selected Drugs Tags -->
+                        <div x-show="selectedDrugs.length > 0" class="mt-4 flex flex-wrap gap-2">
+                            <template x-for="drug in selectedDrugs" :key="drug">
+                                <span class="inline-flex items-center gap-2 bg-medical-100 text-medical-800 px-4 py-2 rounded-full text-sm font-medium">
+                                    <i class="fas fa-check-circle"></i>
+                                    <span x-text="drug"></span>
+                                    <button type="button" @@click="removeDrug(drug)" class="hover:text-medical-600 transition-colors">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                </span>
+                            </template>
+                        </div>
+                        <!-- Dropdown suggestions -->
+                        <div x-show="showDrugDropdown && filteredDrugs.length > 0" 
+                             class="absolute top-full left-0 right-0 mt-2 bg-white border-2 border-medical-300 rounded-lg shadow-lg z-20 max-h-64 overflow-y-auto">
+                            <template x-for="drug in filteredDrugs" :key="drug">
+                                <button type="button"
+                                        @@click="selectDrug(drug); showDrugDropdown = false"
+                                        class="w-full text-left px-4 py-3 hover:bg-medical-50 transition-colors border-b border-slate-100 last:border-b-0">
+                                    <i class="fas fa-pills text-medical-600 mr-2"></i>
+                                    <span x-text="drug"></span>
+                                </button>
+                            </template>
+                        </div>
+                    </div>
+                    <!-- Disease Search Section -->
+                    <div>
+                        <label class="block text-lg font-semibold text-gray-900 mb-3">
+                            <i class="fas fa-heartbeat text-danger mr-2"></i>Danh Sách Bệnh Lý (ICD-10 / Tên Bệnh)
+                        </label>
+                        <div class="relative">
+                            <input type="text"
+                                   x-model="diseaseSearch"
+                                   @@input="filterDiseases()"
+                                   placeholder="Nhập tên bệnh hoặc mã ICD-10... (VD: Tiểu đường, I10, Viêm phổi)"
+                                   class="w-full px-4 py-3 border-2 border-slate-300 rounded-lg focus:outline-none focus:border-medical-600 transition-colors">
+                            <i class="fas fa-heartbeat absolute right-4 top-4 text-medical-600"></i>
+                        </div>
+                        <!-- Selected Diseases Tags -->
+                        <div x-show="selectedDiseases.length > 0" class="mt-4 flex flex-wrap gap-2">
+                            <template x-for="disease in selectedDiseases" :key="disease">
+                                <span class="inline-flex items-center gap-2 bg-warning-100 text-warning-800 px-4 py-2 rounded-full text-sm font-medium bg-amber-100 text-amber-900">
+                                    <i class="fas fa-check-circle"></i>
+                                    <span x-text="disease"></span>
+                                    <button type="button" @@click="removeDisease(disease)" class="hover:text-amber-700 transition-colors">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                </span>
+                            </template>
+                        </div>
+                        <!-- Dropdown suggestions -->
+                        <div x-show="showDiseaseDropdown && filteredDiseases.length > 0"
+                             class="absolute top-full left-0 right-0 mt-2 bg-white border-2 border-medical-300 rounded-lg shadow-lg z-20 max-h-64 overflow-y-auto">
+                            <template x-for="disease in filteredDiseases" :key="disease">
+                                <button type="button"
+                                        @@click="selectDisease(disease); showDiseaseDropdown = false"
+                                        class="w-full text-left px-4 py-3 hover:bg-medical-50 transition-colors border-b border-slate-100 last:border-b-0">
+                                    <i class="fas fa-heartbeat text-danger mr-2"></i>
+                                    <span x-text="disease"></span>
+                                </button>
+                            </template>
+                        </div>
+                    </div>
+                    <!-- Action Buttons -->
+                    <div class="flex gap-3 pt-4 border-t border-slate-200">
+                        <button @@click="checkInteractions()"
+                                :disabled="selectedDrugs.length === 0 && selectedDiseases.length === 0"
+                                class="flex-1 bg-medical-700 text-white px-6 py-3 rounded-lg font-semibold hover:bg-medical-800 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2">
+                            <i class="fas fa-check-circle"></i> Kiểm Tra Tương Tác
+                        </button>
+                        <button @@click="clearAll()"
+                                class="px-6 py-3 border-2 border-slate-300 text-gray-700 rounded-lg font-semibold hover:bg-slate-50 transition-colors flex items-center justify-center gap-2">
+                            <i class="fas fa-redo"></i> Xóa Tất Cả
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+<!-- Results Section -->
+<section id="resultsSection" class="py-12 bg-slate-50" x-show="showResults">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <h2 class="text-3xl font-bold mb-8 text-gray-900">
+            <i class="fas fa-chart-bar text-medical-700 mr-3"></i>Kết Quả Kiểm Tra
+        </h2>
+        <div class="grid md:grid-cols-2 gap-6">
+            <!-- Drug-Drug Interactions -->
+            <div class="bg-white rounded-xl shadow-lg border border-slate-200 overflow-hidden card-hover">
+                <div class="bg-medical-700 text-white px-6 py-4 flex items-center gap-3">
+                    <i class="fas fa-exchange-alt text-xl"></i>
+                    <h3 class="text-xl font-semibold">Tương Tác Thuốc - Thuốc</h3>
+                </div>
+                <div class="p-6 space-y-4">
+                    <template x-for="interaction in drugDrugInteractions" :key="interaction.id">
+                        <div :class="'p-4 rounded-lg border-l-4 ' + interaction.severityClass">
+                            <div class="flex items-start gap-3">
+                                <i :class="'fas ' + interaction.icon + ' text-xl mt-1'"></i>
+                                <div class="flex-1">
+                                    <h4 class="font-semibold" x-text="interaction.title"></h4>
+                                    <p class="text-sm text-gray-600 mt-1" x-text="interaction.description"></p>
+                                    <div class="mt-3 p-3 bg-slate-50 rounded text-sm">
+                                        <strong>Khuyến cáo: </strong>
+                                        <span x-text="interaction.recommendation"></span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </template>
+
+                    <div x-show="drugDrugInteractions.length === 0" class="text-center py-8 text-gray-500">
+                        <i class="fas fa-check-circle text-3xl text-green-500 mb-2"></i>
+                        <p>Không có tương tác nguy hiểm giữa các thuốc đã chọn</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Drug-Disease Contraindications -->
+            <div class="bg-white rounded-xl shadow-lg border border-slate-200 overflow-hidden card-hover">
+                <div class="bg-danger px-6 py-4 text-white flex items-center gap-3">
+                    <i class="fas fa-warning text-xl"></i>
+                    <h3 class="text-xl font-semibold">Chống Chỉ Định - Bệnh</h3>
+                </div>
+
+                <div class="p-6 space-y-4">
+                    <template x-for="contraindication in drugDiseaseContraindications" :key="contraindication.id">
+                        <div :class="'p-4 rounded-lg border-l-4 ' + contraindication.severityClass">
+                            <div class="flex items-start gap-3">
+                                <i :class="'fas ' + contraindication.icon + ' text-xl mt-1'"></i>
+                                <div class="flex-1">
+                                    <h4 class="font-semibold" x-text="contraindication.title"></h4>
+                                    <p class="text-sm text-gray-600 mt-1" x-text="contraindication.description"></p>
+                                    <div class="mt-3 p-3 bg-slate-50 rounded text-sm">
+                                        <strong>Khuyến cáo: </strong>
+                                        <span x-text="contraindication.recommendation"></span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </template>
+
+                    <div x-show="drugDiseaseContraindications.length === 0" class="text-center py-8 text-gray-500">
+                        <i class="fas fa-check-circle text-3xl text-green-500 mb-2"></i>
+                        <p>Không có chống chỉ định giữa thuốc và bệnh đã chọn</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Overall Safety Status -->
+        <div class="mt-8 p-6 rounded-xl text-center border-2" :class="overallStatus.class">
+            <i :class="'fas ' + overallStatus.icon + ' text-4xl mb-3'"></i>
+            <h3 class="text-2xl font-bold mb-2" x-text="overallStatus.message"></h3>
+            <p class="text-gray-600" x-text="overallStatus.detail"></p>
+        </div>
+    </div>
+</section>
+
+<!-- Statistics Section -->
+<section id="features" class="py-12 bg-white border-t border-slate-200">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <h2 class="text-3xl font-bold text-center mb-12 text-gray-900">
+            <i class="fas fa-bar-chart text-medical-700 mr-3"></i>Thống Kê Hệ Thống
+        </h2>
+
+        <div class="grid md:grid-cols-3 gap-6 mb-12">
+            <!-- Total Drugs -->
+            <div class="bg-gradient-to-br from-medical-50 to-medical-100 p-8 rounded-xl shadow-lg border border-medical-200 card-hover">
+                <div class="flex items-center justify-between mb-4">
+                    <i class="fas fa-pills text-4xl text-medical-700"></i>
+                    <span class="text-3xl font-bold text-medical-700">1,245</span>
+                </div>
+                <h3 class="text-lg font-semibold text-gray-900 mb-2">Thuốc Trong Cơ Sở Dữ Liệu</h3>
+                <p class="text-gray-600 text-sm">Được cập nhật thường xuyên từ các nguồn y tế uy tín</p>
+            </div>
+
+            <!-- Total Diseases -->
+            <div class="bg-gradient-to-br from-amber-50 to-amber-100 p-8 rounded-xl shadow-lg border border-amber-200 card-hover">
+                <div class="flex items-center justify-between mb-4">
+                    <i class="fas fa-heartbeat text-4xl text-amber-600"></i>
+                    <span class="text-3xl font-bold text-amber-600">3,856</span>
+                </div>
+                <h3 class="text-lg font-semibold text-gray-900 mb-2">Bệnh Lý (ICD-10)</h3>
+                <p class="text-gray-600 text-sm">Bao gồm các bệnh phổ biến và bệnh hiếm</p>
+            </div>
+
+            <!-- Total Searches -->
+            <div class="bg-gradient-to-br from-green-50 to-green-100 p-8 rounded-xl shadow-lg border border-green-200 card-hover">
+                <div class="flex items-center justify-between mb-4">
+                    <i class="fas fa-search text-4xl text-green-600"></i>
+                    <span class="text-3xl font-bold text-green-600">24,567</span>
+                </div>
+                <h3 class="text-lg font-semibold text-gray-900 mb-2">Lượt Tra Cứu</h3>
+                <p class="text-gray-600 text-sm">Trong 30 ngày qua từ các phòng khám</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Features Section -->
+<section class="py-12 bg-slate-50 border-t border-slate-200">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <h2 class="text-3xl font-bold text-center mb-12 text-gray-900">
+            <i class="fas fa-star text-medical-700 mr-3"></i>Tính Năng Chính
+        </h2>
+
+        <div class="grid md:grid-cols-3 gap-6">
+            <!-- Feature 1: Search -->
+            <div class="bg-white p-8 rounded-xl shadow-lg border border-slate-200 text-center card-hover">
+                <div class="inline-flex items-center justify-center w-16 h-16 bg-medical-100 rounded-full mb-4">
+                    <i class="fas fa-search text-2xl text-medical-700"></i>
+                </div>
+                <h3 class="text-xl font-semibold mb-3 text-gray-900">Tra Cứu Thông Minh</h3>
+                <p class="text-gray-600">Tìm kiếm nhanh chóng thuốc và bệnh lý với gợi ý tự động, hỗ trợ tên thuốc, hoạt chất, mã ICD-10</p>
+            </div>
+
+            <!-- Feature 2: Interactions -->
+            <div class="bg-white p-8 rounded-xl shadow-lg border border-slate-200 text-center card-hover">
+                <div class="inline-flex items-center justify-center w-16 h-16 bg-amber-100 rounded-full mb-4">
+                    <i class="fas fa-exchange-alt text-2xl text-amber-600"></i>
+                </div>
+                <h3 class="text-xl font-semibold mb-3 text-gray-900">Phát Hiện Tương Tác</h3>
+                <p class="text-gray-600">Kiểm tra tương tác thuốc-thuốc và chống chỉ định thuốc-bệnh với cơ chế chi tiết</p>
+            </div>
+
+            <!-- Feature 3: Alerts -->
+            <div class="bg-white p-8 rounded-xl shadow-lg border border-slate-200 text-center card-hover">
+                <div class="inline-flex items-center justify-center w-16 h-16 bg-red-100 rounded-full mb-4">
+                    <i class="fas fa-bell text-2xl text-red-600"></i>
+                </div>
+                <h3 class="text-xl font-semibold mb-3 text-gray-900">Cảnh Báo Rõ Ràng</h3>
+                <p class="text-gray-600">Hiển thị cảnh báo mầu sắc (Đỏ/Vàng/Xanh) với khuyến cáo và độ nghiêm trọng</p>
+            </div>
+
+            <!-- Feature 4: Database -->
+            <div class="bg-white p-8 rounded-xl shadow-lg border border-slate-200 text-center card-hover">
+                <div class="inline-flex items-center justify-center w-16 h-16 bg-blue-100 rounded-full mb-4">
+                    <i class="fas fa-database text-2xl text-blue-600"></i>
+                </div>
+                <h3 class="text-xl font-semibold mb-3 text-gray-900">Cơ Sở Dữ Liệu Toàn Diện</h3>
+                <p class="text-gray-600">Dữ liệu được cập nhật từ FDA, WHO và các tổ chức y tế quốc tế uy tín</p>
+            </div>
+
+            <!-- Feature 5: Management -->
+            <div class="bg-white p-8 rounded-xl shadow-lg border border-slate-200 text-center card-hover">
+                <div class="inline-flex items-center justify-center w-16 h-16 bg-purple-100 rounded-full mb-4">
+                    <i class="fas fa-cogs text-2xl text-purple-600"></i>
+                </div>
+                <h3 class="text-xl font-semibold mb-3 text-gray-900">Quản Lý Dữ Liệu</h3>
+                <p class="text-gray-600">Quản lý thuốc, bệnh lý, cấu hình tương tác dễ dàng qua giao diện trực quan</p>
+            </div>
+
+            <!-- Feature 6: Security -->
+            <div class="bg-white p-8 rounded-xl shadow-lg border border-slate-200 text-center card-hover">
+                <div class="inline-flex items-center justify-center w-16 h-16 bg-green-100 rounded-full mb-4">
+                    <i class="fas fa-shield-alt text-2xl text-green-600"></i>
+                </div>
+                <h3 class="text-xl font-semibold mb-3 text-gray-900">Bảo Mật Cao</h3>
+                <p class="text-gray-600">Dữ liệu được mã hóa, tuân thủ quy định bảo vệ dữ liệu y tế quốc tế</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- CTA Section -->
+<section class="py-16 bg-gradient-to-r from-medical-700 to-medical-600 text-white">
+    <div class="max-w-4xl mx-auto text-center px-4 sm:px-6 lg:px-8">
+        <h2 class="text-4xl font-bold mb-4">Bạn Đã Sẵn Sàng?</h2>
+        <p class="text-xl text-blue-100 mb-8">
+            Bắt đầu tra cứu tương tác thuốc - bệnh ngay bây giờ để đảm bảo an toàn cho bệnh nhân của bạn.
+        </p>
+        <button onclick="document.getElementById('searchSection').scrollIntoView({behavior: 'smooth'})"
+                class="bg-white text-medical-700 px-8 py-4 rounded-lg font-semibold text-lg hover:bg-blue-50 transition-colors inline-flex items-center gap-2">
+            <i class="fas fa-arrow-right"></i> Tra Cứu Ngay
+        </button>
+    </div>
+</section>
+
+<!-- Alpine.js Application Logic -->
+<script>
+function searchApp() {
+    return {
+        // Input values
+        drugSearch: '',
+        diseaseSearch: '',
+        
+        // Selected items
+        selectedDrugs: [],
+        selectedDiseases: [],
+        
+        // Dropdown visibility
+        showDrugDropdown: false,
+        showDiseaseDropdown: false,
+        
+        // Filtered results
+        filteredDrugs: [],
+        filteredDiseases: [],
+        
+        // Results
+        showResults: false,
+        drugDrugInteractions: [],
+        drugDiseaseContraindications: [],
+        
+        // Mock data
+        mockDrugs: [
+            'Amoxicillin (Amoxisillin)',
+            'Paracetamol (Acetaminophen)',
+            'Ibuprofen',
+            'Aspirin',
+            'Metformin',
+            'Lisinopril',
+            'Atorvastatin',
+            'Omeprazole',
+            'Ciprofloxacin',
+            'Cephalexin',
+            'Loratadine',
+            'Diclofenac',
+            'Enalapril',
+            'Hydrochlorothiazide',
+            'Warfarin'
+        ],
+        
+        mockDiseases: [
+            'I10 - Tăng huyết áp',
+            'E11 - Tiểu đường tuýp 2',
+            'J44 - Bệnh phổi tắc nghẽn mạn tính',
+            'I21 - Nhồi máu cơ tim',
+            'K21 - Trào ngược dạ dày thực quản',
+            'J18 - Viêm phổi',
+            'F41 - Rối loạn lo âu',
+            'M79 - Rối loạn mô mềm',
+            'N18 - Bệnh thận mạn tính',
+            'I63 - Đột quỵ thiếu máu'
+        ],
+        
+        // Initialize
+        init() {
+            this.$watch('drugSearch', () => this.showDrugDropdown = true);
+            this.$watch('diseaseSearch', () => this.showDiseaseDropdown = true);
+        },
+        
+        // Filter drugs
+        filterDrugs() {
+            const search = this.drugSearch.toLowerCase().trim();
+            if (!search) {
+                this.filteredDrugs = [];
+                return;
+            }
+            this.filteredDrugs = this.mockDrugs.filter(d => 
+                d.toLowerCase().includes(search) && 
+                !this.selectedDrugs.includes(d)
+            );
+        },
+        
+        // Filter diseases
+        filterDiseases() {
+            const search = this.diseaseSearch.toLowerCase().trim();
+            if (!search) {
+                this.filteredDiseases = [];
+                return;
+            }
+            this.filteredDiseases = this.mockDiseases.filter(d => 
+                d.toLowerCase().includes(search) && 
+                !this.selectedDiseases.includes(d)
+            );
+        },
+        
+        // Select drug
+        selectDrug(drug) {
+            if (!this.selectedDrugs.includes(drug)) {
+                this.selectedDrugs.push(drug);
+            }
+            this.drugSearch = '';
+            this.filteredDrugs = [];
+            this.showDrugDropdown = false;
+        },
+        
+        // Select disease
+        selectDisease(disease) {
+            if (!this.selectedDiseases.includes(disease)) {
+                this.selectedDiseases.push(disease);
+            }
+            this.diseaseSearch = '';
+            this.filteredDiseases = [];
+            this.showDiseaseDropdown = false;
+        },
+        
+        // Remove drug
+        removeDrug(drug) {
+            this.selectedDrugs = this.selectedDrugs.filter(d => d !== drug);
+        },
+        
+        // Remove disease
+        removeDisease(disease) {
+            this.selectedDiseases = this.selectedDiseases.filter(d => d !== disease);
+        },
+        
+        // Clear all
+        clearAll() {
+            this.selectedDrugs = [];
+            this.selectedDiseases = [];
+            this.drugSearch = '';
+            this.diseaseSearch = '';
+            this.showResults = false;
+            this.drugDrugInteractions = [];
+            this.drugDiseaseContraindications = [];
+        },
+        
+        // Check interactions (Mock implementation)
+        checkInteractions() {
+            this.drugDrugInteractions = [];
+            this.drugDiseaseContraindications = [];
+            
+            // Simulate drug-drug interactions
+            if (this.selectedDrugs.length >= 2) {
+                // Mock: Aspirin + Warfarin
+                if ((this.selectedDrugs.some(d => d.includes('Aspirin')) && 
+                     this.selectedDrugs.some(d => d.includes('Warfarin')))) {
+                    this.drugDrugInteractions.push({
+                        id: 1,
+                        title: 'Aspirin + Warfarin - NGUY HIỂM',
+                        description: 'Kết hợp 2 thuốc chống đông máu có nguy cơ chảy máu cao',
+                        icon: 'fa-exclamation-triangle',
+                        severityClass: 'border-red-500 bg-red-50',
+                        recommendation: 'Sử dụng liều thấp Aspirin hoặc đổi sang thuốc khác. Cần theo dõi chỉ số INR thường xuyên.'
+                    });
+                }
+                
+                // Mock: Ibuprofen + Lisinopril
+                if ((this.selectedDrugs.some(d => d.includes('Ibuprofen')) && 
+                     this.selectedDrugs.some(d => d.includes('Lisinopril')))) {
+                    this.drugDrugInteractions.push({
+                        id: 2,
+                        title: 'Ibuprofen + Lisinopril - THẬN TRỌNG',
+                        description: 'NSAID có thể giảm hiệu quả thuốc chẹn ACE',
+                        icon: 'fa-exclamation-circle',
+                        severityClass: 'border-amber-500 bg-amber-50',
+                        recommendation: 'Theo dõi huyết áp. Nên sử dụng Paracetamol thay cho NSAID.'
+                    });
+                }
+                
+                // Mock: Paracetamol + Ibuprofen
+                if ((this.selectedDrugs.some(d => d.includes('Paracetamol')) && 
+                     this.selectedDrugs.some(d => d.includes('Ibuprofen')))) {
+                    this.drugDrugInteractions.push({
+                        id: 3,
+                        title: 'Paracetamol + Ibuprofen - THẬN TRỌNG',
+                        description: 'Kết hợp 2 thuốc hạ sốt-giảm đau tăng nguy cơ tác dụng phụ',
+                        icon: 'fa-exclamation-circle',
+                        severityClass: 'border-amber-500 bg-amber-50',
+                        recommendation: 'Chỉ nên sử dụng 1 loại. Nếu cần, cách thời gian ít nhất 4-6 giờ.'
+                    });
+                }
+            }
+            
+            // Simulate drug-disease contraindications
+            if (this.selectedDrugs.length > 0 && this.selectedDiseases.length > 0) {
+                // Mock: Ibuprofen + Bệnh thận mạn tính
+                if (this.selectedDrugs.some(d => d.includes('Ibuprofen')) && 
+                    this.selectedDiseases.some(d => d.includes('N18'))) {
+                    this.drugDiseaseContraindications.push({
+                        id: 1,
+                        title: 'Ibuprofen + Bệnh thận mạn tính - CHỐNG CHỈ ĐỊNH',
+                        description: 'NSAID có thể làm xấu thêm chức năng thận',
+                        icon: 'fa-ban',
+                        severityClass: 'border-red-500 bg-red-50',
+                        recommendation: 'TUYỆT ĐỐI không dùng. Thay thế bằng Paracetamol hoặc thuốc hạ sốt khác.'
+                    });
+                }
+                
+                // Mock: Metformin + Bệnh thận mạn tính
+                if (this.selectedDrugs.some(d => d.includes('Metformin')) && 
+                    this.selectedDiseases.some(d => d.includes('N18'))) {
+                    this.drugDiseaseContraindications.push({
+                        id: 2,
+                        title: 'Metformin + Bệnh thận mạn tính - THẬN TRỌNG',
+                        description: 'Metformin được thải qua thận, có nguy cơ tích tụ',
+                        icon: 'fa-exclamation-circle',
+                        severityClass: 'border-amber-500 bg-amber-50',
+                        recommendation: 'Cần kiểm tra GFR. Giảm liều hoặc thay thế nếu GFR < 30.'
+                    });
+                }
+                
+                // Mock: Aspirin + Viêm phổi
+                if (this.selectedDrugs.some(d => d.includes('Aspirin')) && 
+                    this.selectedDiseases.some(d => d.includes('J18'))) {
+                    this.drugDiseaseContraindications.push({
+                        id: 3,
+                        title: 'Aspirin + Viêm phổi - AN TOÀN',
+                        description: 'Aspirin có thể được sử dụng an toàn trong viêm phổi',
+                        icon: 'fa-check-circle',
+                        severityClass: 'border-green-500 bg-green-50',
+                        recommendation: 'Có thể sử dụng. Hãy tuân thủ liều khuyến cáo.'
+                    });
+                }
+            }
+            
+            this.showResults = true;
+            setTimeout(() => {
+                document.getElementById('resultsSection').scrollIntoView({ behavior: 'smooth' });
+            }, 100);
+        },
+        
+        // Overall status
+        get overallStatus() {
+            const hasWarnings = this.drugDrugInteractions.length > 0 || 
+                               this.drugDiseaseContraindications.length > 0;
+            
+            if (!hasWarnings) {
+                return {
+                    class: 'border-green-300 bg-green-50 text-green-800',
+                    icon: 'fa-check-circle',
+                    message: '✓ An Toàn',
+                    detail: 'Kết hợp thuốc và bệnh lý được kiểm tra là an toàn. Tuy nhiên, vẫn cần theo dõi bệnh nhân.'
+                };
+            }
+            
+            const hasDangers = this.drugDrugInteractions.some(i => i.severityClass.includes('red')) ||
+                              this.drugDiseaseContraindications.some(c => c.severityClass.includes('red'));
+            
+            if (hasDangers) {
+                return {
+                    class: 'border-red-300 bg-red-50 text-red-800',
+                    icon: 'fa-exclamation-triangle',
+                    message: '⚠ NGUY HIỂM',
+                    detail: 'Phát hiện tương tác nguy hiểm hoặc chống chỉ định. Vui lòng xem xét thay đổi phương án điều trị.'
+                };
+            }
+            
+            return {
+                class: 'border-amber-300 bg-amber-50 text-amber-800',
+                icon: 'fa-exclamation-circle',
+                message: '! Cần Thận Trọng',
+                detail: 'Có tương tác cần theo dõi. Kiểm tra thường xuyên tình trạng bệnh nhân.'
+            };
+        }
+    }
+}
+</script>
+        <div class="row">
+            @if(Model != null){
+            @foreach (var drug in Model)
+            {
+                <div class="col-md-6 col-lg-4 mb-4">
+                    <div class="card h-100 shadow-sm hover-effect">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <h6 class="card-title text-primary">@drug.Name</h6>
+                                <span class="badge bg-info">
+                                    <i class="fas fa-eye"></i> @drug.ViewCount
+                                </span>
+                            </div>
+                            <p class="card-text small text-muted mb-2">
+                                <strong>Hoạt chất:</strong> @drug.ActiveIngredient
+                            </p>
+                            <p class="card-text small text-muted mb-2">
+                                <strong>Công dụng:</strong> @drug.Function
+                            </p>
+                            <p class="card-text small text-muted mb-3">
+                                <strong>Nhà sản xuất:</strong> @drug.Manufacturer
+                            </p>
+                            <a href="/Drug/Details/@drug.Id" class="btn btn-sm btn-primary">
+                                <i class="fas fa-info-circle"></i> Chi Tiết
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            }
+            }
+            else
+{
+    <p>Không có dữ liệu</p>
+}
+        </div>
+    </div>
+</div>
+
+<!-- Call to Action -->
+<div class="cta-section bg-primary text-white py-5">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <h3 class="mb-0">Bắt đầu kiểm tra tương tác thuốc ngay hôm nay</h3>
+            </div>
+            <div class="col-md-4 text-end">
+                <a href="/Interaction/CheckDrugInteraction" class="btn btn-light btn-lg">
+                    Kiểm Tra Ngay
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // Animation on scroll
+        const cards = document.querySelectorAll('.feature-card');
+        const observerOptions = {
+            threshold: 0.1,
+            rootMargin: '0px 0px -50px 0px'
+        };
+
+        const observer = new IntersectionObserver(function(entries) {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.style.animation = 'fadeInUp 0.6s ease-out';
+                }
+            });
+        }, observerOptions);
+
+        cards.forEach(card => observer.observe(card));
+    </script>
+}

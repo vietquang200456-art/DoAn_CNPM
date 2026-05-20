@@ -1,0 +1,491 @@
+@model IEnumerable<PharmaCheckApp.Models.Drug>
+
+@{
+    ViewData["Title"] = "Quản Lý Thuốc | PharmaCheck";
+}
+
+<!-- Page Header -->
+<div class="bg-gradient-to-r from-medical-700 to-medical-600 text-white py-8">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex items-center justify-between">
+            <div>
+                <h1 class="text-4xl font-bold flex items-center gap-3">
+                    <i class="fas fa-pills"></i>
+                    Quản Lý Thuốc
+                </h1>
+                <p class="text-blue-100 mt-2">Tạo, sửa, xóa và quản lý thông tin thuốc trong cơ sở dữ liệu</p>
+            </div>
+            <button onclick="openDrugModal()" class="bg-white text-medical-700 px-6 py-3 rounded-lg font-semibold hover:bg-blue-50 transition-colors flex items-center gap-2">
+                <i class="fas fa-plus"></i> Thêm Thuốc Mới
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Main Content -->
+<section class="py-8 bg-slate-50 min-h-screen">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <!-- Search & Filter Bar -->
+        <div class="bg-white rounded-xl shadow-lg border border-slate-200 p-6 mb-8">
+            <div class="grid md:grid-cols-3 gap-4">
+                <!-- Search Input -->
+                <div class="md:col-span-2">
+                    <div class="relative">
+                        <input type="text"
+                               id="drugSearch"
+                               placeholder="Tìm kiếm thuốc (tên, hoạt chất, mã)..."
+                               class="w-full px-4 py-3 border-2 border-slate-300 rounded-lg focus:outline-none focus:border-medical-600 transition-colors">
+                        <i class="fas fa-search absolute right-4 top-4 text-medical-600"></i>
+                    </div>
+                </div>
+
+                <!-- Filter Status -->
+                <div>
+                    <select id="statusFilter" class="w-full px-4 py-3 border-2 border-slate-300 rounded-lg focus:outline-none focus:border-medical-600 transition-colors">
+                        <option value="">Tất cả Trạng Thái</option>
+                        <option value="active">Đang Hoạt Động</option>
+                        <option value="inactive">Ngừng Hoạt Động</option>
+                        <option value="restricted">Hạn Chế</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <!-- Table Container -->
+        <div class="bg-white rounded-xl shadow-lg border border-slate-200 overflow-hidden">
+            <div class="overflow-x-auto">
+                <table class="w-full">
+                    <!-- Table Head -->
+                    <thead class="bg-medical-700 text-white">
+                        <tr>
+                            <th class="px-6 py-4 text-left font-semibold text-sm">
+                                <i class="fas fa-pills mr-2"></i>Tên Thuốc
+                            </th>
+                            <th class="px-6 py-4 text-left font-semibold text-sm">
+                                <i class="fas fa-flask mr-2"></i>Hoạt Chất
+                            </th>
+                            <th class="px-6 py-4 text-left font-semibold text-sm">
+                                <i class="fas fa-tag mr-2"></i>Dạng Bào Chế
+                            </th>
+                            <th class="px-6 py-4 text-left font-semibold text-sm">
+                                <i class="fas fa-thermometer-half mr-2"></i>Liều Dùng
+                            </th>
+                            <th class="px-6 py-4 text-left font-semibold text-sm">
+                                <i class="fas fa-circle text-sm mr-2"></i>Trạng Thái
+                            </th>
+                            <th class="px-6 py-4 text-center font-semibold text-sm">
+                                <i class="fas fa-cog mr-2"></i>Hành Động
+                            </th>
+                        </tr>
+                    </thead>
+
+                    <!-- Table Body -->
+                    <tbody class="divide-y divide-slate-200">
+                        <!-- Row 1 -->
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="px-6 py-4">
+                                <div class="font-semibold text-gray-900">Amoxicillin 500mg</div>
+                                <div class="text-sm text-gray-500">Mã: AMX-500</div>
+                            </td>
+                            <td class="px-6 py-4">
+                                <span class="inline-block bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium">
+                                    Amoxicillin Trihydrate
+                                </span>
+                            </td>
+                            <td class="px-6 py-4">Viên</td>
+                            <td class="px-6 py-4">
+                                <div class="text-sm">
+                                    <div>500mg x 3/ngày</div>
+                                    <div class="text-gray-500 text-xs">Trong 7 ngày</div>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4">
+                                <span class="inline-flex items-center gap-2 bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-medium">
+                                    <i class="fas fa-check-circle"></i>Đang Hoạt Động
+                                </span>
+                            </td>
+                            <td class="px-6 py-4">
+                                <div class="flex justify-center gap-2">
+                                    <button onclick="editDrug()" class="bg-blue-100 text-blue-700 hover:bg-blue-200 p-2 rounded-lg transition-colors" title="Sửa">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <button onclick="viewDrug()" class="bg-gray-100 text-gray-700 hover:bg-gray-200 p-2 rounded-lg transition-colors" title="Xem Chi Tiết">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                    <button onclick="confirmDeleteDrug('Amoxicillin 500mg')" class="bg-red-100 text-red-700 hover:bg-red-200 p-2 rounded-lg transition-colors" title="Xóa">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+
+                        <!-- Row 2 -->
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="px-6 py-4">
+                                <div class="font-semibold text-gray-900">Paracetamol 500mg</div>
+                                <div class="text-sm text-gray-500">Mã: PCM-500</div>
+                            </td>
+                            <td class="px-6 py-4">
+                                <span class="inline-block bg-purple-100 text-purple-800 px-3 py-1 rounded-full text-sm font-medium">
+                                    Paracetamol (Acetaminophen)
+                                </span>
+                            </td>
+                            <td class="px-6 py-4">Viên, Siro</td>
+                            <td class="px-6 py-4">
+                                <div class="text-sm">
+                                    <div>500mg x 1-2/ngày</div>
+                                    <div class="text-gray-500 text-xs">Không quá 4g/ngày</div>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4">
+                                <span class="inline-flex items-center gap-2 bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-medium">
+                                    <i class="fas fa-check-circle"></i>Đang Hoạt Động
+                                </span>
+                            </td>
+                            <td class="px-6 py-4">
+                                <div class="flex justify-center gap-2">
+                                    <button onclick="editDrug()" class="bg-blue-100 text-blue-700 hover:bg-blue-200 p-2 rounded-lg transition-colors" title="Sửa">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <button onclick="viewDrug()" class="bg-gray-100 text-gray-700 hover:bg-gray-200 p-2 rounded-lg transition-colors" title="Xem Chi Tiết">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                    <button onclick="confirmDeleteDrug('Paracetamol 500mg')" class="bg-red-100 text-red-700 hover:bg-red-200 p-2 rounded-lg transition-colors" title="Xóa">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+
+                        <!-- Row 3 -->
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="px-6 py-4">
+                                <div class="font-semibold text-gray-900">Ibuprofen 400mg</div>
+                                <div class="text-sm text-gray-500">Mã: IBU-400</div>
+                            </td>
+                            <td class="px-6 py-4">
+                                <span class="inline-block bg-orange-100 text-orange-800 px-3 py-1 rounded-full text-sm font-medium">
+                                    Ibuprofen
+                                </span>
+                            </td>
+                            <td class="px-6 py-4">Viên</td>
+                            <td class="px-6 py-4">
+                                <div class="text-sm">
+                                    <div>400mg x 3/ngày</div>
+                                    <div class="text-gray-500 text-xs">Cách nhau 6-8h</div>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4">
+                                <span class="inline-flex items-center gap-2 bg-amber-100 text-amber-800 px-3 py-1 rounded-full text-sm font-medium">
+                                    <i class="fas fa-exclamation-circle"></i>Hạn Chế
+                                </span>
+                            </td>
+                            <td class="px-6 py-4">
+                                <div class="flex justify-center gap-2">
+                                    <button onclick="editDrug()" class="bg-blue-100 text-blue-700 hover:bg-blue-200 p-2 rounded-lg transition-colors" title="Sửa">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <button onclick="viewDrug()" class="bg-gray-100 text-gray-700 hover:bg-gray-200 p-2 rounded-lg transition-colors" title="Xem Chi Tiết">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                    <button onclick="confirmDeleteDrug('Ibuprofen 400mg')" class="bg-red-100 text-red-700 hover:bg-red-200 p-2 rounded-lg transition-colors" title="Xóa">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+
+                        <!-- Row 4 -->
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="px-6 py-4">
+                                <div class="font-semibold text-gray-900">Metformin 500mg</div>
+                                <div class="text-sm text-gray-500">Mã: MET-500</div>
+                            </td>
+                            <td class="px-6 py-4">
+                                <span class="inline-block bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-medium">
+                                    Metformin HCl
+                                </span>
+                            </td>
+                            <td class="px-6 py-4">Viên</td>
+                            <td class="px-6 py-4">
+                                <div class="text-sm">
+                                    <div>500-1000mg x 2-3/ngày</div>
+                                    <div class="text-gray-500 text-xs">Cùng ăn</div>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4">
+                                <span class="inline-flex items-center gap-2 bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-medium">
+                                    <i class="fas fa-check-circle"></i>Đang Hoạt Động
+                                </span>
+                            </td>
+                            <td class="px-6 py-4">
+                                <div class="flex justify-center gap-2">
+                                    <button onclick="editDrug()" class="bg-blue-100 text-blue-700 hover:bg-blue-200 p-2 rounded-lg transition-colors" title="Sửa">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <button onclick="viewDrug()" class="bg-gray-100 text-gray-700 hover:bg-gray-200 p-2 rounded-lg transition-colors" title="Xem Chi Tiết">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                    <button onclick="confirmDeleteDrug('Metformin 500mg')" class="bg-red-100 text-red-700 hover:bg-red-200 p-2 rounded-lg transition-colors" title="Xóa">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+
+                        <!-- Row 5 -->
+                        <tr class="hover:bg-slate-50 transition-colors">
+                            <td class="px-6 py-4">
+                                <div class="font-semibold text-gray-900">Lisinopril 10mg</div>
+                                <div class="text-sm text-gray-500">Mã: LIS-10</div>
+                            </td>
+                            <td class="px-6 py-4">
+                                <span class="inline-block bg-red-100 text-red-800 px-3 py-1 rounded-full text-sm font-medium">
+                                    Lisinopril
+                                </span>
+                            </td>
+                            <td class="px-6 py-4">Viên</td>
+                            <td class="px-6 py-4">
+                                <div class="text-sm">
+                                    <div>10mg x 1/ngày</div>
+                                    <div class="text-gray-500 text-xs">Buổi sáng</div>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4">
+                                <span class="inline-flex items-center gap-2 bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-medium">
+                                    <i class="fas fa-check-circle"></i>Đang Hoạt Động
+                                </span>
+                            </td>
+                            <td class="px-6 py-4">
+                                <div class="flex justify-center gap-2">
+                                    <button onclick="editDrug()" class="bg-blue-100 text-blue-700 hover:bg-blue-200 p-2 rounded-lg transition-colors" title="Sửa">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <button onclick="viewDrug()" class="bg-gray-100 text-gray-700 hover:bg-gray-200 p-2 rounded-lg transition-colors" title="Xem Chi Tiết">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                    <button onclick="confirmDeleteDrug('Lisinopril 10mg')" class="bg-red-100 text-red-700 hover:bg-red-200 p-2 rounded-lg transition-colors" title="Xóa">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Table Footer with Pagination -->
+            <div class="bg-slate-50 border-t border-slate-200 px-6 py-4 flex items-center justify-between">
+                <div class="text-sm text-gray-600">
+                    Hiển thị <span class="font-semibold">1-5</span> của <span class="font-semibold">1,245</span> thuốc
+                </div>
+                <div class="flex gap-2">
+                    <button class="px-4 py-2 border border-slate-300 rounded-lg text-gray-700 hover:bg-slate-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                        <i class="fas fa-chevron-left"></i>
+                    </button>
+                    <button class="px-3 py-2 bg-medical-700 text-white rounded-lg">1</button>
+                    <button class="px-3 py-2 border border-slate-300 rounded-lg text-gray-700 hover:bg-slate-50 transition-colors">2</button>
+                    <button class="px-3 py-2 border border-slate-300 rounded-lg text-gray-700 hover:bg-slate-50 transition-colors">3</button>
+                    <span class="px-2 py-2">...</span>
+                    <button class="px-3 py-2 border border-slate-300 rounded-lg text-gray-700 hover:bg-slate-50 transition-colors">249</button>
+                    <button class="px-4 py-2 border border-slate-300 rounded-lg text-gray-700 hover:bg-slate-50 transition-colors">
+                        <i class="fas fa-chevron-right"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Add/Edit Drug Modal -->
+<div id="drugModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+    <div class="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+        <!-- Modal Header -->
+        <div class="sticky top-0 bg-medical-700 text-white px-6 py-4 flex items-center justify-between border-b border-medical-600">
+            <h2 class="text-2xl font-bold flex items-center gap-3">
+                <i class="fas fa-pills"></i>
+                <span id="modalTitle">Thêm Thuốc Mới</span>
+            </h2>
+            <button onclick="closeDrugModal()" class="text-white hover:bg-medical-600 p-2 rounded-lg transition-colors">
+                <i class="fas fa-times text-xl"></i>
+            </button>
+        </div>
+
+        <!-- Modal Body -->
+        <div class="p-6 space-y-4">
+            <!-- Drug Name -->
+            <div>
+                <label class="block text-sm font-semibold text-gray-900 mb-2">
+                    <i class="fas fa-pills text-medical-700 mr-2"></i>Tên Thuốc
+                </label>
+                <input type="text" placeholder="VD: Amoxicillin 500mg"
+                       class="w-full px-4 py-3 border-2 border-slate-300 rounded-lg focus:outline-none focus:border-medical-600 transition-colors">
+            </div>
+
+            <!-- Active Ingredient -->
+            <div class="grid md:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-semibold text-gray-900 mb-2">
+                        <i class="fas fa-flask text-medical-700 mr-2"></i>Hoạt Chất
+                    </label>
+                    <input type="text" placeholder="VD: Amoxicillin Trihydrate"
+                           class="w-full px-4 py-3 border-2 border-slate-300 rounded-lg focus:outline-none focus:border-medical-600 transition-colors">
+                </div>
+
+                <!-- Form -->
+                <div>
+                    <label class="block text-sm font-semibold text-gray-900 mb-2">
+                        <i class="fas fa-capsules text-medical-700 mr-2"></i>Dạng Bào Chế
+                    </label>
+                    <select class="w-full px-4 py-3 border-2 border-slate-300 rounded-lg focus:outline-none focus:border-medical-600 transition-colors">
+                        <option>Chọn dạng bào chế</option>
+                        <option>Viên</option>
+                        <option>Siro</option>
+                        <option>Tiêm</option>
+                        <option>Mỡ</option>
+                        <option>Kem</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Dosage -->
+            <div class="grid md:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-semibold text-gray-900 mb-2">
+                        <i class="fas fa-weight text-medical-700 mr-2"></i>Liều Lượng
+                    </label>
+                    <input type="text" placeholder="VD: 500mg"
+                           class="w-full px-4 py-3 border-2 border-slate-300 rounded-lg focus:outline-none focus:border-medical-600 transition-colors">
+                </div>
+
+                <!-- Dosage Instructions -->
+                <div>
+                    <label class="block text-sm font-semibold text-gray-900 mb-2">
+                        <i class="fas fa-instructions text-medical-700 mr-2"></i>Hướng Dẫn Dùng
+                    </label>
+                    <input type="text" placeholder="VD: 500mg x 3/ngày"
+                           class="w-full px-4 py-3 border-2 border-slate-300 rounded-lg focus:outline-none focus:border-medical-600 transition-colors">
+                </div>
+            </div>
+
+            <!-- Description -->
+            <div>
+                <label class="block text-sm font-semibold text-gray-900 mb-2">
+                    <i class="fas fa-align-left text-medical-700 mr-2"></i>Mô Tả / Công Dụng
+                </label>
+                <textarea rows="4" placeholder="Nhập mô tả, công dụng, lưu ý khi dùng..."
+                          class="w-full px-4 py-3 border-2 border-slate-300 rounded-lg focus:outline-none focus:border-medical-600 transition-colors resize-none"></textarea>
+            </div>
+
+            <!-- Status -->
+            <div class="grid md:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-semibold text-gray-900 mb-2">
+                        <i class="fas fa-circle text-medical-700 mr-2"></i>Trạng Thái
+                    </label>
+                    <select class="w-full px-4 py-3 border-2 border-slate-300 rounded-lg focus:outline-none focus:border-medical-600 transition-colors">
+                        <option>Đang Hoạt Động</option>
+                        <option>Ngừng Hoạt Động</option>
+                        <option>Hạn Chế</option>
+                    </select>
+                </div>
+
+                <!-- Drug Code -->
+                <div>
+                    <label class="block text-sm font-semibold text-gray-900 mb-2">
+                        <i class="fas fa-barcode text-medical-700 mr-2"></i>Mã Thuốc
+                    </label>
+                    <input type="text" placeholder="VD: AMX-500"
+                           class="w-full px-4 py-3 border-2 border-slate-300 rounded-lg focus:outline-none focus:border-medical-600 transition-colors">
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal Footer -->
+        <div class="sticky bottom-0 bg-slate-50 border-t border-slate-200 px-6 py-4 flex gap-3 justify-end">
+            <button onclick="closeDrugModal()"
+                    class="px-6 py-3 border-2 border-slate-300 text-gray-700 rounded-lg font-semibold hover:bg-slate-50 transition-colors">
+                Hủy
+            </button>
+            <button class="px-6 py-3 bg-medical-700 text-white rounded-lg font-semibold hover:bg-medical-800 transition-colors flex items-center gap-2">
+                <i class="fas fa-save"></i> Lưu
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div id="deleteModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+    <div class="bg-white rounded-xl shadow-2xl max-w-md w-full">
+        <div class="p-6">
+            <div class="flex items-center justify-center w-12 h-12 mx-auto bg-red-100 rounded-full mb-4">
+                <i class="fas fa-exclamation-triangle text-red-600 text-xl"></i>
+            </div>
+            <h3 class="text-xl font-bold text-center text-gray-900 mb-2">Xác Nhận Xóa</h3>
+            <p class="text-center text-gray-600 mb-6">
+                Bạn chắc chắn muốn xóa <span id="deleteItemName" class="font-semibold"></span>? Hành động này không thể hoàn tác.
+            </p>
+        </div>
+        <div class="bg-slate-50 border-t border-slate-200 px-6 py-4 flex gap-3 justify-end">
+            <button onclick="closeDeleteModal()"
+                    class="px-6 py-2 border border-slate-300 text-gray-700 rounded-lg font-semibold hover:bg-slate-50 transition-colors">
+                Hủy
+            </button>
+            <button class="px-6 py-2 bg-red-600 text-white rounded-lg font-semibold hover:bg-red-700 transition-colors flex items-center gap-2">
+                <i class="fas fa-trash"></i> Xóa
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- JavaScript Functions -->
+<script>
+function openDrugModal() {
+    document.getElementById('drugModal').classList.remove('hidden');
+    document.getElementById('modalTitle').textContent = 'Thêm Thuốc Mới';
+}
+
+function editDrug() {
+    document.getElementById('drugModal').classList.remove('hidden');
+    document.getElementById('modalTitle').textContent = 'Chỉnh Sửa Thuốc';
+}
+
+function viewDrug() {
+    alert('Xem chi tiết thuốc - Chưa triển khai');
+}
+
+function closeDrugModal() {
+    document.getElementById('drugModal').classList.add('hidden');
+}
+
+function confirmDeleteDrug(drugName) {
+    document.getElementById('deleteItemName').textContent = drugName;
+    document.getElementById('deleteModal').classList.remove('hidden');
+}
+
+function closeDeleteModal() {
+    document.getElementById('deleteModal').classList.add('hidden');
+}
+
+// Close modals when clicking outside
+document.addEventListener('click', function(e) {
+    const drugModal = document.getElementById('drugModal');
+    const deleteModal = document.getElementById('deleteModal');
+    
+    if (e.target === drugModal) {
+        drugModal.classList.add('hidden');
+    }
+    if (e.target === deleteModal) {
+        deleteModal.classList.add('hidden');
+    }
+});
+
+// Search functionality
+document.getElementById('drugSearch').addEventListener('keyup', function(e) {
+    console.log('Tìm kiếm: ' + e.target.value);
+});
+
+document.getElementById('statusFilter').addEventListener('change', function(e) {
+    console.log('Lọc theo trạng thái: ' + e.target.value);
+});
+</script>
