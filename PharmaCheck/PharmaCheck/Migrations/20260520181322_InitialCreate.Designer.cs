@@ -12,8 +12,8 @@ using PharmaCheck.Data;
 namespace PharmaCheck.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20260517074212_InitDB")]
-    partial class InitDB
+    [Migration("20260520181322_InitialCreate")]
+    partial class InitialCreate
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)

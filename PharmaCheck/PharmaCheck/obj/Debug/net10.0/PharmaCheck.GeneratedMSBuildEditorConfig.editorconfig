@@ -34,12 +34,20 @@ build_property.EnableCodeStyleSeverity =
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcRHJ1Z1xJbmRleC5jc2h0bWw=
 build_metadata.AdditionalFiles.CssScope = 
 
+[D:/DoAn_CNPM/PharmaCheck/PharmaCheck/Views/Home/dsthuoc.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcSG9tZVxkc3RodW9jLmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
 [D:/DoAn_CNPM/PharmaCheck/PharmaCheck/Views/Home/Index.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcSG9tZVxJbmRleC5jc2h0bWw=
 build_metadata.AdditionalFiles.CssScope = 
 
 [D:/DoAn_CNPM/PharmaCheck/PharmaCheck/Views/Home/Privacy.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcSG9tZVxQcml2YWN5LmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[D:/DoAn_CNPM/PharmaCheck/PharmaCheck/Views/Home/tinhnangchinh.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcSG9tZVx0aW5obmFuZ2NoaW5oLmNzaHRtbA==
 build_metadata.AdditionalFiles.CssScope = 
 
 [D:/DoAn_CNPM/PharmaCheck/PharmaCheck/Views/Interaction/Index.cshtml]
