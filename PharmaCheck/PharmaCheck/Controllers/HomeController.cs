@@ -34,7 +34,7 @@ namespace PharmaCheck.Controllers
 
                 return View(featuredDrugs);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 // Thực tế bạn có thể dùng ILogger để ghi log: _logger.LogError(ex, "Lỗi tải danh sách thuốc");
                 ViewBag.ErrorMessage = "Đã xảy ra lỗi khi tải danh sách thuốc.";
@@ -95,100 +95,219 @@ namespace PharmaCheck.Controllers
         /// URL: /Home/CheckInteractions (POST)
         /// </summary>
         [HttpPost]
-        [ValidateAntiForgeryToken] // Bảo mật CSRF token từ Fetch API gửi lên
         public async Task<IActionResult> CheckInteractions([FromBody] InteractionCheckRequest request)
         {
-            if (request == null || ((request.DrugIds == null || !request.DrugIds.Any()) && 
-                                    (request.DiseaseIds == null || !request.DiseaseIds.Any())))
+            try
             {
-                return BadRequest(new { message = "Dữ liệu yêu cầu không hợp lệ." });
-            }
-
-            var drugDrugInteractionsResult = new List<object>();
-            var drugDiseaseContraindicationsResult = new List<object>();
-
-            // 1. Lưu lịch sử tìm kiếm vào DB
-            await SaveSearchHistoryAsync(request);
-
-            // 2. Kiểm tra tương tác THUỐC - THUỐC
-            if (request.DrugIds != null && request.DrugIds.Count >= 2)
-            {
-                var interactions = await _context.Set<DrugInteraction>()
-                    .Include(di => di.SourceDrug)
-                    .Include(di => di.TargetDrug)
-                    .Where(di => request.DrugIds.Contains(di.SourceDrugId) && 
-                                 request.DrugIds.Contains(di.TargetDrugId) &&
-                                 di.SourceDrugId != di.TargetDrugId)
-                    .ToListAsync();
-
-                foreach (var item in interactions)
+                System.Diagnostics.Debug.WriteLine("═══════════════════════════════════════════");
+                System.Diagnostics.Debug.WriteLine("🔍 [CheckInteractions] REQUEST NHẬN ĐƯỢC");
+                System.Diagnostics.Debug.WriteLine("═══════════════════════════════════════════");
+                System.Diagnostics.Debug.WriteLine($"   Request object: {(request == null ? "NULL" : "OK")}");
+                
+                if (request != null)
                 {
-                    string severityText = item.SeverityLevel == 3 ? "NGUY HIỂM" : 
-                                          item.SeverityLevel == 2 ? "THẬN TRỌNG" : "NHẸ";
-                    
-                    string severityClass = item.SeverityLevel == 3 ? "border-red-500 bg-red-50" : 
-                                           item.SeverityLevel == 2 ? "border-amber-500 bg-amber-50" : "border-blue-500 bg-blue-50";
-                    
-                    string icon = item.SeverityLevel == 3 ? "fa-exclamation-triangle" : "fa-exclamation-circle";
+                    System.Diagnostics.Debug.WriteLine($"   DrugIds count: {request.DrugIds?.Count ?? 0}");
+                    System.Diagnostics.Debug.WriteLine($"   DrugIds: [{string.Join(", ", request.DrugIds ?? new List<int>())}]");
+                    System.Diagnostics.Debug.WriteLine($"   DiseaseIds count: {request.DiseaseIds?.Count ?? 0}");
+                    System.Diagnostics.Debug.WriteLine($"   DiseaseIds: [{string.Join(", ", request.DiseaseIds ?? new List<int>())}]");
+                }
 
-                    drugDrugInteractionsResult.Add(new
+                // Kiểm tra Model State
+                if (!ModelState.IsValid)
+                {
+                    System.Diagnostics.Debug.WriteLine("❌ ModelState KHÔNG HỢP LỆ!");
+                    foreach (var modelState in ModelState.Values)
                     {
-                        id = item.Id,
-                        level = item.SeverityLevel, // Bổ sung trường số phục vụ Alpine.js :class
-                        title = $"{item.SourceDrug?.Name} + {item.TargetDrug?.Name} - {severityText}",
-                        description = item.Description,
-                        icon = icon,
-                        severityClass = severityClass, // Giữ lại để back-up nếu cần dùng
-                        recommendation = item.Recommendation
+                        foreach (var error in modelState.Errors)
+                        {
+                            System.Diagnostics.Debug.WriteLine($"   Error: {error.ErrorMessage}");
+                        }
+                    }
+                    return BadRequest(new 
+                    { 
+                        message = "Model State không hợp lệ",
+                        errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage).ToList()
                     });
                 }
-            }
 
-            // 3. Kiểm tra tương tác THUỐC - BỆNH LÝ
-            if (request.DrugIds != null && request.DrugIds.Any() && request.DiseaseIds != null && request.DiseaseIds.Any())
-            {
-                var contraindications = await _context.Set<DrugDiseaseContraindication>()
-                    .Include(ddc => ddc.Drug)
-                    .Include(ddc => ddc.Disease)
-                    .Where(ddc => request.DrugIds.Contains(ddc.DrugId) && 
-                                 request.DiseaseIds.Contains(ddc.DiseaseId))
-                    .ToListAsync();
-
-                foreach (var item in contraindications)
+                if (request == null || ((request.DrugIds == null || !request.DrugIds.Any()) && 
+                                        (request.DiseaseIds == null || !request.DiseaseIds.Any())))
                 {
-                    string riskText = item.RiskLevel == 3 ? "CHỐNG CHỈ ĐỊNH" : 
-                                      item.RiskLevel == 2 ? "THẬN TRỌNG" : "THẤP";
-                    
-                    string severityClass = item.RiskLevel == 3 ? "border-red-500 bg-red-50" : 
-                                           item.RiskLevel == 2 ? "border-amber-500 bg-amber-50" : "border-green-500 bg-green-50";
-                    
-                    string icon = item.RiskLevel == 3 ? "fa-ban" : 
-                                  item.RiskLevel == 2 ? "fa-exclamation-circle" : "fa-check-circle";
-
-                    drugDiseaseContraindicationsResult.Add(new
-                    {
-                        id = item.Id,
-                        level = item.RiskLevel, // Bổ sung trường số phục vụ Alpine.js :class
-                        title = $"{item.Drug?.Name} + {item.Disease?.Name} - {riskText}",
-                        description = $"{item.Warning}. {item.Risk}",
-                        icon = icon,
-                        severityClass = severityClass, // Giữ lại để back-up nếu cần dùng
-                        recommendation = item.Recommendation
-                    });
+                    System.Diagnostics.Debug.WriteLine("❌ [CheckInteractions] Request null hoặc không có dữ liệu");
+                    return BadRequest(new { message = "Dữ liệu yêu cầu không hợp lệ.", error = "EmptyRequest" });
                 }
-            }
 
-            // Trả về định dạng JSON camelCase đồng bộ hoàn toàn với giao diện Alpine.js
-            return Json(new
+                var drugDrugInteractionsResult = new List<object>();
+                var drugDiseaseContraindicationsResult = new List<object>();
+
+                // 1. Lưu lịch sử tìm kiếm vào DB
+                await SaveSearchHistoryAsync(request);
+
+                // 2. Kiểm tra tương tác THUỐC - THUỐC
+                if (request.DrugIds != null && request.DrugIds.Count >= 2)
+                {
+                    System.Diagnostics.Debug.WriteLine("🔍 [CheckInteractions] Kiểm tra Drug-Drug Interactions...");
+                    
+                    var interactions = await _context.Set<DrugInteraction>()
+                        .Include(di => di.SourceDrug)
+                        .Include(di => di.TargetDrug)
+                        .Where(di => request.DrugIds.Contains(di.SourceDrugId) && 
+                                     request.DrugIds.Contains(di.TargetDrugId) &&
+                                     di.SourceDrugId != di.TargetDrugId)
+                        .ToListAsync();
+
+                    System.Diagnostics.Debug.WriteLine($"   📊 Tìm thấy {interactions.Count} interactions");
+
+                    foreach (var item in interactions)
+                    {
+                        string severityText = item.SeverityLevel == 3 ? "NGUY HIỂM" : 
+                                              item.SeverityLevel == 2 ? "THẬN TRỌNG" : "NHẸ";
+                        
+                        string icon = item.SeverityLevel == 3 ? "fa-exclamation-triangle" : "fa-exclamation-circle";
+
+                        drugDrugInteractionsResult.Add(new
+                        {
+                            id = item.Id,
+                            level = item.SeverityLevel,
+                            title = $"{item.SourceDrug?.Name} + {item.TargetDrug?.Name} - {severityText}",
+                            description = item.Description,
+                            icon = icon,
+                            recommendation = item.Recommendation
+                        });
+                    }
+                }
+
+                // 3. Kiểm tra tương tác THUỐC - BỆNH LÝ
+                if (request.DrugIds != null && request.DrugIds.Any() && request.DiseaseIds != null && request.DiseaseIds.Any())
+                {
+                    System.Diagnostics.Debug.WriteLine("🔍 [CheckInteractions] Kiểm tra Drug-Disease Contraindications...");
+                    
+                    var contraindications = await _context.Set<DrugDiseaseContraindication>()
+                        .Include(ddc => ddc.Drug)
+                        .Include(ddc => ddc.Disease)
+                        .Where(ddc => request.DrugIds.Contains(ddc.DrugId) && 
+                                     request.DiseaseIds.Contains(ddc.DiseaseId))
+                        .ToListAsync();
+
+                    System.Diagnostics.Debug.WriteLine($"   📊 Tìm thấy {contraindications.Count} contraindications");
+
+                    foreach (var item in contraindications)
+                    {
+                        string riskText = item.RiskLevel == 3 ? "CHỐNG CHỈ ĐỊNH" : 
+                                          item.RiskLevel == 2 ? "THẬN TRỌNG" : "THẤP";
+                        
+                        string icon = item.RiskLevel == 3 ? "fa-ban" : 
+                                      item.RiskLevel == 2 ? "fa-exclamation-circle" : "fa-check-circle";
+
+                        drugDiseaseContraindicationsResult.Add(new
+                        {
+                            id = item.Id,
+                            level = item.RiskLevel,
+                            title = $"{item.Drug?.Name} + {item.Disease?.Name} - {riskText}",
+                            description = $"{item.Warning}. {item.Risk}",
+                            icon = icon,
+                            recommendation = item.Recommendation
+                        });
+                    }
+                }
+
+                System.Diagnostics.Debug.WriteLine($"✅ [CheckInteractions] Trả về {drugDrugInteractionsResult.Count} drug-drug, {drugDiseaseContraindicationsResult.Count} drug-disease");
+                System.Diagnostics.Debug.WriteLine("═══════════════════════════════════════════");
+
+                // Trả về định dạng JSON camelCase đồng bộ hoàn toàn với giao diện Alpine.js
+                return Json(new
+                {
+                    drugDrugInteractions = drugDrugInteractionsResult,
+                    drugDiseaseContraindications = drugDiseaseContraindicationsResult
+                });
+            }
+            catch (Exception ex)
             {
-                drugDrugInteractions = drugDrugInteractionsResult,
-                drugDiseaseContraindications = drugDiseaseContraindicationsResult
-            });
+                System.Diagnostics.Debug.WriteLine($"❌ [CheckInteractions] Exception: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"❌ Stack Trace: {ex.StackTrace}");
+                System.Diagnostics.Debug.WriteLine("═══════════════════════════════════════════");
+                
+                return StatusCode(500, new 
+                { 
+                    message = "Lỗi xử lý dữ liệu trên máy chủ.",
+                    error = ex.Message,
+                    details = ex.InnerException?.Message
+                });
+            }
         }
 
         public IActionResult Privacy()
         {
             return View();
+        }
+
+        /// <summary>
+        /// DEBUG ENDPOINT: Kiểm tra dữ liệu trong database
+        /// URL: /Home/DiagnosticData
+        /// </summary>
+        [HttpGet]
+        public async Task<IActionResult> DiagnosticData()
+        {
+            try
+            {
+                var drugCount = await _context.Set<Drug>().CountAsync();
+                var diseaseCount = await _context.Set<Disease>().CountAsync();
+                var interactionCount = await _context.Set<DrugInteraction>().CountAsync();
+                var contraindicationCount = await _context.Set<DrugDiseaseContraindication>().CountAsync();
+
+                var drugs = await _context.Set<Drug>().Take(5).ToListAsync();
+                var diseases = await _context.Set<Disease>().Take(5).ToListAsync();
+                var interactions = await _context.Set<DrugInteraction>()
+                    .Include(di => di.SourceDrug)
+                    .Include(di => di.TargetDrug)
+                    .Take(3)
+                    .ToListAsync();
+                var contraindications = await _context.Set<DrugDiseaseContraindication>()
+                    .Include(ddc => ddc.Drug)
+                    .Include(ddc => ddc.Disease)
+                    .Take(3)
+                    .ToListAsync();
+
+                return Json(new
+                {
+                    summary = new
+                    {
+                        totalDrugs = drugCount,
+                        totalDiseases = diseaseCount,
+                        totalDrugInteractions = interactionCount,
+                        totalContraindications = contraindicationCount
+                    },
+                    sampleDrugs = drugs.Select(d => new { d.Id, d.Name, d.IsActive }).ToList(),
+                    sampleDiseases = diseases.Select(d => new { d.Id, d.Name, d.IsActive }).ToList(),
+                    sampleInteractions = interactions.Select(di => new
+                    {
+                        di.Id,
+                        SourceDrugId = di.SourceDrugId,
+                        SourceDrugName = di.SourceDrug?.Name,
+                        TargetDrugId = di.TargetDrugId,
+                        TargetDrugName = di.TargetDrug?.Name,
+                        di.SeverityLevel
+                    }).ToList(),
+                    sampleContraindications = contraindications.Select(ddc => new
+                    {
+                        ddc.Id,
+                        DrugId = ddc.DrugId,
+                        DrugName = ddc.Drug?.Name,
+                        DiseaseId = ddc.DiseaseId,
+                        DiseaseName = ddc.Disease?.Name,
+                        ddc.RiskLevel
+                    }).ToList()
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new
+                {
+                    error = "Lỗi kiểm tra database",
+                    message = ex.Message,
+                    stackTrace = ex.StackTrace
+                });
+            }
         }
 
         /// <summary>
