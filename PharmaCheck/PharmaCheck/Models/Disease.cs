@@ -5,19 +5,19 @@ namespace PharmaCheck.Models
 {
     public class Disease
     {
-        public int Id { get; set; }
+        public int Id { get; set; } // mã bệnh
 
-        public string Name { get; set; } = string.Empty;
+        public string Name { get; set; } = string.Empty;    // tên bệnh
 
-        public string Symptoms { get; set; } = string.Empty;
+        public string Symptoms { get; set; } = string.Empty;    // triệu chứng
 
-        public string Causes { get; set; } = string.Empty;
+        public string Causes { get; set; } = string.Empty; // nguyên nhân
 
-        public string TreatmentMethod { get; set; } = string.Empty;
+        public string TreatmentMethod { get; set; } = string.Empty; // phương pháp điều trị
 
-        public string Description { get; set; } = string.Empty;
+        public string Description { get; set; } = string.Empty; // mô tả thêm về bệnh
 
-        public bool IsActive { get; set; } = true;
+        public bool IsActive { get; set; } = true; // trạng thái hoạt động của bệnh
 
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
