@@ -1,0 +1,136 @@
+@model PharmaCheck.Controllers.RegisterViewModel
+@{
+    Layout = null;
+}
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Đăng ký tài khoản - PharmaCheck</title>
+    <script src="https://cdn.jsdelivr.net/npm/@@tailwindcss/browser@@4"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="bg-slate-50 flex items-center justify-center min-h-screen font-sans">
+
+    <div class="w-full max-w-xl p-8 m-4 bg-white rounded-2xl shadow-xl shadow-blue-100/50 border border-slate-100">
+        <!-- Header -->
+        <div class="text-center mb-6">
+            <h2 class="text-2xl font-bold text-slate-800">Tạo tài khoản mới</h2>
+            <p class="text-slate-500 text-sm mt-1">Tham gia cộng đồng tra cứu thông tin y khoa an toàn</p>
+        </div>
+
+        <form asp-action="Register" method="post" class="space-y-4">
+            <div asp-validation-summary="ModelOnly" class="p-3 text-sm text-red-600 bg-red-50 rounded-xl border border-red-100"></div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <!-- Username Input -->
+                <div>
+                    <label class="block text-sm font-semibold text-slate-700 mb-1.5">Tên đăng nhập</label>
+                    <div class="relative">
+                        <span class="absolute inset-y-0 left-0 flex items-center pl-3.5 text-slate-400">
+                            <i class="fa-solid fa-id-card-clip text-sm"></i>
+                        </span>
+                        <input asp-for="Username" type="text" class="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-blue-500 focus:bg-white focus:ring-4 focus:ring-blue-100 transition-all text-slate-800" placeholder="User123" />
+                    </div>
+                    <span asp-validation-for="Username" class="text-xs text-red-500 mt-1 block"></span>
+                </div>
+
+                <!-- FullName Input -->
+                <div>
+                    <label class="block text-sm font-semibold text-slate-700 mb-1.5">Họ và tên</label>
+                    <div class="relative">
+                        <span class="absolute inset-y-0 left-0 flex items-center pl-3.5 text-slate-400">
+                            <i class="fa-solid fa-user text-sm"></i>
+                        </span>
+                        <input asp-for="FullName" type="text" class="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-blue-500 focus:bg-white focus:ring-4 focus:ring-blue-100 transition-all text-slate-800" placeholder="Nguyễn Văn A" />
+                    </div>
+                    <span asp-validation-for="FullName" class="text-xs text-red-500 mt-1 block"></span>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <!-- Email Input -->
+                <div>
+                    <label class="block text-sm font-semibold text-slate-700 mb-1.5">Địa chỉ Email</label>
+                    <div class="relative">
+                        <span class="absolute inset-y-0 left-0 flex items-center pl-3.5 text-slate-400">
+                            <i class="fa-solid fa-envelope text-sm"></i>
+                        </span>
+                        <input asp-for="Email" type="email" class="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-blue-500 focus:bg-white focus:ring-4 focus:ring-blue-100 transition-all text-slate-800" placeholder="example@@gmail.com" />
+                    </div>
+                    <span asp-validation-for="Email" class="text-xs text-red-500 mt-1 block"></span>
+                </div>
+
+                <!-- Phone Input -->
+                <div>
+                    <label class="block text-sm font-semibold text-slate-700 mb-1.5">Số điện thoại</label>
+                    <div class="relative">
+                        <span class="absolute inset-y-0 left-0 flex items-center pl-3.5 text-slate-400">
+                            <i class="fa-solid fa-phone text-sm"></i>
+                        </span>
+                        <!-- Note: Phone validation is currently disabled in the model, so the validation message span is commented out
+                        <input asp-for="Phone" type="text" class="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-blue-500 focus:bg-white focus:ring-4 focus:ring-blue-100 transition-all text-slate-800" placeholder="0912xxxxxx" />
+                     -->
+                    </div>
+                    <!-- Validation Message for Phone
+                    <span asp-validation-for="Phone" class="text-xs text-red-500 mt-1 block"></span>
+                     -->
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <!-- Password Input -->
+                <div>
+                    <label class="block text-sm font-semibold text-slate-700 mb-1.5">Mật khẩu</label>
+                    <div class="relative">
+                        <span class="absolute inset-y-0 left-0 flex items-center pl-3.5 text-slate-400">
+                            <i class="fa-solid fa-lock text-sm"></i>
+                        </span>
+                        <input asp-for="Password" type="password" class="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-blue-500 focus:bg-white focus:ring-4 focus:ring-blue-100 transition-all text-slate-800" placeholder="••••••••" />
+                    </div>
+                    <span asp-validation-for="Password" class="text-xs text-red-500 mt-1 block"></span>
+                </div>
+
+                <!-- Confirm Password Input -->
+                <div>
+                    <label class="block text-sm font-semibold text-slate-700 mb-1.5">Xác nhận mật khẩu</label>
+                    <div class="relative">
+                        <span class="absolute inset-y-0 left-0 flex items-center pl-3.5 text-slate-400">
+                            <i class="fa-solid fa-shield-check text-sm"></i>
+                        </span>
+                        <input asp-for="ConfirmPassword" type="password" class="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-blue-500 focus:bg-white focus:ring-4 focus:ring-blue-100 transition-all text-slate-800" placeholder="••••••••" />
+                    </div>
+                    <span asp-validation-for="ConfirmPassword" class="text-xs text-red-500 mt-1 block"></span>
+                </div>
+            </div>
+
+            <!-- Terms Checkbox -->
+            <div class="pt-2">
+                <div class="flex items-start">
+                    <input asp-for="AgreeToTerms" type="checkbox" class="w-4 h-4 mt-0.5 text-blue-600 border-slate-300 rounded-md focus:ring-blue-500 bg-slate-50">
+                    <label asp-for="AgreeToTerms" class="ml-2 text-sm text-slate-600 select-none">
+                        Tôi hoàn toàn đồng ý với <a href="#" class="text-blue-600 hover:underline font-medium">Điều khoản sử dụng</a> và <a href="#" class="text-blue-600 hover:underline font-medium">Chính sách bảo mật y tế</a> của PharmaCheck.
+                    </label>
+                </div>
+                <span asp-validation-for="AgreeToTerms" class="text-xs text-red-500 mt-1 block"></span>
+            </div>
+
+            <!-- Submit Button -->
+            <button type="submit" class="w-full mt-2 py-3 px-4 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl shadow-md shadow-blue-200 hover:shadow-none transition-all duration-200 text-sm flex items-center justify-center gap-2 cursor-pointer">
+                <i class="fa-solid fa-user-plus text-xs"></i>
+                <span>Đăng Ký Tài Khoản</span>
+            </button>
+        </form>
+
+        <!-- Footer -->
+        <div class="text-center mt-6 pt-5 border-t border-slate-100">
+            <p class="text-sm text-slate-600">
+                Đã có tài khoản hệ thống? 
+                <a asp-action="Login" class="font-semibold text-blue-600 hover:underline">Đăng nhập</a>
+            </p>
+        </div>
+    </div>
+
+</body>
+</html>
