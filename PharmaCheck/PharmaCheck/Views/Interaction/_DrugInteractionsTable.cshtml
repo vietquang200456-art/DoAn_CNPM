@@ -1,0 +1,91 @@
+@model PharmaCheck.Controllers.PaginatedResult<DrugInteractionDisplayDto>
+
+<!-- ===== BẢNG DỮ LIỆU TƯƠNG TÁC THUỐC ===== -->
+@if (Model.Items.Any())
+{
+    <table class="w-full text-sm border-collapse">
+        <thead>
+            <tr class="bg-gradient-to-r from-blue-600 to-blue-700 text-white">
+                <th class="px-6 py-4 text-left font-semibold">#</th>
+                <th class="px-6 py-4 text-left font-semibold">Thuốc Nguồn</th>
+                <th class="px-6 py-4 text-left font-semibold">Thuốc Tương Tác</th>
+                <th class="px-6 py-4 text-center font-semibold">Mức Độ</th>
+                <th class="px-6 py-4 text-left font-semibold">Mô Tả</th>
+                <th class="px-6 py-4 text-left font-semibold">Khuyến Nghị</th>
+                <th class="px-6 py-4 text-center font-semibold">Ngày Tạo</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var interaction in Model.Items)
+            {
+                <tr class="border-b border-gray-200 hover:bg-blue-50 transition-colors">
+                    <td class="px-6 py-4 font-semibold text-gray-700">@(Model.Items.IndexOf(interaction) + 1 + (Model.CurrentPage - 1) * Model.PageSize)</td>
+                    <td class="px-6 py-4">
+                        <span class="inline-block bg-blue-100 text-blue-900 px-3 py-1 rounded-full font-medium text-sm">
+                            @interaction.SourceDrugName
+                        </span>
+                    </td>
+                    <td class="px-6 py-4">
+                        <span class="inline-block bg-indigo-100 text-indigo-900 px-3 py-1 rounded-full font-medium text-sm">
+                            @interaction.TargetDrugName
+                        </span>
+                    </td>
+                    <td class="px-6 py-4 text-center">
+                        <span class="inline-block px-3 py-1 rounded-full font-semibold text-sm @interaction.SeverityBadgeClass">
+                            @interaction.SeverityLevelName (@interaction.SeverityLevel)
+                        </span>
+                    </td>
+                    <td class="px-6 py-4 text-gray-700 max-w-xs">
+                        <div class="truncate" title="@interaction.Description">
+                            @interaction.Description
+                        </div>
+                    </td>
+                    <td class="px-6 py-4 text-gray-700 max-w-xs">
+                        <div class="truncate" title="@interaction.Recommendation">
+                            @interaction.Recommendation
+                        </div>
+                    </td>
+                    <td class="px-6 py-4 text-center text-gray-600 text-sm">
+                        @interaction.CreatedAt.ToString("dd/MM/yyyy")
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    <!-- Thống kê và phân trang -->
+    <div class="mt-6 flex justify-between items-center flex-wrap gap-4">
+        <div class="text-sm text-gray-600">
+            Hiển thị <span class="font-semibold">@Model.Items.Count()</span> của <span class="font-semibold">@Model.TotalRecords</span> bản ghi
+        </div>
+
+        @if (Model.TotalPages > 1)
+        {
+            <div class="flex gap-2 flex-wrap">
+                @for (int page = 1; page <= Model.TotalPages; page++)
+                {
+                    if (page == Model.CurrentPage)
+                    {
+                        <button class="px-4 py-2 bg-blue-600 text-white font-semibold rounded-lg shadow-md">@@page</button>
+                    }
+                    else
+                    {
+                        <button type="button"
+                                onclick="goToInteractionPage(@@page)"
+                                class="px-4 py-2 bg-white border border-gray-300 text-gray-700 font-semibold rounded-lg hover:bg-gray-50 transition-colors">
+                            @@page
+                        </button>
+                    }
+                }
+            </div>
+        }
+    </div>
+}
+else
+{
+    <div class="text-center py-12">
+        <i class="fas fa-inbox text-6xl text-gray-300 mb-4 block"></i>
+        <p class="text-gray-500 text-lg font-semibold">Không có dữ liệu tương tác thuốc nào</p>
+        <p class="text-gray-400">Hãy thêm tương tác thuốc mới hoặc thử lại với tiêu chí tìm kiếm khác</p>
+    </div>
+}

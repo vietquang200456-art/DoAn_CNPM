@@ -1,705 +1,518 @@
-@model dynamic
+@model InteractionManagementViewModel
 
 @{
-    ViewData["Title"] = "Cấu Hình Tương Tác Thuốc | PharmaCheck";
+    ViewData["Title"] = "Quản Lý Tương Tác & Chống Chỉ Định | PharmaCheck";
 }
 
-<!-- Page Header -->
-<div class="bg-gradient-to-r from-amber-600 to-amber-500 text-white py-8">
+<!-- ===== PHẦN BANNER TIÊU ĐỀ ===== -->
+<div class="bg-gradient-to-r from-blue-700 via-blue-600 to-indigo-800 text-white py-8">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex items-center justify-between">
             <div>
                 <h1 class="text-4xl font-bold flex items-center gap-3">
                     <i class="fas fa-exchange-alt"></i>
-                    Cấu Hình Tương Tác
+                    Quản Lý Cấu Hình Tương Tác
                 </h1>
-                <p class="text-amber-100 mt-2">Quản lý tương tác thuốc-thuốc và chống chỉ định thuốc-bệnh</p>
+                <p class="text-blue-100 mt-2">Quản lý tương tác giữa các thuốc và chống chỉ định thuốc-bệnh</p>
             </div>
-            <button onclick="openInteractionModal()" class="bg-white text-amber-600 px-6 py-3 rounded-lg font-semibold hover:bg-amber-50 transition-colors flex items-center gap-2">
-                <i class="fas fa-plus"></i> Thêm Tương Tác
-            </button>
         </div>
     </div>
 </div>
 
-<!-- Main Content -->
-<section class="py-8 bg-slate-50 min-h-screen">
+<!-- ===== NỘI DUNG CHÍNH ===== -->
+<div class="bg-gray-50 min-h-screen py-8">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <!-- Tabs Navigation -->
-        <div class="flex gap-4 mb-8 border-b-2 border-slate-200">
-            <button onclick="switchTab('drugdrug')"
-                    id="tab-drugdrug"
-                    class="px-6 py-4 text-lg font-semibold border-b-4 border-amber-600 text-amber-700 transition-colors flex items-center gap-2">
-                <i class="fas fa-pills"></i> Tương Tác Thuốc-Thuốc
+        <!-- ===== TAB ĐIỀU HƯỚNG ===== -->
+        <div class="flex gap-4 mb-6 border-b border-gray-200">
+            <button type="button" 
+                    onclick="switchTab('interactions')" 
+                    id="tab-interactions"
+                    class="tab-btn active px-6 py-3 font-semibold text-blue-700 border-b-2 border-blue-700 hover:text-blue-900 transition-colors">
+                <i class="fas fa-pills mr-2"></i>Tương Tác Thuốc - Thuốc
             </button>
-            <button onclick="switchTab('drugdisease')"
-                    id="tab-drugdisease"
-                    class="px-6 py-4 text-lg font-semibold border-b-4 border-transparent text-gray-600 hover:text-gray-900 hover:border-slate-300 transition-colors flex items-center gap-2">
-                <i class="fas fa-heartbeat"></i> Chống Chỉ Định Thuốc-Bệnh
+            <button type="button" 
+                    onclick="switchTab('contraindications')" 
+                    id="tab-contraindications"
+                    class="tab-btn px-6 py-3 font-semibold text-gray-600 border-b-2 border-transparent hover:text-gray-900 hover:border-gray-300 transition-colors">
+                <i class="fas fa-ban mr-2"></i>Chống Chỉ Định Thuốc - Bệnh
             </button>
         </div>
 
-        <!-- TAB 1: Drug-Drug Interactions -->
-        <div id="drugdrug-content" class="space-y-6">
-            <!-- Search & Filter -->
-            <div class="bg-white rounded-xl shadow-lg border border-slate-200 p-6">
-                <div class="grid md:grid-cols-4 gap-4">
-                    <div class="md:col-span-2">
-                        <div class="relative">
-                            <input type="text" placeholder="Tìm kiếm tương tác thuốc..."
-                                   class="w-full px-4 py-3 border-2 border-slate-300 rounded-lg focus:outline-none focus:border-amber-600 transition-colors">
-                            <i class="fas fa-search absolute right-4 top-4 text-amber-600"></i>
+        <!-- ===== TAB 1: TƯƠNG TÁC THUỐC - THUỐC ===== -->
+        <div id="interactions-tab" class="tab-content block">
+            <div class="bg-white rounded-2xl shadow-lg p-6 mb-6">
+                <!-- Tiêu đề tab -->
+                <h2 class="text-2xl font-bold text-gray-800 mb-6 flex items-center gap-2">
+                    <i class="fas fa-flask-vial text-blue-600"></i>
+                    Tương Tác Giữa Hai Loại Thuốc
+                </h2>
+
+                <!-- ===== BỘ ĐIỀU KHIỂN TÌM KIẾM VÀ LỌC ===== -->
+                <form id="interactions-filter-form" onsubmit="handleInteractionSearch(event)" class="mb-8 p-6 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl border border-blue-200">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                        <!-- Ô tìm kiếm -->
+                        <div class="md:col-span-2">
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">
+                                <i class="fas fa-search mr-2 text-blue-600"></i>Tìm kiếm (Tên thuốc/Hoạt chất)
+                            </label>
+                            <input type="text" 
+                                   id="interaction-search-term"
+                                   name="searchTerm"
+                                   placeholder="Nhập tên thuốc hoặc hoạt chất..."
+                                   value="@Model.InteractionSearchTerm"
+                                   class="w-full px-4 py-3 border border-blue-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                                   />
+                        </div>
+
+                        <!-- Bộ lọc mức độ -->
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">
+                                <i class="fas fa-sliders-h mr-2 text-blue-600"></i>Mức Độ Nghiêm Trọng
+                            </label>
+                            <select id="interaction-severity-level"
+                                    name="severityLevel"
+                                    class="w-full px-4 py-3 border border-blue-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white">
+                                <option value="">-- Tất cả mức độ --</option>
+                                <option value="1" @@(Model.InteractionSeverityLevel == 1 ? "selected" : "")>1 - Nhẹ</option>
+                                <option value="2" @@(Model.InteractionSeverityLevel == 2 ? "selected" : "")>2 - Vừa</option>
+                                <option value="3" @@(Model.InteractionSeverityLevel == 3 ? "selected" : "")>3 - Trung bình</option>
+                                <option value="4" @@(Model.InteractionSeverityLevel == 4 ? "selected" : "")>4 - Nặng</option>
+                                <option value="5" @@(Model.InteractionSeverityLevel == 5 ? "selected" : "")>5 - Rất nặng</option>
+                            </select>
                         </div>
                     </div>
-                    <div>
-                        <select class="w-full px-4 py-3 border-2 border-slate-300 rounded-lg focus:outline-none focus:border-amber-600 transition-colors">
-                            <option>Tất cả Mức Độ</option>
-                            <option>Nguy Hiểm (Đỏ)</option>
-                            <option>Thận Trọng (Vàng)</option>
-                            <option>An Toàn (Xanh)</option>
-                        </select>
+
+                    <!-- Nút bấm -->
+                    <div class="flex gap-3">
+                        <button type="submit" 
+                                class="flex-1 md:flex-none bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-8 rounded-lg transition-colors flex items-center justify-center gap-2 shadow-md">
+                            <i class="fas fa-search"></i>Tìm Kiếm & Lọc
+                        </button>
+                        <button type="button" 
+                                onclick="resetInteractionFilters()"
+                                class="flex-1 md:flex-none bg-gray-300 hover:bg-gray-400 text-gray-800 font-semibold py-3 px-8 rounded-lg transition-colors flex items-center justify-center gap-2 shadow-md">
+                            <i class="fas fa-redo"></i>Đặt Lại
+                        </button>
                     </div>
-                    <div>
-                        <select class="w-full px-4 py-3 border-2 border-slate-300 rounded-lg focus:outline-none focus:border-amber-600 transition-colors">
-                            <option>Tất cả Trạng Thái</option>
-                            <option>Đang Hoạt Động</option>
-                            <option>Vô Hiệu Hóa</option>
-                        </select>
+                </form>
+
+                <!-- ===== THỐNG KÊ KẾT QUẢ ===== -->
+                <div class="mb-6 p-4 bg-blue-100 border-l-4 border-blue-600 rounded">
+                    <p class="text-blue-900 font-semibold">
+                        <i class="fas fa-info-circle mr-2"></i>Tổng cộng: <span id="interaction-total-records">@Model.InteractionTotalRecords</span> bản ghi
+                        | Trang @Model.InteractionCurrentPage / @Model.InteractionTotalPages
+                    </p>
+                </div>
+
+                <!-- ===== BẢNG DỮ LIỆU TƯƠNG TÁC THUỐC ===== -->
+                <div id="interactions-table-container" class="overflow-x-auto">
+                    @if (Model.DrugInteractions.Any())
+                    {
+                        <table class="w-full text-sm border-collapse">
+                            <thead>
+                                <tr class="bg-gradient-to-r from-blue-600 to-blue-700 text-white">
+                                    <th class="px-6 py-4 text-left font-semibold">#</th>
+                                    <th class="px-6 py-4 text-left font-semibold">Thuốc Nguồn</th>
+                                    <th class="px-6 py-4 text-left font-semibold">Thuốc Tương Tác</th>
+                                    <th class="px-6 py-4 text-center font-semibold">Mức Độ</th>
+                                    <th class="px-6 py-4 text-left font-semibold">Mô Tả</th>
+                                    <th class="px-6 py-4 text-left font-semibold">Khuyến Nghị</th>
+                                    <th class="px-6 py-4 text-center font-semibold">Ngày Tạo</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var interaction in Model.DrugInteractions)
+                                {
+                                    <tr class="border-b border-gray-200 hover:bg-blue-50 transition-colors">
+                                        <td class="px-6 py-4 font-semibold text-gray-700">@(Model.DrugInteractions.IndexOf(interaction) + 1 + (Model.InteractionCurrentPage - 1) * 10)</td>
+                                        <td class="px-6 py-4">
+                                            <span class="inline-block bg-blue-100 text-blue-900 px-3 py-1 rounded-full font-medium text-sm">
+                                                @interaction.SourceDrugName
+                                            </span>
+                                        </td>
+                                        <td class="px-6 py-4">
+                                            <span class="inline-block bg-indigo-100 text-indigo-900 px-3 py-1 rounded-full font-medium text-sm">
+                                                @interaction.TargetDrugName
+                                            </span>
+                                        </td>
+                                        <td class="px-6 py-4 text-center">
+                                            <span class="inline-block px-3 py-1 rounded-full font-semibold text-sm @interaction.SeverityBadgeClass">
+                                                @interaction.SeverityLevelName (@interaction.SeverityLevel)
+                                            </span>
+                                        </td>
+                                        <td class="px-6 py-4 text-gray-700 max-w-xs">
+                                            <div class="truncate" title="@interaction.Description">
+                                                @interaction.Description
+                                            </div>
+                                        </td>
+                                        <td class="px-6 py-4 text-gray-700 max-w-xs">
+                                            <div class="truncate" title="@interaction.Recommendation">
+                                                @interaction.Recommendation
+                                            </div>
+                                        </td>
+                                        <td class="px-6 py-4 text-center text-gray-600 text-sm">
+                                            @interaction.CreatedAt.ToString("dd/MM/yyyy")
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    }
+                    else
+                    {
+                        <div class="text-center py-12">
+                            <i class="fas fa-inbox text-6xl text-gray-300 mb-4 block"></i>
+                            <p class="text-gray-500 text-lg font-semibold">Không có dữ liệu tương tác thuốc nào</p>
+                            <p class="text-gray-400">Hãy thêm tương tác thuốc mới hoặc thử lại với tiêu chí tìm kiếm khác</p>
+                        </div>
+                    }
+                </div>
+
+                <!-- ===== PHÂN TRANG ===== -->
+                @if (Model.InteractionTotalPages > 1)
+                {
+                    <div class="mt-8 flex justify-center gap-2 flex-wrap">
+                        @for (int page = 1; page <= Model.InteractionTotalPages; page++)
+                        {
+                            if (page == Model.InteractionCurrentPage)
+                            {
+                                <button class="px-4 py-2 bg-blue-600 text-white font-semibold rounded-lg shadow-md">@@page</button>
+                            }
+                            else
+                            {
+                                <button type="button"
+                                        onclick="goToInteractionPage(@@page)"
+                                        class="px-4 py-2 bg-white border border-gray-300 text-gray-700 font-semibold rounded-lg hover:bg-gray-50 transition-colors">
+                                    @@page
+                                </button>
+                            }
+                        }
                     </div>
-                </div>
-            </div>
-
-            <!-- Drug-Drug Interactions Table -->
-            <div class="bg-white rounded-xl shadow-lg border border-slate-200 overflow-hidden">
-                <div class="overflow-x-auto">
-                    <table class="w-full">
-                        <thead class="bg-amber-600 text-white">
-                            <tr>
-                                <th class="px-6 py-4 text-left font-semibold text-sm">
-                                    <i class="fas fa-pills mr-2"></i>Thuốc 1
-                                </th>
-                                <th class="px-6 py-4 text-left font-semibold text-sm">
-                                    <i class="fas fa-pills mr-2"></i>Thuốc 2
-                                </th>
-                                <th class="px-6 py-4 text-left font-semibold text-sm">
-                                    <i class="fas fa-alert mr-2"></i>Mức Độ
-                                </th>
-                                <th class="px-6 py-4 text-left font-semibold text-sm">
-                                    <i class="fas fa-list mr-2"></i>Cơ Chế
-                                </th>
-                                <th class="px-6 py-4 text-left font-semibold text-sm">
-                                    <i class="fas fa-circle text-sm mr-2"></i>Trạng Thái
-                                </th>
-                                <th class="px-6 py-4 text-center font-semibold text-sm">
-                                    <i class="fas fa-cog mr-2"></i>Hành Động
-                                </th>
-                            </tr>
-                        </thead>
-
-                        <tbody class="divide-y divide-slate-200">
-                            <!-- Row 1: Dangerous -->
-                            <tr class="hover:bg-slate-50 transition-colors">
-                                <td class="px-6 py-4">
-                                    <div class="font-semibold text-gray-900">Aspirin</div>
-                                    <div class="text-sm text-gray-500">Liều: 100-500mg</div>
-                                </td>
-                                <td class="px-6 py-4">
-                                    <div class="font-semibold text-gray-900">Warfarin</div>
-                                    <div class="text-sm text-gray-500">Liều: 2-10mg</div>
-                                </td>
-                                <td class="px-6 py-4">
-                                    <span class="inline-flex items-center gap-2 bg-red-100 text-red-800 px-3 py-1 rounded-full text-sm font-bold">
-                                        <i class="fas fa-exclamation-triangle"></i>NGUY HIỂM
-                                    </span>
-                                </td>
-                                <td class="px-6 py-4">
-                                    <div class="text-sm text-gray-600">
-                                        Cả hai đều chống đông máu → nguy cơ chảy máu cao
-                                    </div>
-                                </td>
-                                <td class="px-6 py-4">
-                                    <span class="inline-flex items-center gap-2 bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-medium">
-                                        <i class="fas fa-check-circle"></i>Hoạt Động
-                                    </span>
-                                </td>
-                                <td class="px-6 py-4">
-                                    <div class="flex justify-center gap-2">
-                                        <button onclick="editInteraction()" class="bg-blue-100 text-blue-700 hover:bg-blue-200 p-2 rounded-lg transition-colors" title="Sửa">
-                                            <i class="fas fa-edit"></i>
-                                        </button>
-                                        <button onclick="viewInteractionDetail()" class="bg-gray-100 text-gray-700 hover:bg-gray-200 p-2 rounded-lg transition-colors" title="Chi Tiết">
-                                            <i class="fas fa-eye"></i>
-                                        </button>
-                                        <button onclick="deleteInteraction('Aspirin + Warfarin')" class="bg-red-100 text-red-700 hover:bg-red-200 p-2 rounded-lg transition-colors" title="Xóa">
-                                            <i class="fas fa-trash"></i>
-                                        </button>
-                                    </div>
-                                </td>
-                            </tr>
-
-                            <!-- Row 2: Warning -->
-                            <tr class="hover:bg-slate-50 transition-colors">
-                                <td class="px-6 py-4">
-                                    <div class="font-semibold text-gray-900">Ibuprofen</div>
-                                    <div class="text-sm text-gray-500">Liều: 400-800mg</div>
-                                </td>
-                                <td class="px-6 py-4">
-                                    <div class="font-semibold text-gray-900">Lisinopril</div>
-                                    <div class="text-sm text-gray-500">Liều: 10-40mg</div>
-                                </td>
-                                <td class="px-6 py-4">
-                                    <span class="inline-flex items-center gap-2 bg-amber-100 text-amber-800 px-3 py-1 rounded-full text-sm font-bold">
-                                        <i class="fas fa-exclamation-circle"></i>THẬN TRỌNG
-                                    </span>
-                                </td>
-                                <td class="px-6 py-4">
-                                    <div class="text-sm text-gray-600">
-                                        NSAID giảm hiệu quả thuốc chẹn ACE
-                                    </div>
-                                </td>
-                                <td class="px-6 py-4">
-                                    <span class="inline-flex items-center gap-2 bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-medium">
-                                        <i class="fas fa-check-circle"></i>Hoạt Động
-                                    </span>
-                                </td>
-                                <td class="px-6 py-4">
-                                    <div class="flex justify-center gap-2">
-                                        <button onclick="editInteraction()" class="bg-blue-100 text-blue-700 hover:bg-blue-200 p-2 rounded-lg transition-colors" title="Sửa">
-                                            <i class="fas fa-edit"></i>
-                                        </button>
-                                        <button onclick="viewInteractionDetail()" class="bg-gray-100 text-gray-700 hover:bg-gray-200 p-2 rounded-lg transition-colors" title="Chi Tiết">
-                                            <i class="fas fa-eye"></i>
-                                        </button>
-                                        <button onclick="deleteInteraction('Ibuprofen + Lisinopril')" class="bg-red-100 text-red-700 hover:bg-red-200 p-2 rounded-lg transition-colors" title="Xóa">
-                                            <i class="fas fa-trash"></i>
-                                        </button>
-                                    </div>
-                                </td>
-                            </tr>
-
-                            <!-- Row 3 -->
-                            <tr class="hover:bg-slate-50 transition-colors">
-                                <td class="px-6 py-4">
-                                    <div class="font-semibold text-gray-900">Paracetamol</div>
-                                    <div class="text-sm text-gray-500">Liều: 500-1000mg</div>
-                                </td>
-                                <td class="px-6 py-4">
-                                    <div class="font-semibold text-gray-900">Ibuprofen</div>
-                                    <div class="text-sm text-gray-500">Liều: 400-800mg</div>
-                                </td>
-                                <td class="px-6 py-4">
-                                    <span class="inline-flex items-center gap-2 bg-amber-100 text-amber-800 px-3 py-1 rounded-full text-sm font-bold">
-                                        <i class="fas fa-exclamation-circle"></i>THẬN TRỌNG
-                                    </span>
-                                </td>
-                                <td class="px-6 py-4">
-                                    <div class="text-sm text-gray-600">
-                                        Tăng nguy cơ tác dụng phụ trên đường tiêu hóa
-                                    </div>
-                                </td>
-                                <td class="px-6 py-4">
-                                    <span class="inline-flex items-center gap-2 bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-medium">
-                                        <i class="fas fa-check-circle"></i>Hoạt Động
-                                    </span>
-                                </td>
-                                <td class="px-6 py-4">
-                                    <div class="flex justify-center gap-2">
-                                        <button onclick="editInteraction()" class="bg-blue-100 text-blue-700 hover:bg-blue-200 p-2 rounded-lg transition-colors" title="Sửa">
-                                            <i class="fas fa-edit"></i>
-                                        </button>
-                                        <button onclick="viewInteractionDetail()" class="bg-gray-100 text-gray-700 hover:bg-gray-200 p-2 rounded-lg transition-colors" title="Chi Tiết">
-                                            <i class="fas fa-eye"></i>
-                                        </button>
-                                        <button onclick="deleteInteraction('Paracetamol + Ibuprofen')" class="bg-red-100 text-red-700 hover:bg-red-200 p-2 rounded-lg transition-colors" title="Xóa">
-                                            <i class="fas fa-trash"></i>
-                                        </button>
-                                    </div>
-                                </td>
-                            </tr>
-
-                            <!-- Row 4 -->
-                            <tr class="hover:bg-slate-50 transition-colors">
-                                <td class="px-6 py-4">
-                                    <div class="font-semibold text-gray-900">Ciprofloxacin</div>
-                                    <div class="text-sm text-gray-500">Liều: 500-750mg</div>
-                                </td>
-                                <td class="px-6 py-4">
-                                    <div class="font-semibold text-gray-900">Atorvastatin</div>
-                                    <div class="text-sm text-gray-500">Liều: 10-80mg</div>
-                                </td>
-                                <td class="px-6 py-4">
-                                    <span class="inline-flex items-center gap-2 bg-amber-100 text-amber-800 px-3 py-1 rounded-full text-sm font-bold">
-                                        <i class="fas fa-exclamation-circle"></i>THẬN TRỌNG
-                                    </span>
-                                </td>
-                                <td class="px-6 py-4">
-                                    <div class="text-sm text-gray-600">
-                                        Tăng nguy cơ bệnh cơ (myopathy)
-                                    </div>
-                                </td>
-                                <td class="px-6 py-4">
-                                    <span class="inline-flex items-center gap-2 bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-medium">
-                                        <i class="fas fa-check-circle"></i>Hoạt Động
-                                    </span>
-                                </td>
-                                <td class="px-6 py-4">
-                                    <div class="flex justify-center gap-2">
-                                        <button onclick="editInteraction()" class="bg-blue-100 text-blue-700 hover:bg-blue-200 p-2 rounded-lg transition-colors" title="Sửa">
-                                            <i class="fas fa-edit"></i>
-                                        </button>
-                                        <button onclick="viewInteractionDetail()" class="bg-gray-100 text-gray-700 hover:bg-gray-200 p-2 rounded-lg transition-colors" title="Chi Tiết">
-                                            <i class="fas fa-eye"></i>
-                                        </button>
-                                        <button onclick="deleteInteraction('Ciprofloxacin + Atorvastatin')" class="bg-red-100 text-red-700 hover:bg-red-200 p-2 rounded-lg transition-colors" title="Xóa">
-                                            <i class="fas fa-trash"></i>
-                                        </button>
-                                    </div>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
-            <!-- Pagination -->
-            <div class="bg-white rounded-xl shadow-lg border border-slate-200 px-6 py-4 flex items-center justify-between">
-                <div class="text-sm text-gray-600">
-                    Hiển thị <span class="font-semibold">1-4</span> của <span class="font-semibold">87</span> tương tác
-                </div>
-                <div class="flex gap-2">
-                    <button class="px-4 py-2 border border-slate-300 rounded-lg text-gray-700 hover:bg-slate-50 transition-colors disabled:opacity-50" disabled>
-                        <i class="fas fa-chevron-left"></i>
-                    </button>
-                    <button class="px-3 py-2 bg-amber-600 text-white rounded-lg">1</button>
-                    <button class="px-3 py-2 border border-slate-300 rounded-lg text-gray-700 hover:bg-slate-50 transition-colors">2</button>
-                    <button class="px-4 py-2 border border-slate-300 rounded-lg text-gray-700 hover:bg-slate-50 transition-colors">
-                        <i class="fas fa-chevron-right"></i>
-                    </button>
-                </div>
+                }
             </div>
         </div>
 
-        <!-- TAB 2: Drug-Disease Contraindications -->
-        <div id="drugdisease-content" class="hidden space-y-6">
-            <!-- Search & Filter -->
-            <div class="bg-white rounded-xl shadow-lg border border-slate-200 p-6">
-                <div class="grid md:grid-cols-4 gap-4">
-                    <div class="md:col-span-2">
-                        <div class="relative">
-                            <input type="text" placeholder="Tìm kiếm chống chỉ định..."
-                                   class="w-full px-4 py-3 border-2 border-slate-300 rounded-lg focus:outline-none focus:border-red-600 transition-colors">
-                            <i class="fas fa-search absolute right-4 top-4 text-red-600"></i>
+        <!-- ===== TAB 2: CHỐNG CHỈ ĐỊNH THUỐC - BỆNH ===== -->
+        <div id="contraindications-tab" class="tab-content hidden">
+            <div class="bg-white rounded-2xl shadow-lg p-6 mb-6">
+                <!-- Tiêu đề tab -->
+                <h2 class="text-2xl font-bold text-gray-800 mb-6 flex items-center gap-2">
+                    <i class="fas fa-exclamation-circle text-red-600"></i>
+                    Chống Chỉ Định Giữa Thuốc và Bệnh
+                </h2>
+
+                <!-- ===== BỘ ĐIỀU KHIỂN TÌM KIẾM VÀ LỌC ===== -->
+                <form id="contraindications-filter-form" onsubmit="handleContraindicationSearch(event)" class="mb-8 p-6 bg-gradient-to-br from-red-50 to-pink-50 rounded-xl border border-red-200">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                        <!-- Ô tìm kiếm -->
+                        <div class="md:col-span-2">
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">
+                                <i class="fas fa-search mr-2 text-red-600"></i>Tìm kiếm (Thuốc/Bệnh)
+                            </label>
+                            <input type="text" 
+                                   id="contraindication-search-term"
+                                   name="searchTerm"
+                                   placeholder="Nhập tên thuốc hoặc tên bệnh..."
+                                   value="@Model.ContraindicationSearchTerm"
+                                   class="w-full px-4 py-3 border border-red-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 bg-white"
+                                   />
+                        </div>
+
+                        <!-- Bộ lọc mức độ -->
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">
+                                <i class="fas fa-sliders-h mr-2 text-red-600"></i>Mức Độ Rủi Ro
+                            </label>
+                            <select id="contraindication-risk-level"
+                                    name="riskLevel"
+                                    class="w-full px-4 py-3 border border-red-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 bg-white">
+                                <option value="">-- Tất cả mức độ --</option>
+                                <option value="1" @@(Model.ContraindicationRiskLevel == 1 ? "selected" : "")>1 - Thấp</option>
+                                <option value="2" @@(Model.ContraindicationRiskLevel == 2 ? "selected" : "")>2 - Vừa</option>
+                                <option value="3" @@(Model.ContraindicationRiskLevel == 3 ? "selected" : "")>3 - Trung bình</option>
+                                <option value="4" @@(Model.ContraindicationRiskLevel == 4 ? "selected" : "")>4 - Cao</option>
+                                <option value="5" @@(Model.ContraindicationRiskLevel == 5 ? "selected" : "")>5 - Rất cao</option>
+                            </select>
                         </div>
                     </div>
-                    <div>
-                        <select class="w-full px-4 py-3 border-2 border-slate-300 rounded-lg focus:outline-none focus:border-red-600 transition-colors">
-                            <option>Tất cả Mức Độ</option>
-                            <option>Chống Chỉ Định Tuyệt Đối (Đỏ)</option>
-                            <option>Thận Trọng (Vàng)</option>
-                            <option>An Toàn (Xanh)</option>
-                        </select>
+
+                    <!-- Nút bấm -->
+                    <div class="flex gap-3">
+                        <button type="submit" 
+                                class="flex-1 md:flex-none bg-red-600 hover:bg-red-700 text-white font-semibold py-3 px-8 rounded-lg transition-colors flex items-center justify-center gap-2 shadow-md">
+                            <i class="fas fa-search"></i>Tìm Kiếm & Lọc
+                        </button>
+                        <button type="button" 
+                                onclick="resetContraindicationFilters()"
+                                class="flex-1 md:flex-none bg-gray-300 hover:bg-gray-400 text-gray-800 font-semibold py-3 px-8 rounded-lg transition-colors flex items-center justify-center gap-2 shadow-md">
+                            <i class="fas fa-redo"></i>Đặt Lại
+                        </button>
                     </div>
-                    <div>
-                        <select class="w-full px-4 py-3 border-2 border-slate-300 rounded-lg focus:outline-none focus:border-red-600 transition-colors">
-                            <option>Tất cả Trạng Thái</option>
-                            <option>Đang Hoạt Động</option>
-                            <option>Vô Hiệu Hóa</option>
-                        </select>
+                </form>
+
+                <!-- ===== THỐNG KÊ KẾT QUẢ ===== -->
+                <div class="mb-6 p-4 bg-red-100 border-l-4 border-red-600 rounded">
+                    <p class="text-red-900 font-semibold">
+                        <i class="fas fa-info-circle mr-2"></i>Tổng cộng: <span id="contraindication-total-records">@Model.ContraindicationTotalRecords</span> bản ghi
+                        | Trang @Model.ContraindicationCurrentPage / @Model.ContraindicationTotalPages
+                    </p>
+                </div>
+
+                <!-- ===== BẢNG DỮ LIỆU CHỐNG CHỈ ĐỊNH ===== -->
+                <div id="contraindications-table-container" class="overflow-x-auto">
+                    @if (Model.DrugDiseaseContraindications.Any())
+                    {
+                        <table class="w-full text-sm border-collapse">
+                            <thead>
+                                <tr class="bg-gradient-to-r from-red-600 to-pink-600 text-white">
+                                    <th class="px-6 py-4 text-left font-semibold">#</th>
+                                    <th class="px-6 py-4 text-left font-semibold">Tên Thuốc</th>
+                                    <th class="px-6 py-4 text-left font-semibold">Tên Bệnh</th>
+                                    <th class="px-6 py-4 text-center font-semibold">Mức Độ Rủi Ro</th>
+                                    <th class="px-6 py-4 text-left font-semibold">Cảnh Báo</th>
+                                    <th class="px-6 py-4 text-left font-semibold">Rủi Ro</th>
+                                    <th class="px-6 py-4 text-center font-semibold">Ngày Tạo</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var contraindication in Model.DrugDiseaseContraindications)
+                                {
+                                    <tr class="border-b border-gray-200 hover:bg-red-50 transition-colors">
+                                        <td class="px-6 py-4 font-semibold text-gray-700">@(Model.DrugDiseaseContraindications.IndexOf(contraindication) + 1 + (Model.ContraindicationCurrentPage - 1) * 10)</td>
+                                        <td class="px-6 py-4">
+                                            <span class="inline-block bg-red-100 text-red-900 px-3 py-1 rounded-full font-medium text-sm">
+                                                @contraindication.DrugName
+                                            </span>
+                                        </td>
+                                        <td class="px-6 py-4">
+                                            <span class="inline-block bg-pink-100 text-pink-900 px-3 py-1 rounded-full font-medium text-sm">
+                                                @contraindication.DiseaseName
+                                            </span>
+                                        </td>
+                                        <td class="px-6 py-4 text-center">
+                                            <span class="inline-block px-3 py-1 rounded-full font-semibold text-sm @contraindication.RiskBadgeClass">
+                                                @contraindication.RiskLevelName (@contraindication.RiskLevel)
+                                            </span>
+                                        </td>
+                                        <td class="px-6 py-4 text-gray-700 max-w-xs">
+                                            <div class="truncate" title="@contraindication.Warning">
+                                                @contraindication.Warning
+                                            </div>
+                                        </td>
+                                        <td class="px-6 py-4 text-gray-700 max-w-xs">
+                                            <div class="truncate" title="@contraindication.Risk">
+                                                @contraindication.Risk
+                                            </div>
+                                        </td>
+                                        <td class="px-6 py-4 text-center text-gray-600 text-sm">
+                                            @contraindication.CreatedAt.ToString("dd/MM/yyyy")
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    }
+                    else
+                    {
+                        <div class="text-center py-12">
+                            <i class="fas fa-inbox text-6xl text-gray-300 mb-4 block"></i>
+                            <p class="text-gray-500 text-lg font-semibold">Không có dữ liệu chống chỉ định nào</p>
+                            <p class="text-gray-400">Hãy thêm chống chỉ định mới hoặc thử lại với tiêu chí tìm kiếm khác</p>
+                        </div>
+                    }
+                </div>
+
+                <!-- ===== PHÂN TRANG ===== -->
+                @if (Model.ContraindicationTotalPages > 1)
+                {
+                    <div class="mt-8 flex justify-center gap-2 flex-wrap">
+                        @for (int page = 1; page <= Model.ContraindicationTotalPages; page++)
+                        {
+                            if (page == Model.ContraindicationCurrentPage)
+                            {
+                                <button class="px-4 py-2 bg-red-600 text-white font-semibold rounded-lg shadow-md">@@page</button>
+                            }
+                            else
+                            {
+                                <button type="button"
+                                        onclick="goToContraindicationPage(@@page)"
+                                        class="px-4 py-2 bg-white border border-gray-300 text-gray-700 font-semibold rounded-lg hover:bg-gray-50 transition-colors">
+                                    @@page
+                                </button>
+                            }
+                        }
                     </div>
-                </div>
+                }
             </div>
-
-            <!-- Drug-Disease Contraindications Table -->
-            <div class="bg-white rounded-xl shadow-lg border border-slate-200 overflow-hidden">
-                <div class="overflow-x-auto">
-                    <table class="w-full">
-                        <thead class="bg-red-600 text-white">
-                            <tr>
-                                <th class="px-6 py-4 text-left font-semibold text-sm">
-                                    <i class="fas fa-pills mr-2"></i>Thuốc
-                                </th>
-                                <th class="px-6 py-4 text-left font-semibold text-sm">
-                                    <i class="fas fa-heartbeat mr-2"></i>Bệnh Lý (ICD-10)
-                                </th>
-                                <th class="px-6 py-4 text-left font-semibold text-sm">
-                                    <i class="fas fa-alert mr-2"></i>Mức Độ
-                                </th>
-                                <th class="px-6 py-4 text-left font-semibold text-sm">
-                                    <i class="fas fa-list mr-2"></i>Lý Do
-                                </th>
-                                <th class="px-6 py-4 text-left font-semibold text-sm">
-                                    <i class="fas fa-circle text-sm mr-2"></i>Trạng Thái
-                                </th>
-                                <th class="px-6 py-4 text-center font-semibold text-sm">
-                                    <i class="fas fa-cog mr-2"></i>Hành Động
-                                </th>
-                            </tr>
-                        </thead>
-
-                        <tbody class="divide-y divide-slate-200">
-                            <!-- Row 1: Absolute Contraindication -->
-                            <tr class="hover:bg-slate-50 transition-colors">
-                                <td class="px-6 py-4">
-                                    <div class="font-semibold text-gray-900">Ibuprofen</div>
-                                    <div class="text-sm text-gray-500">NSAID</div>
-                                </td>
-                                <td class="px-6 py-4">
-                                    <div class="font-semibold text-gray-900">N18 - Bệnh Thận Mạn Tính</div>
-                                    <div class="text-sm text-gray-500">eGFR < 30 ml/min</div>
-                                </td>
-                                <td class="px-6 py-4">
-                                    <span class="inline-flex items-center gap-2 bg-red-100 text-red-800 px-3 py-1 rounded-full text-sm font-bold">
-                                        <i class="fas fa-ban"></i>CHỐNG CHỈ ĐỊNH TUYỆT ĐỐI
-                                    </span>
-                                </td>
-                                <td class="px-6 py-4">
-                                    <div class="text-sm text-gray-600">
-                                        NSAID làm xấu thêm chức năng thận, gây nguy hiểm tính mạng
-                                    </div>
-                                </td>
-                                <td class="px-6 py-4">
-                                    <span class="inline-flex items-center gap-2 bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-medium">
-                                        <i class="fas fa-check-circle"></i>Hoạt Động
-                                    </span>
-                                </td>
-                                <td class="px-6 py-4">
-                                    <div class="flex justify-center gap-2">
-                                        <button onclick="editContraindication()" class="bg-blue-100 text-blue-700 hover:bg-blue-200 p-2 rounded-lg transition-colors" title="Sửa">
-                                            <i class="fas fa-edit"></i>
-                                        </button>
-                                        <button onclick="viewContraindicationDetail()" class="bg-gray-100 text-gray-700 hover:bg-gray-200 p-2 rounded-lg transition-colors" title="Chi Tiết">
-                                            <i class="fas fa-eye"></i>
-                                        </button>
-                                        <button onclick="deleteContraindication('Ibuprofen + Bệnh Thận Mạn Tính')" class="bg-red-100 text-red-700 hover:bg-red-200 p-2 rounded-lg transition-colors" title="Xóa">
-                                            <i class="fas fa-trash"></i>
-                                        </button>
-                                    </div>
-                                </td>
-                            </tr>
-
-                            <!-- Row 2 -->
-                            <tr class="hover:bg-slate-50 transition-colors">
-                                <td class="px-6 py-4">
-                                    <div class="font-semibold text-gray-900">Metformin</div>
-                                    <div class="text-sm text-gray-500">Antidiabetic</div>
-                                </td>
-                                <td class="px-6 py-4">
-                                    <div class="font-semibold text-gray-900">N18 - Bệnh Thận Mạn Tính</div>
-                                    <div class="text-sm text-gray-500">eGFR 30-45 ml/min</div>
-                                </td>
-                                <td class="px-6 py-4">
-                                    <span class="inline-flex items-center gap-2 bg-amber-100 text-amber-800 px-3 py-1 rounded-full text-sm font-bold">
-                                        <i class="fas fa-exclamation-circle"></i>THẬN TRỌNG
-                                    </span>
-                                </td>
-                                <td class="px-6 py-4">
-                                    <div class="text-sm text-gray-600">
-                                        Cần giảm liều, nguy cơ tích tụ và acidosis lactic
-                                    </div>
-                                </td>
-                                <td class="px-6 py-4">
-                                    <span class="inline-flex items-center gap-2 bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-medium">
-                                        <i class="fas fa-check-circle"></i>Hoạt Động
-                                    </span>
-                                </td>
-                                <td class="px-6 py-4">
-                                    <div class="flex justify-center gap-2">
-                                        <button onclick="editContraindication()" class="bg-blue-100 text-blue-700 hover:bg-blue-200 p-2 rounded-lg transition-colors" title="Sửa">
-                                            <i class="fas fa-edit"></i>
-                                        </button>
-                                        <button onclick="viewContraindicationDetail()" class="bg-gray-100 text-gray-700 hover:bg-gray-200 p-2 rounded-lg transition-colors" title="Chi Tiết">
-                                            <i class="fas fa-eye"></i>
-                                        </button>
-                                        <button onclick="deleteContraindication('Metformin + Bệnh Thận Mạn Tính')" class="bg-red-100 text-red-700 hover:bg-red-200 p-2 rounded-lg transition-colors" title="Xóa">
-                                            <i class="fas fa-trash"></i>
-                                        </button>
-                                    </div>
-                                </td>
-                            </tr>
-
-                            <!-- Row 3 -->
-                            <tr class="hover:bg-slate-50 transition-colors">
-                                <td class="px-6 py-4">
-                                    <div class="font-semibold text-gray-900">Ciprofloxacin</div>
-                                    <div class="text-sm text-gray-500">Antibiotic</div>
-                                </td>
-                                <td class="px-6 py-4">
-                                    <div class="font-semibold text-gray-900">J44 - COPD</div>
-                                    <div class="text-sm text-gray-500">Bệnh phổi tắc nghẽn</div>
-                                </td>
-                                <td class="px-6 py-4">
-                                    <span class="inline-flex items-center gap-2 bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-bold">
-                                        <i class="fas fa-check-circle"></i>AN TOÀN
-                                    </span>
-                                </td>
-                                <td class="px-6 py-4">
-                                    <div class="text-sm text-gray-600">
-                                        Có thể sử dụng bình thường
-                                    </div>
-                                </td>
-                                <td class="px-6 py-4">
-                                    <span class="inline-flex items-center gap-2 bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-medium">
-                                        <i class="fas fa-check-circle"></i>Hoạt Động
-                                    </span>
-                                </td>
-                                <td class="px-6 py-4">
-                                    <div class="flex justify-center gap-2">
-                                        <button onclick="editContraindication()" class="bg-blue-100 text-blue-700 hover:bg-blue-200 p-2 rounded-lg transition-colors" title="Sửa">
-                                            <i class="fas fa-edit"></i>
-                                        </button>
-                                        <button onclick="viewContraindicationDetail()" class="bg-gray-100 text-gray-700 hover:bg-gray-200 p-2 rounded-lg transition-colors" title="Chi Tiết">
-                                            <i class="fas fa-eye"></i>
-                                        </button>
-                                        <button onclick="deleteContraindication('Ciprofloxacin + COPD')" class="bg-red-100 text-red-700 hover:bg-red-200 p-2 rounded-lg transition-colors" title="Xóa">
-                                            <i class="fas fa-trash"></i>
-                                        </button>
-                                    </div>
-                                </td>
-                            </tr>
-
-                            <!-- Row 4 -->
-                            <tr class="hover:bg-slate-50 transition-colors">
-                                <td class="px-6 py-4">
-                                    <div class="font-semibold text-gray-900">ACE Inhibitors</div>
-                                    <div class="text-sm text-gray-500">VD: Lisinopril</div>
-                                </td>
-                                <td class="px-6 py-4">
-                                    <div class="font-semibold text-gray-900">Q89 - Mang Thai</div>
-                                    <div class="text-sm text-gray-500">Trisemester bất kỳ</div>
-                                </td>
-                                <td class="px-6 py-4">
-                                    <span class="inline-flex items-center gap-2 bg-red-100 text-red-800 px-3 py-1 rounded-full text-sm font-bold">
-                                        <i class="fas fa-ban"></i>CHỐNG CHỈ ĐỊNH TUYỆT ĐỐI
-                                    </span>
-                                </td>
-                                <td class="px-6 py-4">
-                                    <div class="text-sm text-gray-600">
-                                        Nguy cơ dị tật bẩm sinh, suy thận thai nhi
-                                    </div>
-                                </td>
-                                <td class="px-6 py-4">
-                                    <span class="inline-flex items-center gap-2 bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-medium">
-                                        <i class="fas fa-check-circle"></i>Hoạt Động
-                                    </span>
-                                </td>
-                                <td class="px-6 py-4">
-                                    <div class="flex justify-center gap-2">
-                                        <button onclick="editContraindication()" class="bg-blue-100 text-blue-700 hover:bg-blue-200 p-2 rounded-lg transition-colors" title="Sửa">
-                                            <i class="fas fa-edit"></i>
-                                        </button>
-                                        <button onclick="viewContraindicationDetail()" class="bg-gray-100 text-gray-700 hover:bg-gray-200 p-2 rounded-lg transition-colors" title="Chi Tiết">
-                                            <i class="fas fa-eye"></i>
-                                        </button>
-                                        <button onclick="deleteContraindication('ACE Inhibitors + Mang Thai')" class="bg-red-100 text-red-700 hover:bg-red-200 p-2 rounded-lg transition-colors" title="Xóa">
-                                            <i class="fas fa-trash"></i>
-                                        </button>
-                                    </div>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
-            <!-- Pagination -->
-            <div class="bg-white rounded-xl shadow-lg border border-slate-200 px-6 py-4 flex items-center justify-between">
-                <div class="text-sm text-gray-600">
-                    Hiển thị <span class="font-semibold">1-4</span> của <span class="font-semibold">156</span> chống chỉ định
-                </div>
-                <div class="flex gap-2">
-                    <button class="px-4 py-2 border border-slate-300 rounded-lg text-gray-700 hover:bg-slate-50 transition-colors disabled:opacity-50" disabled>
-                        <i class="fas fa-chevron-left"></i>
-                    </button>
-                    <button class="px-3 py-2 bg-red-600 text-white rounded-lg">1</button>
-                    <button class="px-3 py-2 border border-slate-300 rounded-lg text-gray-700 hover:bg-slate-50 transition-colors">2</button>
-                    <button class="px-3 py-2 border border-slate-300 rounded-lg text-gray-700 hover:bg-slate-50 transition-colors">3</button>
-                    <button class="px-4 py-2 border border-slate-300 rounded-lg text-gray-700 hover:bg-slate-50 transition-colors">
-                        <i class="fas fa-chevron-right"></i>
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-</section>
-
-<!-- Add/Edit Interaction Modal -->
-<div id="interactionModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-    <div class="bg-white rounded-xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto">
-        <!-- Modal Header -->
-        <div class="sticky top-0 bg-amber-600 text-white px-6 py-4 flex items-center justify-between border-b border-amber-600">
-            <h2 class="text-2xl font-bold flex items-center gap-3">
-                <i class="fas fa-exchange-alt"></i>
-                <span id="interactionModalTitle">Thêm Tương Tác Mới</span>
-            </h2>
-            <button onclick="closeInteractionModal()" class="text-white hover:bg-amber-700 p-2 rounded-lg transition-colors">
-                <i class="fas fa-times text-xl"></i>
-            </button>
-        </div>
-
-        <!-- Modal Body -->
-        <div class="p-6 space-y-4">
-            <!-- Select Type -->
-            <div>
-                <label class="block text-sm font-semibold text-gray-900 mb-2">
-                    <i class="fas fa-list text-amber-600 mr-2"></i>Loại Tương Tác
-                </label>
-                <select class="w-full px-4 py-3 border-2 border-slate-300 rounded-lg focus:outline-none focus:border-amber-600 transition-colors">
-                    <option>Tương Tác Thuốc-Thuốc</option>
-                    <option>Chống Chỉ Định Thuốc-Bệnh</option>
-                </select>
-            </div>
-
-            <!-- Drug 1 Selection -->
-            <div>
-                <label class="block text-sm font-semibold text-gray-900 mb-2">
-                    <i class="fas fa-pills text-amber-600 mr-2"></i>Thuốc 1
-                </label>
-                <input type="text" placeholder="Tìm và chọn thuốc đầu tiên..."
-                       class="w-full px-4 py-3 border-2 border-slate-300 rounded-lg focus:outline-none focus:border-amber-600 transition-colors">
-            </div>
-
-            <!-- Drug 2 / Disease Selection -->
-            <div>
-                <label class="block text-sm font-semibold text-gray-900 mb-2">
-                    <i class="fas fa-pills text-amber-600 mr-2"></i>Thuốc 2 / Bệnh Lý
-                </label>
-                <input type="text" placeholder="Tìm và chọn thuốc hoặc bệnh lý thứ hai..."
-                       class="w-full px-4 py-3 border-2 border-slate-300 rounded-lg focus:outline-none focus:border-amber-600 transition-colors">
-            </div>
-
-            <!-- Severity Level -->
-            <div class="grid md:grid-cols-2 gap-4">
-                <div>
-                    <label class="block text-sm font-semibold text-gray-900 mb-2">
-                        <i class="fas fa-alert text-amber-600 mr-2"></i>Mức Độ Nguy Hiểm
-                    </label>
-                    <select class="w-full px-4 py-3 border-2 border-slate-300 rounded-lg focus:outline-none focus:border-amber-600 transition-colors">
-                        <option>Chọn mức độ</option>
-                        <option style="color: #dc2626;">Nguy Hiểm (Đỏ) - Chống Chỉ Định Tuyệt Đối</option>
-                        <option style="color: #f59e0b;">Thận Trọng (Vàng) - Cần Giám Sát</option>
-                        <option style="color: #10b981;">An Toàn (Xanh) - Có Thể Dùng</option>
-                    </select>
-                </div>
-
-                <div>
-                    <label class="block text-sm font-semibold text-gray-900 mb-2">
-                        <i class="fas fa-circle text-amber-600 mr-2"></i>Trạng Thái
-                    </label>
-                    <select class="w-full px-4 py-3 border-2 border-slate-300 rounded-lg focus:outline-none focus:border-amber-600 transition-colors">
-                        <option>Đang Hoạt Động</option>
-                        <option>Vô Hiệu Hóa</option>
-                    </select>
-                </div>
-            </div>
-
-            <!-- Mechanism / Reason -->
-            <div>
-                <label class="block text-sm font-semibold text-gray-900 mb-2">
-                    <i class="fas fa-align-left text-amber-600 mr-2"></i>Cơ Chế / Lý Do Tương Tác
-                </label>
-                <textarea rows="4" placeholder="Mô tả chi tiết cơ chế tương tác, tại sao xảy ra, các yếu tố ảnh hưởng..."
-                          class="w-full px-4 py-3 border-2 border-slate-300 rounded-lg focus:outline-none focus:border-amber-600 transition-colors resize-none"></textarea>
-            </div>
-
-            <!-- Recommendation -->
-            <div>
-                <label class="block text-sm font-semibold text-gray-900 mb-2">
-                    <i class="fas fa-lightbulb text-amber-600 mr-2"></i>Khuyến Cáo / Cách Xử Lý
-                </label>
-                <textarea rows="4" placeholder="Hướng dẫn bác sĩ cách xử lý, giải pháp thay thế, theo dõi..."
-                          class="w-full px-4 py-3 border-2 border-slate-300 rounded-lg focus:outline-none focus:border-amber-600 transition-colors resize-none"></textarea>
-            </div>
-
-            <!-- Evidence & References -->
-            <div>
-                <label class="block text-sm font-semibold text-gray-900 mb-2">
-                    <i class="fas fa-link text-amber-600 mr-2"></i>Nguồn Tham Khảo / Bằng Chứng
-                </label>
-                <input type="text" placeholder="VD: FDA Warning 2023, DrugBank ID: DB00101"
-                       class="w-full px-4 py-3 border-2 border-slate-300 rounded-lg focus:outline-none focus:border-amber-600 transition-colors">
-            </div>
-        </div>
-
-        <!-- Modal Footer -->
-        <div class="sticky bottom-0 bg-slate-50 border-t border-slate-200 px-6 py-4 flex gap-3 justify-end">
-            <button onclick="closeInteractionModal()"
-                    class="px-6 py-3 border-2 border-slate-300 text-gray-700 rounded-lg font-semibold hover:bg-slate-50 transition-colors">
-                Hủy
-            </button>
-            <button class="px-6 py-3 bg-amber-600 text-white rounded-lg font-semibold hover:bg-amber-700 transition-colors flex items-center gap-2">
-                <i class="fas fa-save"></i> Lưu
-            </button>
         </div>
     </div>
 </div>
 
-<!-- JavaScript Functions -->
+<!-- ===== SCRIPT XỬ LÝ TƯƠNG TÁC ===== -->
 <script>
-// Tab switching
-function switchTab(tab) {
-    const drugdrug = document.getElementById('drugdrug-content');
-    const drugdisease = document.getElementById('drugdisease-content');
-    const tabDrugDrug = document.getElementById('tab-drugdrug');
-    const tabDrugDisease = document.getElementById('tab-drugdisease');
+    /**
+     * Hàm chuyển đổi giữa các tab
+     * param {string} tabName - Tên tab cần hiển thị ('interactions' hoặc 'contraindications')
+     */
+    function switchTab(tabName) {
+        // Ẩn tất cả tab
+        document.querySelectorAll('.tab-content').forEach(tab => {
+            tab.classList.add('hidden');
+        });
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.classList.remove('active', 'border-b-2', 'border-blue-700', 'text-blue-700');
+            btn.classList.add('border-transparent', 'text-gray-600');
+        });
 
-    if (tab === 'drugdrug') {
-        drugdrug.classList.remove('hidden');
-        drugdisease.classList.add('hidden');
-        tabDrugDrug.classList.add('border-amber-600', 'text-amber-700');
-        tabDrugDrug.classList.remove('border-transparent', 'text-gray-600');
-        tabDrugDisease.classList.remove('border-red-600', 'text-red-700');
-        tabDrugDisease.classList.add('border-transparent', 'text-gray-600');
-    } else {
-        drugdrug.classList.add('hidden');
-        drugdisease.classList.remove('hidden');
-        tabDrugDrug.classList.remove('border-amber-600', 'text-amber-700');
-        tabDrugDrug.classList.add('border-transparent', 'text-gray-600');
-        tabDrugDisease.classList.add('border-red-600', 'text-red-700');
-        tabDrugDisease.classList.remove('border-transparent', 'text-gray-600');
+        // Hiển thị tab được chọn
+        if (tabName === 'interactions') {
+            document.getElementById('interactions-tab').classList.remove('hidden');
+            document.getElementById('tab-interactions').classList.add('active', 'border-b-2', 'border-blue-700', 'text-blue-700');
+            document.getElementById('tab-interactions').classList.remove('border-transparent', 'text-gray-600');
+        } else if (tabName === 'contraindications') {
+            document.getElementById('contraindications-tab').classList.remove('hidden');
+            document.getElementById('tab-contraindications').classList.add('border-b-2', 'border-red-600', 'text-red-700');
+            document.getElementById('tab-contraindications').classList.remove('border-transparent', 'text-gray-600');
+        }
     }
-}
 
-// Modal functions
-function openInteractionModal() {
-    document.getElementById('interactionModal').classList.remove('hidden');
-    document.getElementById('interactionModalTitle').textContent = 'Thêm Tương Tác Mới';
-}
+    /**
+     * Hàm xử lý tìm kiếm và lọc tương tác thuốc
+     * param {Event} event - Event từ form submit
+     */
+    function handleInteractionSearch(event) {
+        event.preventDefault();
 
-function closeInteractionModal() {
-    document.getElementById('interactionModal').classList.add('hidden');
-}
+        // Lấy giá trị từ form
+        const searchTerm = document.getElementById('interaction-search-term').value.trim();
+        const severityLevel = document.getElementById('interaction-severity-level').value;
 
-function editInteraction() {
-    document.getElementById('interactionModal').classList.remove('hidden');
-    document.getElementById('interactionModalTitle').textContent = 'Chỉnh Sửa Tương Tác';
-}
-
-function editContraindication() {
-    document.getElementById('interactionModal').classList.remove('hidden');
-    document.getElementById('interactionModalTitle').textContent = 'Chỉnh Sửa Chống Chỉ Định';
-}
-
-function viewInteractionDetail() {
-    alert('Xem chi tiết tương tác - Chưa triển khai');
-}
-
-function viewContraindicationDetail() {
-    alert('Xem chi tiết chống chỉ định - Chưa triển khai');
-}
-
-function deleteInteraction(name) {
-    alert('Xóa: ' + name + ' - Chưa triển khai');
-}
-
-function deleteContraindication(name) {
-    alert('Xóa: ' + name + ' - Chưa triển khai');
-}
-
-// Close modal when clicking outside
-document.addEventListener('click', function(e) {
-    const modal = document.getElementById('interactionModal');
-    if (e.target === modal) {
-        modal.classList.add('hidden');
+        // Gửi request POST đến server
+        fetch('@Url.Action("SearchAndFilterInteractions", "Interaction")', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: new URLSearchParams({
+                searchTerm: searchTerm || '',
+                severityLevel: severityLevel || '',
+                pageNumber: 1
+            })
+        })
+        .then(response => response.text())
+        .then(html => {
+            // Cập nhật bảng dữ liệu
+            document.getElementById('interactions-table-container').innerHTML = html;
+        })
+        .catch(error => {
+            console.error('Lỗi:', error);
+            alert('Có lỗi xảy ra khi tìm kiếm. Vui lòng thử lại!');
+        });
     }
-});
+
+    /**
+     * Hàm xử lý tìm kiếm và lọc chống chỉ định
+     * param {Event} event - Event từ form submit
+     */
+    function handleContraindicationSearch(event) {
+        event.preventDefault();
+
+        // Lấy giá trị từ form
+        const searchTerm = document.getElementById('contraindication-search-term').value.trim();
+        const riskLevel = document.getElementById('contraindication-risk-level').value;
+
+        // Gửi request POST đến server
+        fetch('@Url.Action("SearchAndFilterContraindications", "Interaction")', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: new URLSearchParams({
+                searchTerm: searchTerm || '',
+                riskLevel: riskLevel || '',
+                pageNumber: 1
+            })
+        })
+        .then(response => response.text())
+        .then(html => {
+            // Cập nhật bảng dữ liệu
+            document.getElementById('contraindications-table-container').innerHTML = html;
+        })
+        .catch(error => {
+            console.error('Lỗi:', error);
+            alert('Có lỗi xảy ra khi tìm kiếm. Vui lòng thử lại!');
+        });
+    }
+
+    /**
+     * Hàm chuyển đến trang khác cho tương tác thuốc
+     * param {number} pageNumber - Số trang
+     */
+    function goToInteractionPage(pageNumber) {
+        const searchTerm = document.getElementById('interaction-search-term').value.trim();
+        const severityLevel = document.getElementById('interaction-severity-level').value;
+
+        fetch('@Url.Action("SearchAndFilterInteractions", "Interaction")', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: new URLSearchParams({
+                searchTerm: searchTerm || '',
+                severityLevel: severityLevel || '',
+                pageNumber: pageNumber
+            })
+        })
+        .then(response => response.text())
+        .then(html => {
+            document.getElementById('interactions-table-container').innerHTML = html;
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        })
+        .catch(error => console.error('Lỗi:', error));
+    }
+
+    /**
+     * Hàm chuyển đến trang khác cho chống chỉ định
+     * param {number} pageNumber - Số trang
+     */
+    function goToContraindicationPage(pageNumber) {
+        const searchTerm = document.getElementById('contraindication-search-term').value.trim();
+        const riskLevel = document.getElementById('contraindication-risk-level').value;
+
+        fetch('@Url.Action("SearchAndFilterContraindications", "Interaction")', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: new URLSearchParams({
+                searchTerm: searchTerm || '',
+                riskLevel: riskLevel || '',
+                pageNumber: pageNumber
+            })
+        })
+        .then(response => response.text())
+        .then(html => {
+            document.getElementById('contraindications-table-container').innerHTML = html;
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        })
+        .catch(error => console.error('Lỗi:', error));
+    }
+
+    /**
+     * Hàm đặt lại bộ lọc tương tác thuốc
+     */
+    function resetInteractionFilters() {
+        document.getElementById('interaction-search-term').value = '';
+        document.getElementById('interaction-severity-level').value = '';
+        document.getElementById('interactions-filter-form').dispatchEvent(new Event('submit'));
+    }
+
+    /**
+     * Hàm đặt lại bộ lọc chống chỉ định
+     */
+    function resetContraindicationFilters() {
+        document.getElementById('contraindication-search-term').value = '';
+        document.getElementById('contraindication-risk-level').value = '';
+        document.getElementById('contraindications-filter-form').dispatchEvent(new Event('submit'));
+    }
 </script>

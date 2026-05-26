@@ -56,8 +56,8 @@ namespace PharmaCheck.Controllers
 
             // Đã bổ sung OrderBy để khắc phục cảnh báo EF Core Query 10102
             var drugs = await _context.Set<Drug>()
-                .Where(d => d.IsActive && 
-                           (d.Name.ToLower().Contains(normalizedTerm) || 
+                .Where(d => d.IsActive &&
+                           (d.Name.ToLower().Contains(normalizedTerm) ||
                             d.ActiveIngredient.ToLower().Contains(normalizedTerm)))
                 .OrderBy(d => d.Name)
                 .Select(d => new { d.Id, d.Name, d.ActiveIngredient })
@@ -103,7 +103,7 @@ namespace PharmaCheck.Controllers
                 System.Diagnostics.Debug.WriteLine("🔍 [CheckInteractions] REQUEST NHẬN ĐƯỢC");
                 System.Diagnostics.Debug.WriteLine("═══════════════════════════════════════════");
                 System.Diagnostics.Debug.WriteLine($"   Request object: {(request == null ? "NULL" : "OK")}");
-                
+
                 if (request != null)
                 {
                     System.Diagnostics.Debug.WriteLine($"   DrugIds count: {request.DrugIds?.Count ?? 0}");
@@ -123,14 +123,14 @@ namespace PharmaCheck.Controllers
                             System.Diagnostics.Debug.WriteLine($"   Error: {error.ErrorMessage}");
                         }
                     }
-                    return BadRequest(new 
-                    { 
+                    return BadRequest(new
+                    {
                         message = "Model State không hợp lệ",
                         errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage).ToList()
                     });
                 }
 
-                if (request == null || ((request.DrugIds == null || !request.DrugIds.Any()) && 
+                if (request == null || ((request.DrugIds == null || !request.DrugIds.Any()) &&
                                         (request.DiseaseIds == null || !request.DiseaseIds.Any())))
                 {
                     System.Diagnostics.Debug.WriteLine("❌ [CheckInteractions] Request null hoặc không có dữ liệu");
@@ -147,11 +147,11 @@ namespace PharmaCheck.Controllers
                 if (request.DrugIds != null && request.DrugIds.Count >= 2)
                 {
                     System.Diagnostics.Debug.WriteLine("🔍 [CheckInteractions] Kiểm tra Drug-Drug Interactions...");
-                    
+
                     var interactions = await _context.Set<DrugInteraction>()
                         .Include(di => di.SourceDrug)
                         .Include(di => di.TargetDrug)
-                        .Where(di => request.DrugIds.Contains(di.SourceDrugId) && 
+                        .Where(di => request.DrugIds.Contains(di.SourceDrugId) &&
                                      request.DrugIds.Contains(di.TargetDrugId) &&
                                      di.SourceDrugId != di.TargetDrugId)
                         .ToListAsync();
@@ -160,9 +160,9 @@ namespace PharmaCheck.Controllers
 
                     foreach (var item in interactions)
                     {
-                        string severityText = item.SeverityLevel == 3 ? "NGUY HIỂM" : 
+                        string severityText = item.SeverityLevel == 3 ? "NGUY HIỂM" :
                                               item.SeverityLevel == 2 ? "THẬN TRỌNG" : "NHẸ";
-                        
+
                         string icon = item.SeverityLevel == 3 ? "fa-exclamation-triangle" : "fa-exclamation-circle";
 
                         drugDrugInteractionsResult.Add(new
@@ -181,11 +181,11 @@ namespace PharmaCheck.Controllers
                 if (request.DrugIds != null && request.DrugIds.Any() && request.DiseaseIds != null && request.DiseaseIds.Any())
                 {
                     System.Diagnostics.Debug.WriteLine("🔍 [CheckInteractions] Kiểm tra Drug-Disease Contraindications...");
-                    
+
                     var contraindications = await _context.Set<DrugDiseaseContraindication>()
                         .Include(ddc => ddc.Drug)
                         .Include(ddc => ddc.Disease)
-                        .Where(ddc => request.DrugIds.Contains(ddc.DrugId) && 
+                        .Where(ddc => request.DrugIds.Contains(ddc.DrugId) &&
                                      request.DiseaseIds.Contains(ddc.DiseaseId))
                         .ToListAsync();
 
@@ -193,10 +193,10 @@ namespace PharmaCheck.Controllers
 
                     foreach (var item in contraindications)
                     {
-                        string riskText = item.RiskLevel == 3 ? "CHỐNG CHỈ ĐỊNH" : 
+                        string riskText = item.RiskLevel == 3 ? "CHỐNG CHỈ ĐỊNH" :
                                           item.RiskLevel == 2 ? "THẬN TRỌNG" : "THẤP";
-                        
-                        string icon = item.RiskLevel == 3 ? "fa-ban" : 
+
+                        string icon = item.RiskLevel == 3 ? "fa-ban" :
                                       item.RiskLevel == 2 ? "fa-exclamation-circle" : "fa-check-circle";
 
                         drugDiseaseContraindicationsResult.Add(new
@@ -226,9 +226,9 @@ namespace PharmaCheck.Controllers
                 System.Diagnostics.Debug.WriteLine($"❌ [CheckInteractions] Exception: {ex.Message}");
                 System.Diagnostics.Debug.WriteLine($"❌ Stack Trace: {ex.StackTrace}");
                 System.Diagnostics.Debug.WriteLine("═══════════════════════════════════════════");
-                
-                return StatusCode(500, new 
-                { 
+
+                return StatusCode(500, new
+                {
                     message = "Lỗi xử lý dữ liệu trên máy chủ.",
                     error = ex.Message,
                     details = ex.InnerException?.Message
@@ -241,6 +241,11 @@ namespace PharmaCheck.Controllers
             return View();
         }
 
+        // Action dẫn tới trang tra cứu riêng biệt
+        public IActionResult Check()
+        {
+            return View();
+        }
         /// <summary>
         /// DEBUG ENDPOINT: Kiểm tra dữ liệu trong database
         /// URL: /Home/DiagnosticData

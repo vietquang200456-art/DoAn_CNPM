@@ -1,0 +1,198 @@
+@model PharmaCheck.Models.DrugPagedListViewModel
+
+@{
+    ViewData["Title"] = "Quản Lý Thuốc | PharmaCheck";
+}
+
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <!-- Search & Filter Bar -->
+    <div class="grid md:grid-cols-4 gap-4">
+
+        <!-- Search Input -->
+        <div class="md:col-span-2">
+            <div class="relative">
+                <input type="text" id="drugSearch" placeholder="Tìm kiếm thuốc (tên, hoạt chất, mã)..."
+                       class="w-full px-4 py-3 border-2 border-slate-300 rounded-lg focus:outline-none focus:border-medical-600 transition-colors">
+
+                <i class="fas fa-search absolute right-4 top-4 text-medical-600"></i>
+            </div>
+        </div>
+
+        <!-- Status Filter -->
+        <div>
+            <select id="statusFilter"
+                    class="w-full px-4 py-3 border-2 border-slate-300 rounded-lg focus:outline-none focus:border-medical-600 transition-colors">
+                <option value="">Tất cả Trạng Thái</option>
+                <option value="active">Đang Hoạt Động</option>
+                <option value="inactive">Ngừng Hoạt Động</option>
+            </select>
+        </div>
+
+        <!-- Search Button -->
+        <div>
+            <button onclick="searchAndFilter()"
+                    class="w-full bg-medical-700 hover:bg-medical-800 text-white px-4 py-3 rounded-lg font-semibold transition-colors flex items-center justify-center gap-2">
+                <i class="fas fa-search"></i>
+                Tìm Kiếm
+            </button>
+        </div>
+
+    </div>
+    <!-- Table Container -->
+    <div class="bg-white rounded-xl shadow-lg border border-slate-200 overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="w-full">
+                <!-- Table Head -->
+                <thead class="bg-medical-700 text-white">
+                    <tr>
+                        <th class="px-6 py-4 text-left font-semibold text-sm">
+                            <i class="fas fa-pills mr-2"></i>Tên Thuốc
+                        </th>
+                        <th class="px-6 py-4 text-left font-semibold text-sm">
+                            <i class="fas fa-flask mr-2"></i>Hoạt Chất
+                        </th>
+                        <th class="px-6 py-4 text-left font-semibold text-sm">
+                            <i class="fas fa-thermometer-half mr-2"></i>Liều Dùng
+                        </th>
+                        <th class="px-6 py-4 text-left font-semibold text-sm">
+                            <i class="fas fa-tag mr-2"></i>Nhà sản xuất
+                        </th>
+                        <th class="px-6 py-4 text-left font-semibold text-sm">
+                            <i class="fas fa-circle text-sm mr-2"></i>Trạng Thái
+                        </th>
+                        <th class="px-6 py-4 text-center font-semibold text-sm">
+                            <i class="fas fa-cog mr-2"></i>Hành Động
+                        </th>
+                    </tr>
+                </thead>
+
+                <!-- Table Body -->
+                <tbody class="divide-y divide-slate-200">
+                    @if (Model.Drugs != null && Model.Drugs.Any())
+                    {
+                        @foreach (var drug in Model.Drugs)
+                        {
+                            <tr class="hover:bg-slate-50 transition-colors">
+                                <td class="px-6 py-4">
+                                    <div class="font-semibold text-gray-900">@drug.Name</div>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <span
+                                        class="inline-block bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium">
+                                        @drug.ActiveIngredient
+                                    </span>
+                                </td>
+                                <td class="px-6 py-4">@drug.Dosage</td>
+                                <td class="px-6 py-4">
+                                    <div class="text-sm">
+                                        <div>@drug.Manufacturer</div>
+                                        <!-- Show created date in smaller text 
+                                            <div class="text-gray-500 text-xs">@(drug.CreatedAt.ToString("dd/MM/yyyy"))</div>
+                                            -->
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4">
+                                    @if (drug.IsActive)
+                                    {
+                                        <span
+                                            class="inline-flex items-center gap-2 bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-medium">
+                                            <i class="fas fa-check-circle"></i>Đang Hoạt Động
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span
+                                            class="inline-flex items-center gap-2 bg-gray-100 text-gray-800 px-3 py-1 rounded-full text-sm font-medium">
+                                            <i class="fas fa-times-circle"></i>Ngừng Hoạt Động
+                                        </span>
+                                    }
+                                </td>
+                                <td class="px-6 py-4">
+                                    <div class="flex justify-center gap-2">
+                                        <button onclick="editDrug(@drug.Id)"
+                                                class="bg-blue-100 text-blue-700 hover:bg-blue-200 p-2 rounded-lg transition-colors"
+                                                title="Sửa">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                        <button onclick="viewDrug(@drug.Id)"
+                                                class="bg-gray-100 text-gray-700 hover:bg-gray-200 p-2 rounded-lg transition-colors"
+                                                title="Xem Chi Tiết">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                        <button onclick="confirmDeleteDrug(@drug.Id, '@drug.Name')"
+                                                class="bg-red-100 text-red-700 hover:bg-red-200 p-2 rounded-lg transition-colors"
+                                                title="Xóa">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="6" class="px-6 py-8 text-center text-gray-500">
+                                <i class="fas fa-inbox text-3xl mb-2 block opacity-50"></i>
+                                Không có thuốc nào để hiển thị
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Table Footer with Pagination -->
+        <div class="bg-slate-50 border-t border-slate-200 px-6 py-4 flex items-center justify-between flex-wrap gap-4">
+            <div class="text-sm text-gray-600">
+                Hiển thị <span class="font-semibold">@((Model.CurrentPage - 1) * Model.PageSize +
+                                                                                                                                                                            1)-@Math.Min(Model.CurrentPage * Model.PageSize, Model.TotalRecords)</span>
+                của <span class="font-semibold">@Model.TotalRecords</span> thuốc
+            </div>
+            <div class="flex gap-2 flex-wrap">
+                <!-- Previous Button -->
+                <button onclick="goToPage(@(Model.CurrentPage - 1))"
+                        class="px-4 py-2 border border-slate-300 rounded-lg text-gray-700 hover:bg-slate-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    @if (!Model.HasPreviousPage)
+                    {
+                        <text>disabled</text>
+                    }
+                    >
+                        <i class="fas fa-chevron-left"></i>
+                    </button>
+
+                    <!-- Page Numbers -->
+                    @for (int i = 1; i <= Math.Min(Model.TotalPages, 5); i++)
+                    {
+                        @if (i == Model.CurrentPage)
+                        {
+                            <button class="px-3 py-2 bg-medical-700 text-white rounded-lg">@i</button>
+                        }
+                        else
+                        {
+                            <button onclick="goToPage(@i)"
+                                    class="px-3 py-2 border border-slate-300 rounded-lg text-gray-700 hover:bg-slate-50 transition-colors">@i</button>
+                        }
+                    }
+
+                    @if (Model.TotalPages > 5)
+                    {
+                        <span class="px-2 py-2">...</span>
+                        <button onclick="goToPage(@Model.TotalPages)"
+                                class="px-3 py-2 border border-slate-300 rounded-lg text-gray-700 hover:bg-slate-50 transition-colors">@Model.TotalPages</button>
+                    }
+
+                    <!-- Next Button -->
+                    <button onclick="goToPage(@(Model.CurrentPage + 1))"
+                            class="px-4 py-2 border border-slate-300 rounded-lg text-gray-700 hover:bg-slate-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        @if (!Model.HasNextPage)
+                        {
+                            <text>disabled</text>
+                        }
+                        >
+                            <i class="fas fa-chevron-right"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>

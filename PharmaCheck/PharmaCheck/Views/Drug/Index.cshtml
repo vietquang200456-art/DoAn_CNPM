@@ -4,7 +4,6 @@
     ViewData["Title"] = "Quản Lý Thuốc | PharmaCheck";
 }
 
-<!-- Page Header -->
 <div class="bg-gradient-to-r from-medical-700 to-medical-600 text-white py-8">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex items-center justify-between">
@@ -15,314 +14,22 @@
                 </h1>
                 <p class="text-blue-100 mt-2">Tạo, sửa, xóa và quản lý thông tin thuốc trong cơ sở dữ liệu</p>
             </div>
-            <button onclick="openDrugModal()" class="bg-white text-medical-700 px-6 py-3 rounded-lg font-semibold hover:bg-blue-50 transition-colors flex items-center gap-2">
+            <button onclick="openDrugModal()"
+                    class="bg-white text-medical-700 px-6 py-3 rounded-lg font-semibold hover:bg-blue-50 transition-colors flex items-center gap-2">
                 <i class="fas fa-plus"></i> Thêm Thuốc Mới
             </button>
         </div>
     </div>
 </div>
 
-<!-- Main Content -->
-<section class="py-8 bg-slate-50 min-h-screen">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <!-- Search & Filter Bar -->
-        <div class="bg-white rounded-xl shadow-lg border border-slate-200 p-6 mb-8">
-            <div class="grid md:grid-cols-3 gap-4">
-                <!-- Search Input -->
-                <div class="md:col-span-2">
-                    <div class="relative">
-                        <input type="text"
-                               id="drugSearch"
-                               placeholder="Tìm kiếm thuốc (tên, hoạt chất, mã)..."
-                               class="w-full px-4 py-3 border-2 border-slate-300 rounded-lg focus:outline-none focus:border-medical-600 transition-colors">
-                        <i class="fas fa-search absolute right-4 top-4 text-medical-600"></i>
-                    </div>
-                </div>
-
-                <!-- Filter Status -->
-                <div>
-                    <select id="statusFilter" class="w-full px-4 py-3 border-2 border-slate-300 rounded-lg focus:outline-none focus:border-medical-600 transition-colors">
-                        <option value="">Tất cả Trạng Thái</option>
-                        <option value="active">Đang Hoạt Động</option>
-                        <option value="inactive">Ngừng Hoạt Động</option>
-                        <option value="restricted">Hạn Chế</option>
-                    </select>
-                </div>
-            </div>
-        </div>
-
-        <!-- Table Container -->
-        <div class="bg-white rounded-xl shadow-lg border border-slate-200 overflow-hidden">
-            <div class="overflow-x-auto">
-                <table class="w-full">
-                    <!-- Table Head -->
-                    <thead class="bg-medical-700 text-white">
-                        <tr>
-                            <th class="px-6 py-4 text-left font-semibold text-sm">
-                                <i class="fas fa-pills mr-2"></i>Tên Thuốc
-                            </th>
-                            <th class="px-6 py-4 text-left font-semibold text-sm">
-                                <i class="fas fa-flask mr-2"></i>Hoạt Chất
-                            </th>
-                            <th class="px-6 py-4 text-left font-semibold text-sm">
-                                <i class="fas fa-thermometer-half mr-2"></i>Liều Dùng
-                            </th>
-                            <th class="px-6 py-4 text-left font-semibold text-sm">
-                                <i class="fas fa-tag mr-2"></i>Nhà sản xuất
-                            </th>
-                            <th class="px-6 py-4 text-left font-semibold text-sm">
-                                <i class="fas fa-circle text-sm mr-2"></i>Trạng Thái
-                            </th>
-                            <th class="px-6 py-4 text-center font-semibold text-sm">
-                                <i class="fas fa-cog mr-2"></i>Hành Động
-                            </th>
-                        </tr>
-                    </thead>
-
-                    <!-- Table Body -->
-                    <tbody class="divide-y divide-slate-200">
-                        @if (Model.Drugs != null && Model.Drugs.Any())
-                        {
-                            @foreach (var drug in Model.Drugs)
-                            {
-                                <tr class="hover:bg-slate-50 transition-colors">
-                                    <td class="px-6 py-4">
-                                        <div class="font-semibold text-gray-900">@drug.Name</div>
-                                    </td>
-                                    <td class="px-6 py-4">
-                                        <span class="inline-block bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium">
-                                            @drug.ActiveIngredient
-                                        </span>
-                                    </td>
-                                    <td class="px-6 py-4">@drug.Dosage</td>
-                                    <td class="px-6 py-4">
-                                        <div class="text-sm">
-                                            <div>@drug.Manufacturer</div>
-                                            <!-- Show created date in smaller text 
-                                            <div class="text-gray-500 text-xs">@(drug.CreatedAt.ToString("dd/MM/yyyy"))</div>
-                                            -->
-                                        </div>
-                                    </td>
-                                    <td class="px-6 py-4">
-                                        @if (drug.IsActive)
-                                        {
-                                            <span class="inline-flex items-center gap-2 bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-medium">
-                                                <i class="fas fa-check-circle"></i>Đang Hoạt Động
-                                            </span>
-                                        }
-                                        else
-                                        {
-                                            <span class="inline-flex items-center gap-2 bg-gray-100 text-gray-800 px-3 py-1 rounded-full text-sm font-medium">
-                                                <i class="fas fa-times-circle"></i>Ngừng Hoạt Động
-                                            </span>
-                                        }
-                                    </td>
-                                    <td class="px-6 py-4">
-                                        <div class="flex justify-center gap-2">
-                                            <button onclick="editDrug(@drug.Id)" class="bg-blue-100 text-blue-700 hover:bg-blue-200 p-2 rounded-lg transition-colors" title="Sửa">
-                                                <i class="fas fa-edit"></i>
-                                            </button>
-                                            <button onclick="viewDrug(@drug.Id)" class="bg-gray-100 text-gray-700 hover:bg-gray-200 p-2 rounded-lg transition-colors" title="Xem Chi Tiết">
-                                                <i class="fas fa-eye"></i>
-                                            </button>
-                                            <button onclick="confirmDeleteDrug(@drug.Id, '@drug.Name')" class="bg-red-100 text-red-700 hover:bg-red-200 p-2 rounded-lg transition-colors" title="Xóa">
-                                                <i class="fas fa-trash"></i>
-                                            </button>
-                                        </div>
-                                    </td>
-                                </tr>
-                            }
-                        }
-                        else
-                        {
-                            <tr>
-                                <td colspan="6" class="px-6 py-8 text-center text-gray-500">
-                                    <i class="fas fa-inbox text-3xl mb-2 block opacity-50"></i>
-                                    Không có thuốc nào để hiển thị
-                                </td>
-                            </tr>
-                        }
-                    </tbody>
-                </table>
-            </div>
-
-            <!-- Table Footer with Pagination -->
-            <div class="bg-slate-50 border-t border-slate-200 px-6 py-4 flex items-center justify-between flex-wrap gap-4">
-                <div class="text-sm text-gray-600">
-                    Hiển thị <span class="font-semibold">@((Model.CurrentPage - 1) * Model.PageSize + 1)-@Math.Min(Model.CurrentPage * Model.PageSize, Model.TotalRecords)</span> 
-                    của <span class="font-semibold">@Model.TotalRecords</span> thuốc
-                </div>
-                <div class="flex gap-2 flex-wrap">
-                    <!-- Previous Button -->
-                    <button onclick="goToPage(@(Model.CurrentPage - 1))" 
-                            class="px-4 py-2 border border-slate-300 rounded-lg text-gray-700 hover:bg-slate-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                            @if (!Model.HasPreviousPage) { <text>disabled</text> }>
-                        <i class="fas fa-chevron-left"></i>
-                    </button>
-
-                    <!-- Page Numbers -->
-                    @for (int i = 1; i <= Math.Min(Model.TotalPages, 5); i++)
-                    {
-                        @if (i == Model.CurrentPage)
-                        {
-                            <button class="px-3 py-2 bg-medical-700 text-white rounded-lg">@i</button>
-                        }
-                        else
-                        {
-                            <button onclick="goToPage(@i)" class="px-3 py-2 border border-slate-300 rounded-lg text-gray-700 hover:bg-slate-50 transition-colors">@i</button>
-                        }
-                    }
-
-                    @if (Model.TotalPages > 5)
-                    {
-                        <span class="px-2 py-2">...</span>
-                        <button onclick="goToPage(@Model.TotalPages)" class="px-3 py-2 border border-slate-300 rounded-lg text-gray-700 hover:bg-slate-50 transition-colors">@Model.TotalPages</button>
-                    }
-
-                    <!-- Next Button -->
-                    <button onclick="goToPage(@(Model.CurrentPage + 1))" 
-                            class="px-4 py-2 border border-slate-300 rounded-lg text-gray-700 hover:bg-slate-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                            @if (!Model.HasNextPage) { <text>disabled</text> }>
-                        <i class="fas fa-chevron-right"></i>
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
+<section id="features" class="py-12 bg-white border-t border-slate-200">
+    <partial name="~/Views/Drug/listdrug.cshtml" />
 </section>
 
-<!-- Add/Edit Drug Modal -->
-<div id="drugModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-    <div class="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-        <!-- Modal Header -->
-        <div class="sticky top-0 bg-medical-700 text-white px-6 py-4 flex items-center justify-between border-b border-medical-600">
-            <h2 class="text-2xl font-bold flex items-center gap-3">
-                <i class="fas fa-pills"></i>
-                <span id="modalTitle">Thêm Thuốc Mới</span>
-            </h2>
-            <button onclick="closeDrugModal()" class="text-white hover:bg-medical-600 p-2 rounded-lg transition-colors">
-                <i class="fas fa-times text-xl"></i>
-            </button>
-        </div>
+<section id="features" class="py-12 bg-white border-t border-slate-200">
+    <partial name="~/Views/Drug/adddrug.cshtml" />
+</section>
 
-        <!-- Modal Body -->
-        <form id="drugForm" class="p-6 space-y-4">
-            <!-- Hidden ID Field -->
-            <input type="hidden" id="drugId" value="0">
-
-            <!-- Drug Name -->
-            <div>
-                <label class="block text-sm font-semibold text-gray-900 mb-2">
-                    <i class="fas fa-pills text-medical-700 mr-2"></i>Tên Thuốc <span class="text-red-600">*</span>
-                </label>
-                <input type="text" id="drugName" placeholder="VD: Amoxicillin 500mg"
-                       class="w-full px-4 py-3 border-2 border-slate-300 rounded-lg focus:outline-none focus:border-medical-600 transition-colors"
-                       required>
-            </div>
-
-            <!-- Active Ingredient -->
-            <div class="grid md:grid-cols-2 gap-4">
-                <div>
-                    <label class="block text-sm font-semibold text-gray-900 mb-2">
-                        <i class="fas fa-flask text-medical-700 mr-2"></i>Hoạt Chất
-                    </label>
-                    <input type="text" id="activeIngredient" placeholder="VD: Amoxicillin Trihydrate"
-                           class="w-full px-4 py-3 border-2 border-slate-300 rounded-lg focus:outline-none focus:border-medical-600 transition-colors">
-                </div>
-
-                <!-- Dosage -->
-                <div>
-                    <label class="block text-sm font-semibold text-gray-900 mb-2">
-                        <i class="fas fa-weight text-medical-700 mr-2"></i>Liều Lượng
-                    </label>
-                    <input type="text" id="dosage" placeholder="VD: 500mg"
-                           class="w-full px-4 py-3 border-2 border-slate-300 rounded-lg focus:outline-none focus:border-medical-600 transition-colors">
-                </div>
-            </div>
-
-            <!-- Manufacturer -->
-            <div class="grid md:grid-cols-2 gap-4">
-                <div>
-                    <label class="block text-sm font-semibold text-gray-900 mb-2">
-                        <i class="fas fa-building text-medical-700 mr-2"></i>Nhà Sản Xuất
-                    </label>
-                    <input type="text" id="manufacturer" placeholder="VD: Công ty ABC"
-                           class="w-full px-4 py-3 border-2 border-slate-300 rounded-lg focus:outline-none focus:border-medical-600 transition-colors">
-                </div>
-
-                <!-- Function -->
-                <div>
-                    <label class="block text-sm font-semibold text-gray-900 mb-2">
-                        <i class="fas fa-heartbeat text-medical-700 mr-2"></i>Công Dụng
-                    </label>
-                    <input type="text" id="function" placeholder="VD: Kháng sinh, chống viêm"
-                           class="w-full px-4 py-3 border-2 border-slate-300 rounded-lg focus:outline-none focus:border-medical-600 transition-colors">
-                </div>
-            </div>
-
-            <!-- Side Effects -->
-            <div>
-                <label class="block text-sm font-semibold text-gray-900 mb-2">
-                    <i class="fas fa-exclamation text-medical-700 mr-2"></i>Tác Dụng Phụ
-                </label>
-                <textarea rows="2" id="sideEffects" placeholder="Nhập tác dụng phụ..."
-                          class="w-full px-4 py-3 border-2 border-slate-300 rounded-lg focus:outline-none focus:border-medical-600 transition-colors resize-none"></textarea>
-            </div>
-
-            <!-- Contraindications -->
-            <div>
-                <label class="block text-sm font-semibold text-gray-900 mb-2">
-                    <i class="fas fa-ban text-medical-700 mr-2"></i>Chống Chỉ Định
-                </label>
-                <textarea rows="2" id="contraindications" placeholder="Nhập chống chỉ định..."
-                          class="w-full px-4 py-3 border-2 border-slate-300 rounded-lg focus:outline-none focus:border-medical-600 transition-colors resize-none"></textarea>
-            </div>
-
-            <!-- Description -->
-            <div>
-                <label class="block text-sm font-semibold text-gray-900 mb-2">
-                    <i class="fas fa-align-left text-medical-700 mr-2"></i>Mô Tả / Ghi Chú
-                </label>
-                <textarea rows="3" id="description" placeholder="Nhập mô tả chi tiết..."
-                          class="w-full px-4 py-3 border-2 border-slate-300 rounded-lg focus:outline-none focus:border-medical-600 transition-colors resize-none"></textarea>
-            </div>
-
-            <!-- Status -->
-            <div>
-                <label class="block text-sm font-semibold text-gray-900 mb-2">
-                    <i class="fas fa-circle text-medical-700 mr-2"></i>Trạng Thái
-                </label>
-                <div class="flex gap-4">
-                    <label class="flex items-center gap-2 cursor-pointer">
-                        <input type="radio" name="isActive" id="statusActive" value="true" checked class="w-4 h-4">
-                        <span class="text-gray-700">Đang Hoạt Động</span>
-                    </label>
-                    <label class="flex items-center gap-2 cursor-pointer">
-                        <input type="radio" name="isActive" id="statusInactive" value="false" class="w-4 h-4">
-                        <span class="text-gray-700">Ngừng Hoạt Động</span>
-                    </label>
-                </div>
-            </div>
-
-            <!-- Message Area -->
-            <div id="formMessage" class="hidden px-4 py-3 rounded-lg text-sm font-medium"></div>
-        </form>
-
-        <!-- Modal Footer -->
-        <div class="sticky bottom-0 bg-slate-50 border-t border-slate-200 px-6 py-4 flex gap-3 justify-end">
-            <button onclick="closeDrugModal()"
-                    class="px-6 py-3 border-2 border-slate-300 text-gray-700 rounded-lg font-semibold hover:bg-slate-50 transition-colors">
-                Hủy
-            </button>
-            <button onclick="saveDrug()" id="saveDrugBtn"
-                    class="px-6 py-3 bg-medical-700 text-white rounded-lg font-semibold hover:bg-medical-800 transition-colors flex items-center gap-2">
-                <i class="fas fa-save"></i> <span id="saveBtnText">Lưu</span>
-            </button>
-        </div>
-    </div>
-</div>
-
-<!-- Delete Confirmation Modal -->
 <div id="deleteModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
     <div class="bg-white rounded-xl shadow-2xl max-w-md w-full">
         <div class="p-6">
@@ -347,240 +54,321 @@
     </div>
 </div>
 
-<!-- JavaScript Functions -->
 <script>
-let currentDeleteId = 0;
-let currentDeleteName = '';
-let isSearching = false;
-let searchTimeout;
+    // ==========================================
+    // KHAI BÁO BIẾN TOÀN CỤC (GLOBAL VARIABLES)
+    // ==========================================
+    let currentDeleteId = 0;      // Lưu trữ ID của thuốc đang được chọn để chuẩn bị xóa
+    let currentDeleteName = '';    // Lưu trữ tên của thuốc đang được chọn để chuẩn bị xóa
+    let isSearching = false;       // Cờ trạng thái kiểm soát tiến trình tìm kiếm (nếu cần mở rộng)
+    // Đã loại bỏ biến "searchTimeout" vì không dùng cơ chế tự động tìm kiếm (Debounce) nữa.
 
-// ===== Modal Management =====
-function openDrugModal() {
-    resetForm();
-    document.getElementById('drugModal').classList.remove('hidden');
-    document.getElementById('modalTitle').textContent = 'Thêm Thuốc Mới';
-    document.getElementById('saveBtnText').textContent = 'Lưu';
-}
-
-function editDrug(id) {
-    if (!id || id === 0) return;
+    // ==========================================
+    // QUẢN LÝ MODAL THÊM/SỬA THUỐC
+    // ==========================================
     
-    // Fetch drug data
-    fetch(`/Drug/GetDrugById?id=${id}`)
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                fillFormWithData(data.data);
-                document.getElementById('drugModal').classList.remove('hidden');
-                document.getElementById('modalTitle').textContent = 'Chỉnh Sửa Thuốc';
-                document.getElementById('saveBtnText').textContent = 'Cập Nhật';
-            } else {
-                alert('Lỗi: ' + data.message);
+    /**
+     * Mở modal để tạo mới một loại thuốc
+     */
+    function openDrugModal() {
+        resetForm(); // Làm sạch form nhập liệu cũ
+        document.getElementById('drugModal').classList.remove('hidden'); // Hiển thị Modal
+        document.getElementById('modalTitle').textContent = 'Thêm Thuốc Mới'; // Đổi tiêu đề Modal
+        document.getElementById('saveBtnText').textContent = 'Lưu'; // Đổi chữ nút Lưu
+    }
+
+    /**
+     * Lấy dữ liệu thuốc từ Server và mở modal để chỉnh sửa
+     */
+    function editDrug(id) {
+        if (!id || id === 0) return;
+
+        // Gọi API lấy dữ liệu chi tiết của thuốc dựa vào ID
+        fetch(`/Drug/GetDrugById?id=${id}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    fillFormWithData(data.data); // Đổ dữ liệu lấy được vào form nhập liệu
+                    document.getElementById('drugModal').classList.remove('hidden'); // Hiện Modal
+                    document.getElementById('modalTitle').textContent = 'Chỉnh Sửa Thuốc'; // Cập nhật tiêu đề Modal
+                    document.getElementById('saveBtnText').textContent = 'Cập Nhật'; // Cập nhật nhãn nút bấm
+                } else {
+                    alert('Lỗi: ' + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Lỗi khi lấy dữ liệu thuốc từ hệ thống');
+            });
+    }
+
+    /**
+     * Xem chi tiết thông tin thuốc (Hàm chờ phát triển)
+     */
+    function viewDrug(id) {
+        if (!id || id === 0) return;
+        alert('Chức năng xem chi tiết sẽ được triển khai trong phiên bản tiếp theo');
+    }
+
+    /**
+     * Đóng modal thêm/sửa thuốc và dọn dẹp form nhập liệu
+     */
+    function closeDrugModal() {
+        document.getElementById('drugModal').classList.add('hidden'); // Ẩn Modal bằng cách thêm class hidden
+        resetForm(); // Đưa form về trạng thái trống ban đầu
+    }
+
+    // ==========================================
+    // QUẢN LÝ MODAL XÁC NHẬN XÓA
+    // ==========================================
+
+    /**
+     * Kích hoạt hiển thị Modal cảnh báo trước khi thực hiện xóa thuốc
+     * param {number} id - ID của bản ghi thuốc cần xóa
+     * param {string} drugName - Tên hiển thị của thuốc cần xóa
+     */
+    function confirmDeleteDrug(id, drugName) {
+        if (!id || id === 0) return;
+        currentDeleteId = id; // Gán ID vào biến toàn cục để hàm xác nhận xóa sử dụng
+        currentDeleteName = drugName;
+        document.getElementById('deleteItemName').textContent = drugName; // Hiển thị tên thuốc lên Modal giao diện
+        document.getElementById('deleteModal').classList.remove('hidden'); // Hiển thị Modal xác nhận xóa
+    }
+
+    /**
+     * Đóng modal xác nhận xóa và giải phóng thông tin tạm thời
+     */
+    function closeDeleteModal() {
+        document.getElementById('deleteModal').classList.add('hidden'); // Ẩn Modal xóa
+        currentDeleteId = 0; // Khôi phục ID tạm thời về trạng thái mặc định
+        currentDeleteName = '';
+    }
+
+    /**
+     * Lắng nghe sự kiện click trên toàn bộ văn bản để đóng các Modal khi người dùng click ra vùng trống bên ngoài
+     */
+    document.addEventListener('click', function (e) {
+        const drugModal = document.getElementById('drugModal');
+        const deleteModal = document.getElementById('deleteModal');
+
+        // Nếu phần tử click trúng chính là thẻ bọc nền mờ của modal thì thực hiện ẩn đi
+        if (e.target === drugModal) {
+            drugModal.classList.add('hidden');
+            resetForm();
+        }
+        if (e.target === deleteModal) {
+            deleteModal.classList.add('hidden');
+        }
+    });
+
+    // ==========================================
+    // QUẢN LÝ FORM VÀ ĐỒNG BỘ DỮ LIỆU
+    // ==========================================
+
+    /**
+     * Làm mới toàn bộ các trường nhập liệu trong form về trạng thái ban đầu
+     */
+    function resetForm() {
+        document.getElementById('drugForm').reset(); // Reset nhanh bằng hàm built-in của thẻ Form
+        document.getElementById('drugId').value = '0'; // Đặt ID ẩn về 0 biểu thị cho hành động thêm mới
+        document.getElementById('statusActive').checked = true; // Trạng thái mặc định là Đang hoạt động
+        document.getElementById('formMessage').classList.add('hidden'); // Ẩn phân vùng thông báo lỗi/thành công
+    }
+
+    /**
+     * Đổ dữ liệu từ Object nhận được từ API vào lại các ô nhập liệu trong form (dành cho Edit)
+     * param {Object} data - Đối tượng chứa thông tin chi tiết thuốc
+     */
+    function fillFormWithData(data) {
+        document.getElementById('drugId').value = data.id || 0;
+        document.getElementById('drugName').value = data.name || '';
+        document.getElementById('activeIngredient').value = data.activeIngredient || '';
+        document.getElementById('dosage').value = data.dosage || '';
+        document.getElementById('manufacturer').value = data.manufacturer || '';
+        document.getElementById('function').value = data.function || '';
+        document.getElementById('sideEffects').value = data.sideEffects || '';
+        document.getElementById('contraindications').value = data.contraindications || '';
+        document.getElementById('description').value = data.description || '';
+
+        // Kiểm tra trạng thái hoạt động để check đúng radio button tương ứng
+        if (data.isActive) {
+            document.getElementById('statusActive').checked = true;
+        } else {
+            document.getElementById('statusInactive').checked = true;
+        }
+    }
+
+    /**
+     * Đọc thông tin từ form, validate dữ liệu đầu vào và gửi dữ liệu lên Server để Lưu hoặc Cập nhật
+     */
+    function saveDrug() {
+        const form = document.getElementById('drugForm');
+
+        // Kiểm tra tính hợp lệ của Form theo các ràng buộc HTML5 (như thuộc tính 'required')
+        if (!form.checkValidity()) {
+            form.reportValidity(); // Tự động hiển thị bong bóng cảnh báo của trình duyệt tại ô trống
+            return;
+        }
+
+        // Tạo object chứa toàn bộ dữ liệu từ form chuẩn bị gửi đi JSON
+        const drugData = {
+            id: parseInt(document.getElementById('drugId').value) || 0,
+            name: document.getElementById('drugName').value,
+            activeIngredient: document.getElementById('activeIngredient').value,
+            dosage: document.getElementById('dosage').value,
+            manufacturer: document.getElementById('manufacturer').value,
+            function: document.getElementById('function').value,
+            sideEffects: document.getElementById('sideEffects').value,
+            contraindications: document.getElementById('contraindications').value,
+            description: document.getElementById('description').value,
+            isActive: document.getElementById('statusActive').checked
+        };
+
+        // Khóa nút bấm lại nhằm tránh việc người dùng nhấp chuột liên tục (Spam click) tạo trùng lặp bản ghi
+        const saveBtn = document.getElementById('saveDrugBtn');
+        saveBtn.disabled = true;
+        const originalText = saveBtn.innerHTML;
+        saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang xử lý...'; // Thêm hiệu ứng quay tròn chờ tải
+
+        // Tiến hành gọi API gửi dữ liệu lên Server xử lý
+        fetch('/Drug/SaveDrug', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(drugData)
+        })
+            .then(response => response.json())
+            .then(data => {
+                // Khôi phục lại trạng thái ban đầu của nút bấm sau khi nhận phản hồi từ Server
+                saveBtn.disabled = false;
+                saveBtn.innerHTML = originalText;
+
+                if (data.success) {
+                    showMessage(true, data.message); // Hiển thị thanh thông báo xanh thành công
+                    setTimeout(() => {
+                        closeDrugModal();
+                        location.reload(); // Tải lại trang sau 1.5 giây để cập nhật dữ liệu mới nhất lên bảng hiển thị
+                    }, 1500);
+                } else {
+                    showMessage(false, data.message || 'Lỗi không xác định xảy ra từ Server');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                saveBtn.disabled = false;
+                saveBtn.innerHTML = originalText;
+                showMessage(false, 'Mất kết nối tới máy chủ. Vui lòng thử lại sau.');
+            });
+    }
+
+    /**
+     * Gửi yêu cầu xóa bản ghi lên Server sau khi người dùng đã xác nhận đồng ý xóa
+     */
+    function deleteDrugConfirmed() {
+        if (currentDeleteId === 0) return;
+
+        const deleteBtn = document.getElementById('confirmDeleteBtn');
+        deleteBtn.disabled = true; // Khóa nút xóa
+        const originalText = deleteBtn.innerHTML;
+        deleteBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang xóa...';
+
+        // Gọi API xóa thực tế
+        fetch(`/Drug/DeleteDrug?id=${currentDeleteId}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
             }
         })
-        .catch(error => {
-            console.error('Error:', error);
-            alert('Lỗi khi lấy dữ liệu thuốc');
-        });
-}
+            .then(response => response.json())
+            .then(data => {
+                deleteBtn.disabled = false;
+                deleteBtn.innerHTML = originalText;
 
-function viewDrug(id) {
-    if (!id || id === 0) return;
-    alert('Chức năng xem chi tiết sẽ được triển khai');
-}
-
-function closeDrugModal() {
-    document.getElementById('drugModal').classList.add('hidden');
-    resetForm();
-}
-
-function confirmDeleteDrug(id, drugName) {
-    if (!id || id === 0) return;
-    currentDeleteId = id;
-    currentDeleteName = drugName;
-    document.getElementById('deleteItemName').textContent = drugName;
-    document.getElementById('deleteModal').classList.remove('hidden');
-}
-
-function closeDeleteModal() {
-    document.getElementById('deleteModal').classList.add('hidden');
-    currentDeleteId = 0;
-    currentDeleteName = '';
-}
-
-// Close modals when clicking outside
-document.addEventListener('click', function(e) {
-    const drugModal = document.getElementById('drugModal');
-    const deleteModal = document.getElementById('deleteModal');
-    
-    if (e.target === drugModal) {
-        drugModal.classList.add('hidden');
-        resetForm();
-    }
-    if (e.target === deleteModal) {
-        deleteModal.classList.add('hidden');
-    }
-});
-
-// ===== Form Management =====
-function resetForm() {
-    document.getElementById('drugForm').reset();
-    document.getElementById('drugId').value = '0';
-    document.getElementById('statusActive').checked = true;
-    document.getElementById('formMessage').classList.add('hidden');
-}
-
-function fillFormWithData(data) {
-    document.getElementById('drugId').value = data.id || 0;
-    document.getElementById('drugName').value = data.name || '';
-    document.getElementById('activeIngredient').value = data.activeIngredient || '';
-    document.getElementById('dosage').value = data.dosage || '';
-    document.getElementById('manufacturer').value = data.manufacturer || '';
-    document.getElementById('function').value = data.function || '';
-    document.getElementById('sideEffects').value = data.sideEffects || '';
-    document.getElementById('contraindications').value = data.contraindications || '';
-    document.getElementById('description').value = data.description || '';
-    
-    if (data.isActive) {
-        document.getElementById('statusActive').checked = true;
-    } else {
-        document.getElementById('statusInactive').checked = true;
-    }
-}
-
-function saveDrug() {
-    const form = document.getElementById('drugForm');
-    
-    // Validate form
-    if (!form.checkValidity()) {
-        form.reportValidity();
-        return;
+                if (data.success) {
+                    alert(data.message);
+                    closeDeleteModal();
+                    location.reload(); // Tải lại trang để cập nhật danh sách mất đi phần tử đã bị xóa
+                } else {
+                    alert('Lỗi hệ thống: ' + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                deleteBtn.disabled = false;
+                deleteBtn.innerHTML = originalText;
+                alert('Không thể thực hiện kết nối máy chủ để xóa thuốc');
+            });
     }
 
-    const drugData = {
-        id: parseInt(document.getElementById('drugId').value) || 0,
-        name: document.getElementById('drugName').value,
-        activeIngredient: document.getElementById('activeIngredient').value,
-        dosage: document.getElementById('dosage').value,
-        manufacturer: document.getElementById('manufacturer').value,
-        function: document.getElementById('function').value,
-        sideEffects: document.getElementById('sideEffects').value,
-        contraindications: document.getElementById('contraindications').value,
-        description: document.getElementById('description').value,
-        isActive: document.getElementById('statusActive').checked
-    };
+    /**
+     * Hiển thị thanh thông báo trạng thái đẹp mắt ngay bên trong Form Modal
+     * param {boolean} isSuccess - Đạt trạng thái thành công (true) hay thất bại (false)
+     * param {string} message - Nội dung chuỗi thông báo hiển thị tới người dùng
+     */
+    function showMessage(isSuccess, message) {
+        const messageDiv = document.getElementById('formMessage');
+        messageDiv.textContent = message;
+        messageDiv.classList.remove('hidden');
 
-    // Disable button and show loading
-    const saveBtn = document.getElementById('saveDrugBtn');
-    saveBtn.disabled = true;
-    const originalText = saveBtn.innerHTML;
-    saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang xử lý...';
-
-    fetch('/Drug/SaveDrug', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(drugData)
-    })
-    .then(response => response.json())
-    .then(data => {
-        saveBtn.disabled = false;
-        saveBtn.innerHTML = originalText;
-
-        if (data.success) {
-            showMessage(true, data.message);
-            setTimeout(() => {
-                closeDrugModal();
-                location.reload(); // Reload to show updated list
-            }, 1500);
+        if (isSuccess) {
+            messageDiv.className = 'px-4 py-3 rounded-lg text-sm font-medium bg-green-100 text-green-800'; // Theme xanh lá
         } else {
-            showMessage(false, data.message || 'Lỗi không xác định');
+            messageDiv.className = 'px-4 py-3 rounded-lg text-sm font-medium bg-red-100 text-red-800';     // Theme đỏ cảnh báo
         }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        saveBtn.disabled = false;
-        saveBtn.innerHTML = originalText;
-        showMessage(false, 'Lỗi kết nối máy chủ');
-    });
-}
-
-function deleteDrugConfirmed() {
-    if (currentDeleteId === 0) return;
-
-    const deleteBtn = document.getElementById('confirmDeleteBtn');
-    deleteBtn.disabled = true;
-    const originalText = deleteBtn.innerHTML;
-    deleteBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang xóa...';
-
-    fetch(`/Drug/DeleteDrug?id=${currentDeleteId}`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        }
-    })
-    .then(response => response.json())
-    .then(data => {
-        deleteBtn.disabled = false;
-        deleteBtn.innerHTML = originalText;
-
-        if (data.success) {
-            alert(data.message);
-            closeDeleteModal();
-            location.reload(); // Reload to show updated list
-        } else {
-            alert('Lỗi: ' + data.message);
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        deleteBtn.disabled = false;
-        deleteBtn.innerHTML = originalText;
-        alert('Lỗi kết nối máy chủ');
-    });
-}
-
-function showMessage(isSuccess, message) {
-    const messageDiv = document.getElementById('formMessage');
-    messageDiv.textContent = message;
-    messageDiv.classList.remove('hidden');
-    
-    if (isSuccess) {
-        messageDiv.className = 'px-4 py-3 rounded-lg text-sm font-medium bg-green-100 text-green-800';
-    } else {
-        messageDiv.className = 'px-4 py-3 rounded-lg text-sm font-medium bg-red-100 text-red-800';
     }
-}
 
-// ===== Search & Filter =====
-function goToPage(page) {
-    if (page < 1) return;
-    
-    const searchTerm = document.getElementById('drugSearch').value;
-    const status = document.getElementById('statusFilter').value;
-    
-    let url = `/Drug/Index?page=${page}`;
-    if (searchTerm) url += `&searchTerm=${encodeURIComponent(searchTerm)}`;
-    if (status) url += `&status=${encodeURIComponent(status)}`;
-    
-    window.location.href = url;
-}
+    // ==========================================
+    // LOGIC XỬ LÝ TÌM KIẾM VÀ BỘ LỌC (SEARCH & FILTER)
+    // ==========================================
 
-function searchAndFilter() {
-    goToPage(1);
-}
+    /**
+     * Điều hướng trang kèm theo các tham số tìm kiếm và bộ lọc trạng thái hiện tại
+     * param {number} page - Số trang cần chuyển đến (Ví dụ: Trang 1, Trang 2...)
+     */
+    function goToPage(page) {
+        if (page < 1) return;
 
-// Search with debounce
-document.getElementById('drugSearch').addEventListener('keyup', function(e) {
-    clearTimeout(searchTimeout);
-    searchTimeout = setTimeout(() => {
+        // Thu thập giá trị hiện có trong các ô input lọc ngoài giao diện tại thời điểm kích hoạt hàm
+        const searchTerm = document.getElementById('drugSearch').value;
+        const status = document.getElementById('statusFilter').value;
+
+        // Thiết lập URL cơ sở điều hướng tới Action Index trong Controller Drug
+        let url = `/Drug/Index?page=${page}`;
+        
+        // Nối chuỗi điều kiện tìm kiếm và mã hóa an toàn dữ liệu đầu vào tránh lỗi URL (encodeURIComponent)
+        if (searchTerm) url += `&searchTerm=${encodeURIComponent(searchTerm.trim())}`;
+        if (status) url += `&status=${encodeURIComponent(status)}`;
+
+        // Thực hiện chuyển trang thực tế
+        window.location.href = url;
+    }
+
+    /**
+     * Hàm trung gian kích hoạt việc tìm kiếm, mặc định đưa người dùng quay trở lại trang 1
+     */
+    function searchAndFilter() {
+        goToPage(1);
+    }
+
+    // --- ĐÃ THAY ĐỔI CƠ CHẾ LẮNG NGHE SỰ KIỆN TÌM KIẾM THEO YÊU CẦU ---
+
+    /**
+     * Lắng nghe sự kiện người dùng nhấn phím trong ô Input tìm kiếm thuốc mã hiệu 'drugSearch'
+     * Thao tác: Ngừng theo dõi sự kiện liên tục gõ 'keyup' tự động chạy cũ, thay bằng chỉ kiểm tra phím Enter.
+     */
+    document.getElementById('drugSearch').addEventListener('keydown', function (e) {
+        if (e.key === 'Enter') {
+            e.preventDefault(); // Ngăn chặn sự kiện submit form mặc định (tránh reload trang ngoài kiểm soát)
+            searchAndFilter();  // Thực hiện tìm kiếm theo Keyword hiện tại
+        }
+    });
+
+    /**
+     * Lắng nghe sự kiện Thay đổi giá trị của bộ chọn Trạng Thái (dropdown list lọc hoạt động)
+     * Thao tác: Tự động chạy lại tìm kiếm lọc ngay lập tức khi người dùng click chọn trạng thái khác để tiện trải nghiệm.
+     */
+    document.getElementById('statusFilter').addEventListener('change', function (e) {
         searchAndFilter();
-    }, 500);
-});
-
-// Status filter change
-document.getElementById('statusFilter').addEventListener('change', function(e) {
-    searchAndFilter();
-});
+    });
 </script>
