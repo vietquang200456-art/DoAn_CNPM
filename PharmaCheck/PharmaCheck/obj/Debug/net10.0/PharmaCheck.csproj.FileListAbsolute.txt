@@ -223,3 +223,4 @@ D:\DoAn_CNPM\PharmaCheck\PharmaCheck\obj\Debug\net10.0\refint\PharmaCheck.dll
 D:\DoAn_CNPM\PharmaCheck\PharmaCheck\obj\Debug\net10.0\PharmaCheck.pdb
 D:\DoAn_CNPM\PharmaCheck\PharmaCheck\obj\Debug\net10.0\PharmaCheck.genruntimeconfig.cache
 D:\DoAn_CNPM\PharmaCheck\PharmaCheck\obj\Debug\net10.0\ref\PharmaCheck.dll
+d:\DoAn_CNPM\PharmaCheck\PharmaCheck\bin\Debug\net10.0\BCrypt.Net-Next.dll

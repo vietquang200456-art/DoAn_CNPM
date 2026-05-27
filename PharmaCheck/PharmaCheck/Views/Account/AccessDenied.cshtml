@@ -1,0 +1,60 @@
+@{
+    ViewData["Title"] = "Truy Cập Bị Từ Chối";
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>@ViewData["Title"] - PharmaCheck</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="bg-gradient-to-br from-blue-700 via-blue-600 to-indigo-800 min-h-screen flex items-center justify-center p-4">
+    <div class="w-full max-w-md">
+        <!-- Card chính -->
+        <div class="bg-white rounded-2xl shadow-2xl overflow-hidden">
+            <!-- Header -->
+            <div class="bg-gradient-to-r from-red-600 to-red-700 px-8 py-8 text-center">
+                <div class="flex justify-center mb-4">
+                    <div class="bg-white rounded-full p-3 shadow-lg">
+                        <i class="fas fa-ban text-red-600 text-3xl"></i>
+                    </div>
+                </div>
+                <h1 class="text-2xl font-bold text-white">Truy Cập Bị Từ Chối</h1>
+                <p class="text-red-100 text-sm mt-2">Bạn không có quyền truy cập tài nguyên này</p>
+            </div>
+
+            <!-- Nội dung -->
+            <div class="px-8 py-8">
+                <div class="text-center">
+                    <p class="text-gray-700 text-sm mb-6">
+                        <i class="fas fa-lock text-2xl text-red-600 mb-3 block"></i>
+                        Tài khoản của bạn không có quyền hạn cần thiết để truy cập trang này. 
+                        Nếu bạn cho rằng đây là lỗi, vui lòng liên hệ với quản trị viên.
+                    </p>
+
+                    <!-- Nút hành động -->
+                    <div class="space-y-3">
+                        <a href="/" class="block w-full bg-gradient-to-r from-blue-600 to-indigo-700 text-white font-bold py-3 rounded-lg hover:shadow-lg transform hover:-translate-y-0.5 transition duration-200">
+                            <i class="fas fa-home"></i> Quay lại trang chủ
+                        </a>
+                        <form method="post" asp-action="Logout" style="display:inline-block; width:100%;">
+                            <button type="submit" class="w-full bg-gray-200 text-gray-700 font-bold py-3 rounded-lg hover:bg-gray-300 transition duration-200">
+                                <i class="fas fa-sign-out-alt"></i> Đăng xuất
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Thông tin -->
+        <div class="mt-8 text-center text-white text-xs">
+            <p>&copy; 2026 PharmaCheck. Tất cả các quyền được bảo lưu.</p>
+        </div>
+    </div>
+</body>
+</html>
