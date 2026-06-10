@@ -1,0 +1,118 @@
+@model CreateContraindicationViewModel
+
+@{
+    ViewData["Title"] = "Thêm Mới Chống Chỉ Định | PharmaCheck";
+}
+
+<div class="bg-gradient-to-r from-red-700 via-red-600 to-pink-800 text-white py-8">
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex items-center gap-4">
+            <a href="@Url.Action("Index", "Interaction")" class="bg-white/10 hover:bg-white/20 p-2.5 rounded-lg transition-colors text-white" title="Quay lại">
+                <i class="fas fa-arrow-left text-lg"></i>
+            </a>
+            <div>
+                <h1 class="text-3xl font-bold flex items-center gap-3">
+                    <i class="fas fa-exclamation-circle"></i>
+                    Thêm Chống Chỉ Định Thuốc - Bệnh
+                </h1>
+                <p class="text-red-100 mt-1">Cấu hình cảnh báo nguy hiểm khi chỉ định thuốc trên bệnh nhân có bệnh lý nền</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="bg-gray-50 min-h-screen py-8">
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="bg-white rounded-2xl shadow-lg p-6 md:p-8">
+            
+            <form asp-action="CreateContraindication" asp-controller="Interaction" method="post" id="create-contraindication-form">
+                @Html.AntiForgeryToken()
+                
+                @if (!ViewData.ModelState.IsValid)
+                {
+                    <div class="mb-6 p-4 bg-red-50 border-l-4 border-red-500 rounded-r-lg text-sm text-red-700">
+                        <div class="flex items-center gap-2 mb-2 font-semibold">
+                            <i class="fas fa-exclamation-triangle"></i> Vui lòng kiểm tra lại thông tin nhập vào:
+                        </div>
+                        <div asp-validation-summary="All" class="list-disc pl-5"></div>
+                    </div>
+                }
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                    <div>
+                        <label asp-for="DrugId" class="block text-sm font-semibold text-gray-700 mb-2">
+                            <i class="fas fa-pills mr-1.5 text-red-600"></i> Tên Thuốc <span class="text-red-500">*</span>
+                        </label>
+                        <select asp-for="DrugId" asp-items="Model.DrugList" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500 bg-white transition-shadow">
+                            <option value="">-- Chọn thuốc cảnh báo --</option>
+                        </select>
+                        <span asp-validation-for="DrugId" class="text-xs text-red-500 mt-1 block font-medium"></span>
+                    </div>
+
+                    <div>
+                        <label asp-for="DiseaseId" class="block text-sm font-semibold text-gray-700 mb-2">
+                            <i class="fas fa-heartbeat mr-1.5 text-pink-600"></i> Bệnh Lý Nền / Chống Chỉ Định <span class="text-red-500">*</span>
+                        </label>
+                        <select asp-for="DiseaseId" asp-items="Model.DiseaseList" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500 bg-white transition-shadow">
+                            <option value="">-- Chọn bệnh lý chống chỉ định --</option>
+                        </select>
+                        <span asp-validation-for="DiseaseId" class="text-xs text-red-500 mt-1 block font-medium"></span>
+                    </div>
+                </div>
+
+                <div class="mb-6">
+                    <label asp-for="RiskLevel" class="block text-sm font-semibold text-gray-700 mb-2">
+                        <i class="fas fa-radiation mr-1.5 text-red-600"></i> Mức Độ Rủi Ro <span class="text-red-500">*</span>
+                    </label>
+                    <select asp-for="RiskLevel" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500 bg-white transition-shadow">
+                        <option value="">-- Chọn mức độ rủi ro --</option>
+                        <option value="1">1 - Thấp (Thận trọng sử dụng nhẹ)</option>
+                        <option value="2">2 - Vừa (Theo dõi sát chỉ số lâm sàng)</option>
+                        <option value="3">3 - Trung bình (Cân nhắc thay đổi thuốc khác an toàn hơn)</option>
+                        <option value="4">4 - Cao (Nguy cơ suy tạng hoặc biến chứng cấp tính)</option>
+                        <option value="5">5 - Rất cao (Chống chỉ định nghiêm ngặt / Đe dọa tính mạng)</option>
+                    </select>
+                    <span asp-validation-for="RiskLevel" class="text-xs text-red-500 mt-1 block font-medium"></span>
+                </div>
+
+                <div class="mb-6">
+                    <label asp-for="Warning" class="block text-sm font-semibold text-gray-700 mb-2">
+                        <i class="fas fa-exclamation-triangle mr-1.5 text-red-600"></i> Tiêu Đề Cảnh Báo <span class="text-red-500">*</span>
+                    </label>
+                    <input type="text" asp-for="Warning" placeholder="Ví dụ: Không dùng cho bệnh nhân suy gan nặng độ C..." 
+                           class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500 transition-shadow"/>
+                    <span asp-validation-for="Warning" class="text-xs text-red-500 mt-1 block font-medium"></span>
+                </div>
+
+                <div class="mb-8">
+                    <label asp-for="Risk" class="block text-sm font-semibold text-gray-700 mb-2">
+                        <i class="fas fa-biohazard mr-1.5 text-red-600"></i> Phân Tích Hệ Quả Rủi Ro <span class="text-red-500">*</span>
+                    </label>
+                    <textarea asp-for="Risk" rows="4" placeholder="Nhập chi tiết các tác hại lâm sàng nguy hiểm nếu cố tình chỉ định thuốc này trên bệnh nhân..." 
+                              class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500 transition-shadow resize-none"></textarea>
+                    <span asp-validation-for="Risk" class="text-xs text-red-500 mt-1 block font-medium"></span>
+                </div>
+
+                <div class="flex items-center justify-end gap-3 border-t border-gray-100 pt-6">
+                    <a href="@Url.Action("Index", "Interaction")" 
+                       class="px-6 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold rounded-xl transition-colors flex items-center gap-2">
+                        <i class="fas fa-times"></i> Hủy Bỏ
+                    </a>
+                    <button type="submit" 
+                            class="px-8 py-3 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-xl transition-colors shadow-md flex items-center gap-2">
+                        <i class="fas fa-save"></i> Lưu Chống Chỉ Định
+                    </button>
+                </div>
+            </form>
+
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        // Đồng bộ hóa: Khi nhấn Hủy bỏ/Quay lại, hệ thống sẽ mở trực tiếp Tab chống chỉ định
+        localStorage.setItem('pharmaCheck_activeTab', 'contraindications');
+    </script>
+}

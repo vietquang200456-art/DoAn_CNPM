@@ -2,9 +2,10 @@
 
 @{
     ViewData["Title"] = "Quản Lý Tương Tác & Chống Chỉ Định | PharmaCheck";
+    // Kiểm tra quyền Admin một lần để tái sử dụng hiệu quả
+    bool isAdmin = User.IsInRole("Admin");
 }
 
-<!-- ===== PHẦN BANNER TIÊU ĐỀ ===== -->
 <div class="bg-gradient-to-r from-blue-700 via-blue-600 to-indigo-800 text-white py-8">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex items-center justify-between">
@@ -19,10 +20,8 @@
     </div>
 </div>
 
-<!-- ===== NỘI DUNG CHÍNH ===== -->
 <div class="bg-gray-50 min-h-screen py-8">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <!-- ===== TAB ĐIỀU HƯỚNG ===== -->
         <div class="flex gap-4 mb-6 border-b border-gray-200">
             <button type="button" 
                     onclick="switchTab('interactions')" 
@@ -38,19 +37,24 @@
             </button>
         </div>
 
-        <!-- ===== TAB 1: TƯƠNG TÁC THUỐC - THUỐC ===== -->
         <div id="interactions-tab" class="tab-content block">
             <div class="bg-white rounded-2xl shadow-lg p-6 mb-6">
-                <!-- Tiêu đề tab -->
-                <h2 class="text-2xl font-bold text-gray-800 mb-6 flex items-center gap-2">
-                    <i class="fas fa-flask-vial text-blue-600"></i>
-                    Tương Tác Giữa Hai Loại Thuốc
-                </h2>
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+                    <h2 class="text-2xl font-bold text-gray-800 flex items-center gap-2">
+                        <i class="fas fa-flask-vial text-blue-600"></i>
+                        Tương Tác Giữa Hai Loại Thuốc
+                    </h2>
+                    @if (isAdmin)
+                    {
+                        <a href="@Url.Action("CreateInteraction", "Interaction")" 
+                           class="bg-green-600 hover:bg-green-700 text-white font-semibold py-2.5 px-5 rounded-lg transition-colors flex items-center gap-2 shadow-md">
+                            <i class="fas fa-plus"></i> Thêm Tương Tác Mới
+                        </a>
+                    }
+                </div>
 
-                <!-- ===== BỘ ĐIỀU KHIỂN TÌM KIẾM VÀ LỌC ===== -->
                 <form id="interactions-filter-form" onsubmit="handleInteractionSearch(event)" class="mb-8 p-6 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl border border-blue-200">
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                        <!-- Ô tìm kiếm -->
                         <div class="md:col-span-2">
                             <label class="block text-sm font-semibold text-gray-700 mb-2">
                                 <i class="fas fa-search mr-2 text-blue-600"></i>Tìm kiếm (Tên thuốc/Hoạt chất)
@@ -64,7 +68,6 @@
                                    />
                         </div>
 
-                        <!-- Bộ lọc mức độ -->
                         <div>
                             <label class="block text-sm font-semibold text-gray-700 mb-2">
                                 <i class="fas fa-sliders-h mr-2 text-blue-600"></i>Mức Độ Nghiêm Trọng
@@ -82,7 +85,6 @@
                         </div>
                     </div>
 
-                    <!-- Nút bấm -->
                     <div class="flex gap-3">
                         <button type="submit" 
                                 class="flex-1 md:flex-none bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-8 rounded-lg transition-colors flex items-center justify-center gap-2 shadow-md">
@@ -96,7 +98,6 @@
                     </div>
                 </form>
 
-                <!-- ===== THỐNG KÊ KẾT QUẢ ===== -->
                 <div class="mb-6 p-4 bg-blue-100 border-l-4 border-blue-600 rounded">
                     <p class="text-blue-900 font-semibold">
                         <i class="fas fa-info-circle mr-2"></i>Tổng cộng: <span id="interaction-total-records">@Model.InteractionTotalRecords</span> bản ghi
@@ -104,7 +105,6 @@
                     </p>
                 </div>
 
-                <!-- ===== BẢNG DỮ LIỆU TƯƠNG TÁC THUỐC ===== -->
                 <div id="interactions-table-container" class="overflow-x-auto">
                     @if (Model.DrugInteractions.Any())
                     {
@@ -118,6 +118,10 @@
                                     <th class="px-6 py-4 text-left font-semibold">Mô Tả</th>
                                     <th class="px-6 py-4 text-left font-semibold">Khuyến Nghị</th>
                                     <th class="px-6 py-4 text-center font-semibold">Ngày Tạo</th>
+                                    @if (isAdmin)
+                                    {
+                                        <th class="px-6 py-4 text-center font-semibold">Hành Động</th>
+                                    }
                                 </tr>
                             </thead>
                             <tbody>
@@ -153,6 +157,24 @@
                                         <td class="px-6 py-4 text-center text-gray-600 text-sm">
                                             @interaction.CreatedAt.ToString("dd/MM/yyyy")
                                         </td>
+                                        @if (isAdmin)
+                                        {
+                                            <td class="px-6 py-4 text-center whitespace-nowrap">
+                                                <div class="flex items-center justify-center gap-2">
+                                                    <a href="@Url.Action("EditInteraction", "Interaction", new { id = interaction.Id })" 
+                                                       class="text-blue-600 hover:text-blue-900 bg-blue-50 hover:bg-blue-100 p-2 rounded-lg transition-colors" 
+                                                       title="Sửa">
+                                                        <i class="fas fa-edit"></i>
+                                                    </a>
+                                                    <button type="button" 
+                                                            onclick="deleteInteraction('@interaction.Id', '@interaction.SourceDrugName', '@interaction.TargetDrugName')" 
+                                                            class="text-red-600 hover:text-red-900 bg-red-50 hover:bg-red-100 p-2 rounded-lg transition-colors" 
+                                                            title="Xóa">
+                                                        <i class="fas fa-trash-alt"></i>
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        }
                                     </tr>
                                 }
                             </tbody>
@@ -168,7 +190,6 @@
                     }
                 </div>
 
-                <!-- ===== PHÂN TRANG ===== -->
                 @if (Model.InteractionTotalPages > 1)
                 {
                     <div class="mt-8 flex justify-center gap-2 flex-wrap">
@@ -192,19 +213,24 @@
             </div>
         </div>
 
-        <!-- ===== TAB 2: CHỐNG CHỈ ĐỊNH THUỐC - BỆNH ===== -->
         <div id="contraindications-tab" class="tab-content hidden">
             <div class="bg-white rounded-2xl shadow-lg p-6 mb-6">
-                <!-- Tiêu đề tab -->
-                <h2 class="text-2xl font-bold text-gray-800 mb-6 flex items-center gap-2">
-                    <i class="fas fa-exclamation-circle text-red-600"></i>
-                    Chống Chỉ Định Giữa Thuốc và Bệnh
-                </h2>
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+                    <h2 class="text-2xl font-bold text-gray-800 flex items-center gap-2">
+                        <i class="fas fa-exclamation-circle text-red-600"></i>
+                        Chống Chỉ Định Giữa Thuốc và Bệnh
+                    </h2>
+                    @if (isAdmin)
+                    {
+                        <a href="@Url.Action("CreateContraindication", "Interaction")" 
+                           class="bg-green-600 hover:bg-green-700 text-white font-semibold py-2.5 px-5 rounded-lg transition-colors flex items-center gap-2 shadow-md">
+                            <i class="fas fa-plus"></i> Thêm Chống Chỉ Định Mới
+                        </a>
+                    }
+                </div>
 
-                <!-- ===== BỘ ĐIỀU KHIỂN TÌM KIẾM VÀ LỌC ===== -->
                 <form id="contraindications-filter-form" onsubmit="handleContraindicationSearch(event)" class="mb-8 p-6 bg-gradient-to-br from-red-50 to-pink-50 rounded-xl border border-red-200">
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                        <!-- Ô tìm kiếm -->
                         <div class="md:col-span-2">
                             <label class="block text-sm font-semibold text-gray-700 mb-2">
                                 <i class="fas fa-search mr-2 text-red-600"></i>Tìm kiếm (Thuốc/Bệnh)
@@ -218,7 +244,6 @@
                                    />
                         </div>
 
-                        <!-- Bộ lọc mức độ -->
                         <div>
                             <label class="block text-sm font-semibold text-gray-700 mb-2">
                                 <i class="fas fa-sliders-h mr-2 text-red-600"></i>Mức Độ Rủi Ro
@@ -236,7 +261,6 @@
                         </div>
                     </div>
 
-                    <!-- Nút bấm -->
                     <div class="flex gap-3">
                         <button type="submit" 
                                 class="flex-1 md:flex-none bg-red-600 hover:bg-red-700 text-white font-semibold py-3 px-8 rounded-lg transition-colors flex items-center justify-center gap-2 shadow-md">
@@ -250,7 +274,6 @@
                     </div>
                 </form>
 
-                <!-- ===== THỐNG KÊ KẾT QUẢ ===== -->
                 <div class="mb-6 p-4 bg-red-100 border-l-4 border-red-600 rounded">
                     <p class="text-red-900 font-semibold">
                         <i class="fas fa-info-circle mr-2"></i>Tổng cộng: <span id="contraindication-total-records">@Model.ContraindicationTotalRecords</span> bản ghi
@@ -258,7 +281,6 @@
                     </p>
                 </div>
 
-                <!-- ===== BẢNG DỮ LIỆU CHỐNG CHỈ ĐỊNH ===== -->
                 <div id="contraindications-table-container" class="overflow-x-auto">
                     @if (Model.DrugDiseaseContraindications.Any())
                     {
@@ -272,6 +294,10 @@
                                     <th class="px-6 py-4 text-left font-semibold">Cảnh Báo</th>
                                     <th class="px-6 py-4 text-left font-semibold">Rủi Ro</th>
                                     <th class="px-6 py-4 text-center font-semibold">Ngày Tạo</th>
+                                    @if (isAdmin)
+                                    {
+                                        <th class="px-6 py-4 text-center font-semibold">Hành Động</th>
+                                    }
                                 </tr>
                             </thead>
                             <tbody>
@@ -307,6 +333,24 @@
                                         <td class="px-6 py-4 text-center text-gray-600 text-sm">
                                             @contraindication.CreatedAt.ToString("dd/MM/yyyy")
                                         </td>
+                                        @if (isAdmin)
+                                        {
+                                            <td class="px-6 py-4 text-center whitespace-nowrap">
+                                                <div class="flex items-center justify-center gap-2">
+                                                    <a href="@Url.Action("EditContraindication", "Interaction", new { id = contraindication.Id })" 
+                                                       class="text-blue-600 hover:text-blue-900 bg-blue-50 hover:bg-blue-100 p-2 rounded-lg transition-colors" 
+                                                       title="Sửa">
+                                                        <i class="fas fa-edit"></i>
+                                                    </a>
+                                                    <button type="button" 
+                                                            onclick="deleteContraindication('@contraindication.Id', '@contraindication.DrugName', '@contraindication.DiseaseName')" 
+                                                            class="text-red-600 hover:text-red-900 bg-red-50 hover:bg-red-100 p-2 rounded-lg transition-colors" 
+                                                            title="Xóa">
+                                                        <i class="fas fa-trash-alt"></i>
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        }
                                     </tr>
                                 }
                             </tbody>
@@ -322,7 +366,6 @@
                     }
                 </div>
 
-                <!-- ===== PHÂN TRANG ===== -->
                 @if (Model.ContraindicationTotalPages > 1)
                 {
                     <div class="mt-8 flex justify-center gap-2 flex-wrap">
@@ -348,23 +391,19 @@
     </div>
 </div>
 
-<!-- ===== SCRIPT XỬ LÝ TƯƠNG TÁC ===== -->
 <script>
     /**
      * Hàm chuyển đổi giữa các tab
-     * param {string} tabName - Tên tab cần hiển thị ('interactions' hoặc 'contraindications')
      */
     function switchTab(tabName) {
-        // Ẩn tất cả tab
         document.querySelectorAll('.tab-content').forEach(tab => {
             tab.classList.add('hidden');
         });
         document.querySelectorAll('.tab-btn').forEach(btn => {
-            btn.classList.remove('active', 'border-b-2', 'border-blue-700', 'text-blue-700');
+            btn.classList.remove('active', 'border-b-2', 'border-blue-700', 'text-blue-700', 'border-red-600', 'text-red-700');
             btn.classList.add('border-transparent', 'text-gray-600');
         });
 
-        // Hiển thị tab được chọn
         if (tabName === 'interactions') {
             document.getElementById('interactions-tab').classList.remove('hidden');
             document.getElementById('tab-interactions').classList.add('active', 'border-b-2', 'border-blue-700', 'text-blue-700');
@@ -377,22 +416,16 @@
     }
 
     /**
-     * Hàm xử lý tìm kiếm và lọc tương tác thuốc
-     * param {Event} event - Event từ form submit
+     * Hàm tìm kiếm tương tác thuốc
      */
     function handleInteractionSearch(event) {
         event.preventDefault();
-
-        // Lấy giá trị từ form
         const searchTerm = document.getElementById('interaction-search-term').value.trim();
         const severityLevel = document.getElementById('interaction-severity-level').value;
 
-        // Gửi request POST đến server
         fetch('@Url.Action("SearchAndFilterInteractions", "Interaction")', {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded',
-            },
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
             body: new URLSearchParams({
                 searchTerm: searchTerm || '',
                 severityLevel: severityLevel || '',
@@ -400,33 +433,21 @@
             })
         })
         .then(response => response.text())
-        .then(html => {
-            // Cập nhật bảng dữ liệu
-            document.getElementById('interactions-table-container').innerHTML = html;
-        })
-        .catch(error => {
-            console.error('Lỗi:', error);
-            alert('Có lỗi xảy ra khi tìm kiếm. Vui lòng thử lại!');
-        });
+        .then(html => { document.getElementById('interactions-table-container').innerHTML = html; })
+        .catch(error => { console.error('Lỗi:', error); });
     }
 
     /**
-     * Hàm xử lý tìm kiếm và lọc chống chỉ định
-     * param {Event} event - Event từ form submit
+     * Hàm tìm kiếm chống chỉ định
      */
     function handleContraindicationSearch(event) {
         event.preventDefault();
-
-        // Lấy giá trị từ form
         const searchTerm = document.getElementById('contraindication-search-term').value.trim();
         const riskLevel = document.getElementById('contraindication-risk-level').value;
 
-        // Gửi request POST đến server
         fetch('@Url.Action("SearchAndFilterContraindications", "Interaction")', {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded',
-            },
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
             body: new URLSearchParams({
                 searchTerm: searchTerm || '',
                 riskLevel: riskLevel || '',
@@ -434,19 +455,12 @@
             })
         })
         .then(response => response.text())
-        .then(html => {
-            // Cập nhật bảng dữ liệu
-            document.getElementById('contraindications-table-container').innerHTML = html;
-        })
-        .catch(error => {
-            console.error('Lỗi:', error);
-            alert('Có lỗi xảy ra khi tìm kiếm. Vui lòng thử lại!');
-        });
+        .then(html => { document.getElementById('contraindications-table-container').innerHTML = html; })
+        .catch(error => { console.error('Lỗi:', error); });
     }
 
     /**
-     * Hàm chuyển đến trang khác cho tương tác thuốc
-     * param {number} pageNumber - Số trang
+     * Hàm chuyển trang tương tác thuốc
      */
     function goToInteractionPage(pageNumber) {
         const searchTerm = document.getElementById('interaction-search-term').value.trim();
@@ -454,9 +468,7 @@
 
         fetch('@Url.Action("SearchAndFilterInteractions", "Interaction")', {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded',
-            },
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
             body: new URLSearchParams({
                 searchTerm: searchTerm || '',
                 severityLevel: severityLevel || '',
@@ -472,8 +484,7 @@
     }
 
     /**
-     * Hàm chuyển đến trang khác cho chống chỉ định
-     * param {number} pageNumber - Số trang
+     * Hàm chuyển trang chống chỉ định
      */
     function goToContraindicationPage(pageNumber) {
         const searchTerm = document.getElementById('contraindication-search-term').value.trim();
@@ -481,9 +492,7 @@
 
         fetch('@Url.Action("SearchAndFilterContraindications", "Interaction")', {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded',
-            },
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
             body: new URLSearchParams({
                 searchTerm: searchTerm || '',
                 riskLevel: riskLevel || '',
@@ -499,7 +508,7 @@
     }
 
     /**
-     * Hàm đặt lại bộ lọc tương tác thuốc
+     * Hàm ĐẶT LẠI bộ lọc
      */
     function resetInteractionFilters() {
         document.getElementById('interaction-search-term').value = '';
@@ -507,12 +516,57 @@
         document.getElementById('interactions-filter-form').dispatchEvent(new Event('submit'));
     }
 
-    /**
-     * Hàm đặt lại bộ lọc chống chỉ định
-     */
     function resetContraindicationFilters() {
         document.getElementById('contraindication-search-term').value = '';
         document.getElementById('contraindication-risk-level').value = '';
         document.getElementById('contraindications-filter-form').dispatchEvent(new Event('submit'));
+    }
+
+    /* =======================================================
+       HÀM XỬ LÝ XOÁ AJAX DÀNH CHO ADMIN
+    ======================================================= */
+    @if (isAdmin)
+    {
+        <text>
+        function deleteInteraction(id, sourceDrug, targetDrug) {
+            if (confirm(`Bạn có chắc chắn muốn xoá tương tác giữa "${sourceDrug}" và "${targetDrug}" không?`)) {
+                fetch(`@Url.Action("DeleteInteraction", "Interaction")/${id}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('Xoá tương tác thuốc thành công!');
+                        // Reload lại danh sách hiện tại
+                        document.getElementById('interactions-filter-form').dispatchEvent(new Event('submit'));
+                    } else {
+                        alert(data.message || 'Xoá thất bại!');
+                    }
+                })
+                .catch(error => console.error('Lỗi khi xoá:', error));
+            }
+        }
+
+        function deleteContraindication(id, drug, disease) {
+            if (confirm(`Bạn có chắc chắn muốn xoá chống chỉ định giữa thuốc "${drug}" và bệnh "${disease}" không?`)) {
+                fetch(`@Url.Action("DeleteContraindication", "Interaction")/${id}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('Xoá chống chỉ định thành công!');
+                        // Reload lại danh sách hiện tại
+                        document.getElementById('contraindications-filter-form').dispatchEvent(new Event('submit'));
+                    } else {
+                        alert(data.message || 'Xoá thất bại!');
+                    }
+                })
+                .catch(error => console.error('Lỗi khi xoá:', error));
+            }
+        }
+        </text>
     }
 </script>

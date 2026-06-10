@@ -17,6 +17,7 @@ namespace PharmaCheck.Models
         public string Recommendation { get; set; } = string.Empty; // khuyến nghị cụ thể cho bệnh nhân (ví dụ: "Nếu bạn đang sử dụng thuốc A, hãy thảo luận với bác sĩ về việc thay đổi liều lượng hoặc lựa chọn thuốc thay thế để giảm nguy cơ tương tác")
 
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow; // thời điểm tạo bản ghi
+        public DateTime? UpdatedAt { get; set; } // thời điểm cập nhật bản ghi (nếu có)
 
         // Navigation
         public Drug? SourceDrug { get; set; } // tham chiếu đến thuốc nguồn (thuốc chính)

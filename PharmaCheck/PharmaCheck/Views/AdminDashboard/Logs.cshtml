@@ -1,0 +1,121 @@
+@{
+    ViewData["Title"] = "Nhật Ký Hoạt Động Hệ Thống | PharmaCheck";
+}
+
+<div class="min-h-screen bg-slate-50 py-8">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        
+        <div class="mb-6">
+            <nav class="flex text-sm text-slate-400 mb-2 gap-2">
+                <a href="/AdminDashboard/Index" class="hover:text-medical-600 transition">Dashboard</a>
+                <span>/</span>
+                <span class="text-slate-600 font-medium">Nhật ký hoạt động</span>
+            </nav>
+            <h1 class="text-3xl font-extrabold text-slate-900 tracking-tight flex items-center gap-3">
+                <i class="fas fa-history text-medical-600"></i>
+                Toàn Bộ Nhật Ký Hệ Thống
+            </h1>
+            <p class="text-slate-500 mt-1">Dữ liệu log thời gian thực ghi lại mọi biến động cấu trúc dữ liệu của PharmaCheck.</p>
+        </div>
+
+        <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-100 mb-6 flex flex-col sm:flex-row gap-4 items-center justify-between">
+            <form method="get" action="/AdminDashboard/Logs" class="w-full sm:w-96 relative flex items-center">
+                <i class="fas fa-search absolute left-3.5 text-slate-400 text-sm"></i>
+                <input type="text" name="search" value="@ViewBag.SearchKeyword" placeholder="Tìm theo nội dung log hoặc hành động..." 
+                       class="w-full pl-10 pr-4 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:border-medical-500 focus:bg-white transition" />
+                @if(!string.IsNullOrEmpty(ViewBag.SearchKeyword))
+                {
+                    <a href="/AdminDashboard/Logs" class="absolute right-3 text-slate-400 hover:text-slate-600 text-xs bg-slate-200/60 px-1.5 py-0.5 rounded">Xóa lọc</a>
+                }
+            </form>
+            <div class="text-sm text-slate-500 font-medium shrink-0">
+                Hiển thị tối đa <span class="text-slate-800 font-bold">20</span> dòng mỗi trang
+            </div>
+        </div>
+
+        <div class="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden">
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="bg-slate-50 border-b border-slate-100 text-xs font-bold uppercase tracking-wider text-slate-400">
+                            <th class="py-3.5 px-6 w-20 text-center">ID</th>
+                            <th class="py-3.5 px-6 w-32">Hành Động</th>
+                            <th class="py-3.5 px-6">Nội Dung Chi Tiết Nhật Ký</th>
+                            <th class="py-3.5 px-6 w-48">Thời Gian Hệ Thống</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100 text-sm text-slate-600">
+                        @if (ViewBag.AllLogs == null || !((IEnumerable<dynamic>)ViewBag.AllLogs).Any())
+                        {
+                            <tr>
+                                <td colspan="4" class="text-center py-12 text-slate-400">
+                                    <i class="fas fa-database block text-3xl mb-3 text-slate-300"></i>
+                                    Không tìm thấy dữ liệu lịch sử nhật ký nào phù hợp.
+                                </td>
+                            </tr>
+                        }
+                        else
+                        {
+                            @foreach (var log in ViewBag.AllLogs)
+                            {
+                                <tr class="hover:bg-slate-50/50 transition-colors">
+                                    <td class="py-4 px-6 text-center text-slate-400 font-mono text-xs">#@log.Id</td>
+                                    <td class="py-4 px-6">
+                                        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-bold border @log.Color uppercase tracking-wide shadow-sm">
+                                            <i class="fas @log.Icon"></i> @log.Action
+                                        </span>
+                                    </td>
+                                    <td class="py-4 px-6 font-medium text-slate-700 break-words max-w-xl">
+                                        @log.Message
+                                    </td>
+                                    <td class="py-4 px-6 text-slate-400 font-medium text-xs">
+                                        <i class="far fa-clock mr-1"></i> @log.Time
+                                    </td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
+
+            @if (ViewBag.TotalPages > 1)
+            {
+                <div class="px-6 py-4 bg-slate-50/50 border-t border-slate-100 flex items-center justify-between">
+                    <div class="text-sm text-slate-500">
+                        Trang <span class="font-semibold text-slate-800">@ViewBag.CurrentPage</span> / @ViewBag.TotalPages
+                    </div>
+                    <div class="flex items-center gap-2">
+                        @if (ViewBag.CurrentPage > 1)
+                        {
+                            <a href="/AdminDashboard/Logs?search=@ViewBag.SearchKeyword&page=@(ViewBag.CurrentPage - 1)" 
+                               class="px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-sm font-semibold text-slate-600 hover:bg-slate-50 transition shadow-sm">
+                                <i class="fas fa-chevron-left mr-1 text-xs"></i> Trước
+                            </a>
+                        }
+                        else
+                        {
+                            <span class="px-3 py-1.5 bg-slate-100 border border-slate-200 rounded-lg text-sm font-semibold text-slate-400 cursor-not-allowed">
+                                <i class="fas fa-chevron-left mr-1 text-xs"></i> Trước
+                            </span>
+                        }
+
+                        @if (ViewBag.CurrentPage < ViewBag.TotalPages)
+                        {
+                            <a href="/AdminDashboard/Logs?search=@ViewBag.SearchKeyword&page=@(ViewBag.CurrentPage + 1)" 
+                               class="px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-sm font-semibold text-slate-600 hover:bg-slate-50 transition shadow-sm">
+                                Tiếp <i class="fas fa-chevron-right ml-1 text-xs"></i>
+                            </a>
+                        }
+                        else
+                        {
+                            <span class="px-3 py-1.5 bg-slate-100 border border-slate-200 rounded-lg text-sm font-semibold text-slate-400 cursor-not-allowed">
+                                Tiếp <i class="fas fa-chevron-right ml-1 text-xs"></i>
+                            </span>
+                        }
+                    </div>
+                </div>
+            }
+        </div>
+
+    </div>
+</div>

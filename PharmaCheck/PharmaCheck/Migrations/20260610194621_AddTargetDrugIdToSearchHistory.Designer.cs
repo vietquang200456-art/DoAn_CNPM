@@ -12,8 +12,8 @@ using PharmaCheck.Data;
 namespace PharmaCheck.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20260520181322_InitialCreate")]
-    partial class InitialCreate
+    [Migration("20260610194621_AddTargetDrugIdToSearchHistory")]
+    partial class AddTargetDrugIdToSearchHistory
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -24,6 +24,33 @@ namespace PharmaCheck.Migrations
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
+
+            modelBuilder.Entity("PharmaCheck.Models.AuditLog", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("ActionType")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Message")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("PerformedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("AuditLogs");
+                });
 
             modelBuilder.Entity("PharmaCheck.Models.Disease", b =>
                 {
@@ -152,6 +179,9 @@ namespace PharmaCheck.Migrations
                     b.Property<int>("RiskLevel")
                         .HasColumnType("int");
 
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
                     b.Property<string>("Warning")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -193,6 +223,9 @@ namespace PharmaCheck.Migrations
                     b.Property<int>("TargetDrugId")
                         .HasColumnType("int");
 
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
                     b.HasKey("Id");
 
                     b.HasIndex("SourceDrugId");
@@ -213,6 +246,9 @@ namespace PharmaCheck.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
+                    b.Property<int?>("DiseaseId")
+                        .HasColumnType("int");
+
                     b.Property<int?>("DrugId")
                         .HasColumnType("int");
 
@@ -224,14 +260,26 @@ namespace PharmaCheck.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<int?>("TargetDrugId")
+                        .HasColumnType("int");
+
                     b.Property<int?>("UserId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("UserId1")
                         .HasColumnType("int");
 
                     b.HasKey("Id");
 
+                    b.HasIndex("DiseaseId");
+
                     b.HasIndex("DrugId");
 
+                    b.HasIndex("TargetDrugId");
+
                     b.HasIndex("UserId");
+
+                    b.HasIndex("UserId1");
 
                     b.ToTable("SearchHistories");
                 });
@@ -321,15 +369,35 @@ namespace PharmaCheck.Migrations
 
             modelBuilder.Entity("PharmaCheck.Models.SearchHistory", b =>
                 {
+                    b.HasOne("PharmaCheck.Models.Disease", "Disease")
+                        .WithMany()
+                        .HasForeignKey("DiseaseId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("PharmaCheck.Models.Drug", "Drug")
                         .WithMany("SearchHistories")
-                        .HasForeignKey("DrugId");
+                        .HasForeignKey("DrugId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("PharmaCheck.Models.Drug", "TargetDrug")
+                        .WithMany()
+                        .HasForeignKey("TargetDrugId")
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("PharmaCheck.Models.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade);
+
+                    b.HasOne("PharmaCheck.Models.User", null)
                         .WithMany("SearchHistories")
-                        .HasForeignKey("UserId");
+                        .HasForeignKey("UserId1");
+
+                    b.Navigation("Disease");
 
                     b.Navigation("Drug");
+
+                    b.Navigation("TargetDrug");
 
                     b.Navigation("User");
                 });

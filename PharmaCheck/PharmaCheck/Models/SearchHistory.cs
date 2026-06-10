@@ -1,24 +1,57 @@
 using System;
 
-namespace PharmaCheck.Models
+namespace PharmaCheck.Models;
+
+public class SearchHistory
 {
-    public class SearchHistory
-    {
-        public int Id { get; set; } // mã lịch sử tìm kiếm
+    public int Id { get; set; } // Mã lịch sử tìm kiếm
 
-        public int? UserId { get; set; } // mã người dùng thực hiện tìm kiếm (có thể null nếu người dùng không đăng nhập)
+    public int? UserId { get; set; } // Người thực hiện (Null nếu là khách vãng lai)
 
-        public int? DrugId { get; set; } // mã thuốc được tìm kiếm (có thể null nếu tìm kiếm không liên quan đến thuốc cụ thể)
+    /// <summary>
+    /// Loại tra cứu: "Drug", "Disease", "Drug-Drug", "Drug-Disease"
+    /// Nên dùng một bộ Constant hoặc Enum để đồng bộ (Ví dụ: SearchTypeConstants.DrugDrug)
+    /// </summary>
+    public string SearchType { get; set; } = string.Empty; 
 
-        public string SearchType { get; set; } = string.Empty; // loại tìm kiếm (ví dụ: "Drug", "Disease", "Interaction", "Contraindication")
+    /// <summary>
+    /// Chuỗi văn bản thô mà người dùng gõ trên thanh tìm kiếm
+    /// </summary>
+    public string SearchQuery { get; set; } = string.Empty; 
 
-        public string SearchQuery { get; set; } = string.Empty; // nội dung tìm kiếm (ví dụ: tên thuốc, tên bệnh, từ khóa liên quan đến tương tác hoặc chống chỉ định)
+    // =============================================================
+    // CÁC TRƯỜNG ĐỊNH DANH ĐỂ THỐNG KÊ (BIẾN LIÊN KẾT)
+    // =============================================================
 
-        public DateTime CreatedAt { get; set; } = DateTime.UtcNow; // thời điểm thực hiện tìm kiếm
+    public int? DrugId { get; set; } // Mã thuốc thứ nhất (Hoặc thuốc đơn lẻ)
 
-        // Navigation
-        public User? User { get; set; } // tham chiếu đến người dùng thực hiện tìm kiếm (nếu có)
+    /// <summary>
+    /// BỔ SUNG: Mã thuốc thứ hai (Dành cho tra cứu tương tác Thuốc - Thuốc)
+    /// </summary>
+    public int? TargetDrugId { get; set; } 
 
-        public Drug? Drug { get; set; } // tham chiếu đến thuốc được tìm kiếm (nếu có)
-    }
+    /// <summary>
+    /// BỔ SUNG: Mã bệnh lý (Dành cho tra cứu tương tác Thuốc - Bệnh / Chống chỉ định)
+    /// </summary>
+    public int? DiseaseId { get; set; } 
+
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow; // Thời điểm tìm kiếm
+
+    // =============================================================
+    // NAVIGATION PROPERTIES (LIÊN KẾT CƠ SỞ DỮ LIỆU)
+    // =============================================================
+    
+    public User? User { get; set; }
+    
+    public Drug? Drug { get; set; }
+
+    /// <summary>
+    /// Tham chiếu đến thuốc thứ hai trong cặp tương tác Thuốc - Thuốc
+    /// </summary>
+    public Drug? TargetDrug { get; set; }
+
+    /// <summary>
+    /// Tham chiếu đến bệnh trong cặp tương tác Thuốc - Bệnh
+    /// </summary>
+    public Disease? Disease { get; set; }
 }

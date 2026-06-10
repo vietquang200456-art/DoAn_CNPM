@@ -12,16 +12,15 @@
             </button>
         </div>
 
-        <form id="drugForm" class="p-6 space-y-4">
+        <form id="drugForm" class="p-6 space-y-4" onsubmit="event.preventDefault();">
             <input type="hidden" id="drugId" value="0">
 
             <div>
                 <label class="block text-sm font-semibold text-gray-900 mb-2">
                     <i class="fas fa-pills text-medical-700 mr-2"></i>Tên Thuốc <span class="text-red-600">*</span>
                 </label>
-                <input type="text" id="drugName" placeholder="VD: Amoxicillin 500mg"
-                       class="w-full px-4 py-3 border-2 border-slate-300 rounded-lg focus:outline-none focus:border-medical-600 transition-colors"
-                       required>
+                <input type="text" id="drugName" placeholder="VD: Paracetamol 500mg"
+                       class="w-full px-4 py-3 border-2 border-slate-300 rounded-lg focus:outline-none focus:border-medical-600 transition-colors" required>
             </div>
 
             <div class="grid md:grid-cols-2 gap-4">
@@ -29,9 +28,8 @@
                     <label class="block text-sm font-semibold text-gray-900 mb-2">
                         <i class="fas fa-flask text-medical-700 mr-2"></i>Hoạt Chất <span class="text-red-600">*</span>
                     </label>
-                    <input type="text" id="activeIngredient" placeholder="VD: Amoxicillin Trihydrate"
-                           class="w-full px-4 py-3 border-2 border-slate-300 rounded-lg focus:outline-none focus:border-medical-600 transition-colors"
-                           required>
+                    <input type="text" id="activeIngredient" placeholder="VD: Paracetamol"
+                           class="w-full px-4 py-3 border-2 border-slate-300 rounded-lg focus:outline-none focus:border-medical-600 transition-colors" required>
                 </div>
 
                 <div>
@@ -39,8 +37,7 @@
                         <i class="fas fa-weight text-medical-700 mr-2"></i>Liều Lượng <span class="text-red-600">*</span>
                     </label>
                     <input type="text" id="dosage" placeholder="VD: 500mg"
-                           class="w-full px-4 py-3 border-2 border-slate-300 rounded-lg focus:outline-none focus:border-medical-600 transition-colors"
-                           required>
+                           class="w-full px-4 py-3 border-2 border-slate-300 rounded-lg focus:outline-none focus:border-medical-600 transition-colors" required>
                 </div>
             </div>
 
@@ -49,18 +46,16 @@
                     <label class="block text-sm font-semibold text-gray-900 mb-2">
                         <i class="fas fa-building text-medical-700 mr-2"></i>Nhà Sản Xuất <span class="text-red-600">*</span>
                     </label>
-                    <input type="text" id="manufacturer" placeholder="VD: Công ty Dược phẩm ABC"
-                           class="w-full px-4 py-3 border-2 border-slate-300 rounded-lg focus:outline-none focus:border-medical-600 transition-colors"
-                           required>
+                    <input type="text" id="manufacturer" placeholder="VD: Dược Hậu Giang"
+                           class="w-full px-4 py-3 border-2 border-slate-300 rounded-lg focus:outline-none focus:border-medical-600 transition-colors" required>
                 </div>
 
                 <div>
                     <label class="block text-sm font-semibold text-gray-900 mb-2">
                         <i class="fas fa-heartbeat text-medical-700 mr-2"></i>Công Dụng <span class="text-red-600">*</span>
                     </label>
-                    <input type="text" id="function" placeholder="VD: Kháng sinh điều trị nhiễm khuẩn"
-                           class="w-full px-4 py-3 border-2 border-slate-300 rounded-lg focus:outline-none focus:border-medical-600 transition-colors"
-                           required>
+                    <input type="text" id="drugUse" name="drugUse" placeholder="VD: Giảm đau, hạ sốt"
+                           class="w-full px-4 py-3 border-2 border-slate-300 rounded-lg focus:outline-none focus:border-medical-600 transition-colors" required>
                 </div>
             </div>
 
@@ -68,27 +63,24 @@
                 <label class="block text-sm font-semibold text-gray-900 mb-2">
                     <i class="fas fa-exclamation text-medical-700 mr-2"></i>Tác Dụng Phụ <span class="text-red-600">*</span>
                 </label>
-                <textarea rows="2" id="sideEffects" placeholder="Nhập các tác dụng phụ có thể gặp phải..."
-                          class="w-full px-4 py-3 border-2 border-slate-300 rounded-lg focus:outline-none focus:border-medical-600 transition-colors resize-none"
-                          required></textarea>
+                <textarea rows="2" id="sideEffects" placeholder="Nhập các tác dụng phụ..."
+                          class="w-full px-4 py-3 border-2 border-slate-300 rounded-lg focus:outline-none focus:border-medical-600 transition-colors resize-none" required></textarea>
             </div>
 
             <div>
                 <label class="block text-sm font-semibold text-gray-900 mb-2">
                     <i class="fas fa-ban text-medical-700 mr-2"></i>Chống Chỉ Định <span class="text-red-600">*</span>
                 </label>
-                <textarea rows="2" id="contraindications" placeholder="Nhập các trường hợp chống chỉ định dùng thuốc..."
-                          class="w-full px-4 py-3 border-2 border-slate-300 rounded-lg focus:outline-none focus:border-medical-600 transition-colors resize-none"
-                          required></textarea>
+                <textarea rows="2" id="contraindications" placeholder="Nhập các trường hợp chống chỉ định..."
+                          class="w-full px-4 py-3 border-2 border-slate-300 rounded-lg focus:outline-none focus:border-medical-600 transition-colors resize-none" required></textarea>
             </div>
 
             <div>
                 <label class="block text-sm font-semibold text-gray-900 mb-2">
                     <i class="fas fa-align-left text-medical-700 mr-2"></i>Mô Tả / Ghi Chú <span class="text-red-600">*</span>
                 </label>
-                <textarea rows="3" id="description" placeholder="Nhập mô tả chi tiết hoặc hướng dẫn bảo quản, lưu ý..."
-                          class="w-full px-4 py-3 border-2 border-slate-300 rounded-lg focus:outline-none focus:border-medical-600 transition-colors resize-none"
-                          required></textarea>
+                <textarea rows="3" id="description" placeholder="Nhập mô tả chi tiết hoặc hướng dẫn bảo quản..."
+                          class="w-full px-4 py-3 border-2 border-slate-300 rounded-lg focus:outline-none focus:border-medical-600 transition-colors resize-none" required></textarea>
             </div>
 
             <div>
@@ -107,7 +99,7 @@
                 </div>
             </div>
 
-            <div id="formMessage" class="hidden px-4 py-3 rounded-lg text-sm font-medium"></div>
+            <div id="formMessage" class="hidden px-4 py-3 rounded-lg text-sm font-medium border"></div>
         </form>
 
         <div class="sticky bottom-0 bg-slate-50 border-t border-slate-200 px-6 py-4 flex gap-3 justify-end z-10">

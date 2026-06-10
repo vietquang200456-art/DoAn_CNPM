@@ -2,7 +2,12 @@
 
 @{
     ViewData["Title"] = "Quản Lý Thuốc | PharmaCheck";
+    // Kiểm tra quyền Admin
+    bool isAdmin = User.IsInRole("Admin");
 }
+
+@* Bước sửa lỗi 1: Thêm Antiforgery Token vào đầu trang để bảo vệ các request AJAX POST *@
+@Html.AntiForgeryToken()
 
 <div class="bg-gradient-to-r from-medical-700 to-medical-600 text-white py-8">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -12,12 +17,18 @@
                     <i class="fas fa-pills"></i>
                     Quản Lý Thuốc
                 </h1>
-                <p class="text-blue-100 mt-2">Tạo, sửa, xóa và quản lý thông tin thuốc trong cơ sở dữ liệu</p>
+                <p class="text-blue-100 mt-2">
+                    @(isAdmin ? "Tạo, sửa, xóa và quản lý thông tin thuốc trong cơ sở dữ liệu" : "Tra cứu và xem thông tin chi tiết các loại thuốc trong hệ thống")
+                </p>
             </div>
-            <button onclick="openDrugModal()"
-                    class="bg-white text-medical-700 px-6 py-3 rounded-lg font-semibold hover:bg-blue-50 transition-colors flex items-center gap-2">
-                <i class="fas fa-plus"></i> Thêm Thuốc Mới
-            </button>
+            
+            @if (isAdmin)
+            {
+                <button onclick="openDrugModal()"
+                        class="bg-white text-medical-700 px-6 py-3 rounded-lg font-semibold hover:bg-blue-50 transition-colors flex items-center gap-2 cursor-pointer shadow-md">
+                    <i class="fas fa-plus"></i> Thêm Thuốc Mới
+                </button>
+            }
         </div>
     </div>
 </div>
@@ -26,72 +37,75 @@
     <partial name="~/Views/Drug/listdrug.cshtml" />
 </section>
 
-<section id="features" class="py-12 bg-white border-t border-slate-200">
-    <partial name="~/Views/Drug/adddrug.cshtml" />
-</section>
+@if (isAdmin)
+{
+    <section id="features" class="py-12 bg-white border-t border-slate-200">
+        <partial name="~/Views/Drug/adddrug.cshtml" />
+    </section>
 
-<div id="deleteModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-    <div class="bg-white rounded-xl shadow-2xl max-w-md w-full">
-        <div class="p-6">
-            <div class="flex items-center justify-center w-12 h-12 mx-auto bg-red-100 rounded-full mb-4">
-                <i class="fas fa-exclamation-triangle text-red-600 text-xl"></i>
+    <div id="deleteModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div class="bg-white rounded-xl shadow-2xl max-w-md w-full">
+            <div class="p-6">
+                <div class="flex items-center justify-center w-12 h-12 mx-auto bg-red-100 rounded-full mb-4">
+                    <i class="fas fa-exclamation-triangle text-red-600 text-xl"></i>
+                </div>
+                <h3 class="text-xl font-bold text-center text-gray-900 mb-2">Xác Nhận Xóa</h3>
+                <p class="text-center text-gray-600 mb-6">
+                    Bạn chắc chắn muốn xóa <span id="deleteItemName" class="font-semibold"></span>? Hành động này không thể hoàn tác.
+                </p>
             </div>
-            <h3 class="text-xl font-bold text-center text-gray-900 mb-2">Xác Nhận Xóa</h3>
-            <p class="text-center text-gray-600 mb-6">
-                Bạn chắc chắn muốn xóa <span id="deleteItemName" class="font-semibold"></span>? Hành động này không thể hoàn tác.
-            </p>
-        </div>
-        <div class="bg-slate-50 border-t border-slate-200 px-6 py-4 flex gap-3 justify-end">
-            <button onclick="closeDeleteModal()"
-                    class="px-6 py-2 border border-slate-300 text-gray-700 rounded-lg font-semibold hover:bg-slate-50 transition-colors">
-                Hủy
-            </button>
-            <button onclick="deleteDrugConfirmed()" id="confirmDeleteBtn"
-                    class="px-6 py-2 bg-red-600 text-white rounded-lg font-semibold hover:bg-red-700 transition-colors flex items-center gap-2">
-                <i class="fas fa-trash"></i> Xóa
-            </button>
+            <div class="bg-slate-50 border-t border-slate-200 px-6 py-4 flex gap-3 justify-end">
+                <button onclick="closeDeleteModal()"
+                        class="px-6 py-2 border border-slate-300 text-gray-700 rounded-lg font-semibold hover:bg-slate-50 transition-colors cursor-pointer">
+                    Hủy
+                </button>
+                <button onclick="deleteDrugConfirmed()" id="confirmDeleteBtn"
+                        class="px-6 py-2 bg-red-600 text-white rounded-lg font-semibold hover:bg-red-700 transition-colors flex items-center gap-2 cursor-pointer">
+                    <i class="fas fa-trash"></i> Xóa
+                </button>
+            </div>
         </div>
     </div>
-</div>
+}
 
 <script>
     // ==========================================
     // KHAI BÁO BIẾN TOÀN CỤC (GLOBAL VARIABLES)
     // ==========================================
-    let currentDeleteId = 0;      // Lưu trữ ID của thuốc đang được chọn để chuẩn bị xóa
-    let currentDeleteName = '';    // Lưu trữ tên của thuốc đang được chọn để chuẩn bị xóa
-    let isSearching = false;       // Cờ trạng thái kiểm soát tiến trình tìm kiếm (nếu cần mở rộng)
-    // Đã loại bỏ biến "searchTimeout" vì không dùng cơ chế tự động tìm kiếm (Debounce) nữa.
+    let currentDeleteId = 0;      
+    let currentDeleteName = '';    
+    let isSearching = false;       
+
+    // Truyền trạng thái quyền từ C# sang JavaScript để kiểm soát client-side
+    const IS_ADMIN = @(isAdmin ? "true" : "false");
 
     // ==========================================
     // QUẢN LÝ MODAL THÊM/SỬA THUỐC
     // ==========================================
     
-    /**
-     * Mở modal để tạo mới một loại thuốc
-     */
     function openDrugModal() {
-        resetForm(); // Làm sạch form nhập liệu cũ
-        document.getElementById('drugModal').classList.remove('hidden'); // Hiển thị Modal
-        document.getElementById('modalTitle').textContent = 'Thêm Thuốc Mới'; // Đổi tiêu đề Modal
-        document.getElementById('saveBtnText').textContent = 'Lưu'; // Đổi chữ nút Lưu
+        if (!IS_ADMIN) return; 
+        resetForm(); 
+        document.getElementById('drugModal')?.classList.remove('hidden'); 
+        document.getElementById('modalTitle').textContent = 'Thêm Thuốc Mới'; 
+        document.getElementById('saveBtnText').textContent = 'Lưu'; 
     }
 
-    /**
-     * Lấy dữ liệu thuốc từ Server và mở modal để chỉnh sửa
-     */
     function editDrug(id) {
+        if (!IS_ADMIN) {
+            alert('Bạn không có quyền chỉnh sửa thông tin thuốc.');
+            return;
+        }
         if (!id || id === 0) return;
 
-        // Gọi API lấy dữ liệu chi tiết của thuốc dựa vào ID
         fetch(`/Drug/GetDrugById?id=${id}`)
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    fillFormWithData(data.data); // Đổ dữ liệu lấy được vào form nhập liệu
-                    document.getElementById('drugModal').classList.remove('hidden'); // Hiện Modal
-                    document.getElementById('modalTitle').textContent = 'Chỉnh Sửa Thuốc'; // Cập nhật tiêu đề Modal
-                    document.getElementById('saveBtnText').textContent = 'Cập Nhật'; // Cập nhật nhãn nút bấm
+                    fillFormWithData(data.data); 
+                    document.getElementById('drugModal')?.classList.remove('hidden'); 
+                    document.getElementById('modalTitle').textContent = 'Chỉnh Sửa Thuốc'; 
+                    document.getElementById('saveBtnText').textContent = 'Cập Nhật'; 
                 } else {
                     alert('Lỗi: ' + data.message);
                 }
@@ -103,60 +117,81 @@
     }
 
     /**
-     * Xem chi tiết thông tin thuốc (Hàm chờ phát triển)
+     * Xem chi tiết thông tin thuốc (Cả Admin và User đều sử dụng được)
      */
     function viewDrug(id) {
         if (!id || id === 0) return;
-        alert('Chức năng xem chi tiết sẽ được triển khai trong phiên bản tiếp theo');
+        
+        fetch(`/Drug/GetDrugById?id=${id}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    fillFormWithData(data.data);
+                    
+                    const modal = document.getElementById('drugModal');
+                    const saveBtn = document.getElementById('saveDrugBtn');
+                    
+                    if (modal) {
+                        modal.classList.remove('hidden');
+                        document.getElementById('modalTitle').textContent = 'Chi Tiết Thông Tin Thuốc';
+                        
+                        if (saveBtn) {
+                            if (!IS_ADMIN) {
+                                saveBtn.classList.add('hidden');
+                            } else {
+                                saveBtn.classList.remove('hidden');
+                                document.getElementById('saveBtnText').textContent = 'Cập Nhật';
+                            }
+                        }
+                    }
+                } else {
+                    alert('Lỗi: ' + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Khởi tạo thông tin thất bại.');
+            });
     }
 
-    /**
-     * Đóng modal thêm/sửa thuốc và dọn dẹp form nhập liệu
-     */
     function closeDrugModal() {
-        document.getElementById('drugModal').classList.add('hidden'); // Ẩn Modal bằng cách thêm class hidden
-        resetForm(); // Đưa form về trạng thái trống ban đầu
+        const modal = document.getElementById('drugModal');
+        if (modal) {
+            modal.classList.add('hidden');
+            resetForm();
+        }
     }
 
     // ==========================================
     // QUẢN LÝ MODAL XÁC NHẬN XÓA
     // ==========================================
 
-    /**
-     * Kích hoạt hiển thị Modal cảnh báo trước khi thực hiện xóa thuốc
-     * param {number} id - ID của bản ghi thuốc cần xóa
-     * param {string} drugName - Tên hiển thị của thuốc cần xóa
-     */
     function confirmDeleteDrug(id, drugName) {
+        if (!IS_ADMIN) return;
         if (!id || id === 0) return;
-        currentDeleteId = id; // Gán ID vào biến toàn cục để hàm xác nhận xóa sử dụng
+        currentDeleteId = id; 
         currentDeleteName = drugName;
-        document.getElementById('deleteItemName').textContent = drugName; // Hiển thị tên thuốc lên Modal giao diện
-        document.getElementById('deleteModal').classList.remove('hidden'); // Hiển thị Modal xác nhận xóa
+        document.getElementById('deleteItemName').textContent = drugName; 
+        document.getElementById('deleteModal')?.classList.remove('hidden'); 
     }
 
-    /**
-     * Đóng modal xác nhận xóa và giải phóng thông tin tạm thời
-     */
     function closeDeleteModal() {
-        document.getElementById('deleteModal').classList.add('hidden'); // Ẩn Modal xóa
-        currentDeleteId = 0; // Khôi phục ID tạm thời về trạng thái mặc định
+        if (!IS_ADMIN) return;
+        document.getElementById('deleteModal')?.classList.add('hidden'); 
+        currentDeleteId = 0; 
         currentDeleteName = '';
     }
 
-    /**
-     * Lắng nghe sự kiện click trên toàn bộ văn bản để đóng các Modal khi người dùng click ra vùng trống bên ngoài
-     */
+    // Sự kiện click đóng Modal khi click ra ngoài vùng trống
     document.addEventListener('click', function (e) {
         const drugModal = document.getElementById('drugModal');
         const deleteModal = document.getElementById('deleteModal');
 
-        // Nếu phần tử click trúng chính là thẻ bọc nền mờ của modal thì thực hiện ẩn đi
         if (e.target === drugModal) {
             drugModal.classList.add('hidden');
             resetForm();
         }
-        if (e.target === deleteModal) {
+        if (IS_ADMIN && e.target === deleteModal) {
             deleteModal.classList.add('hidden');
         }
     });
@@ -165,210 +200,185 @@
     // QUẢN LÝ FORM VÀ ĐỒNG BỘ DỮ LIỆU
     // ==========================================
 
-    /**
-     * Làm mới toàn bộ các trường nhập liệu trong form về trạng thái ban đầu
-     */
     function resetForm() {
-        document.getElementById('drugForm').reset(); // Reset nhanh bằng hàm built-in của thẻ Form
-        document.getElementById('drugId').value = '0'; // Đặt ID ẩn về 0 biểu thị cho hành động thêm mới
-        document.getElementById('statusActive').checked = true; // Trạng thái mặc định là Đang hoạt động
-        document.getElementById('formMessage').classList.add('hidden'); // Ẩn phân vùng thông báo lỗi/thành công
+        const form = document.getElementById('drugForm');
+        if (!form) return;
+        
+        form.reset(); 
+        if(document.getElementById('drugId')) document.getElementById('drugId').value = '0'; 
+        if(document.getElementById('statusActive')) document.getElementById('statusActive').checked = true; 
+        document.getElementById('formMessage')?.classList.add('hidden');
+        
+        const saveBtn = document.getElementById('saveDrugBtn');
+        if (saveBtn && IS_ADMIN) saveBtn.classList.remove('hidden');
     }
 
-    /**
-     * Đổ dữ liệu từ Object nhận được từ API vào lại các ô nhập liệu trong form (dành cho Edit)
-     * param {Object} data - Đối tượng chứa thông tin chi tiết thuốc
-     */
     function fillFormWithData(data) {
-        document.getElementById('drugId').value = data.id || 0;
-        document.getElementById('drugName').value = data.name || '';
-        document.getElementById('activeIngredient').value = data.activeIngredient || '';
-        document.getElementById('dosage').value = data.dosage || '';
-        document.getElementById('manufacturer').value = data.manufacturer || '';
-        document.getElementById('function').value = data.function || '';
-        document.getElementById('sideEffects').value = data.sideEffects || '';
-        document.getElementById('contraindications').value = data.contraindications || '';
-        document.getElementById('description').value = data.description || '';
+        if (!document.getElementById('drugForm')) return;
 
-        // Kiểm tra trạng thái hoạt động để check đúng radio button tương ứng
-        if (data.isActive) {
-            document.getElementById('statusActive').checked = true;
+        // Bọc cứu hộ an toàn an toàn bằng toán tử ?. để tránh tuyệt đối lỗi Null gãy hàm JS
+        if(document.getElementById('drugId')) document.getElementById('drugId').value = data.id ?? data.Id ?? 0;
+        if(document.getElementById('drugName')) document.getElementById('drugName').value = data.name ?? data.Name ?? '';
+        if(document.getElementById('activeIngredient')) document.getElementById('activeIngredient').value = data.activeIngredient ?? data.ActiveIngredient ?? '';
+        if(document.getElementById('dosage')) document.getElementById('dosage').value = data.dosage ?? data.Dosage ?? '';
+        if(document.getElementById('manufacturer')) document.getElementById('manufacturer').value = data.manufacturer ?? data.Manufacturer ?? '';
+        
+        // SỬA LỖI TẠI ĐÂY: Thử map đổ dữ liệu Công Dụng vào id "drugUse" trước, nếu không có thì thử "function"
+        const inputFunction = document.getElementById('drugUse') || document.getElementById('function');
+        if (inputFunction) inputFunction.value = data.function ?? data.Function ?? '';
+
+        if(document.getElementById('sideEffects')) document.getElementById('sideEffects').value = data.sideEffects ?? data.SideEffects ?? '';
+        if(document.getElementById('contraindications')) document.getElementById('contraindications').value = data.contraindications ?? data.Contraindications ?? '';
+        if(document.getElementById('description')) document.getElementById('description').value = data.description ?? data.Description ?? '';
+
+        const isActiveVal = (data.isActive !== undefined) ? data.isActive : data.IsActive;
+        if (isActiveVal) {
+            if(document.getElementById('statusActive')) document.getElementById('statusActive').checked = true;
         } else {
-            document.getElementById('statusInactive').checked = true;
+            if(document.getElementById('statusInactive')) document.getElementById('statusInactive').checked = true;
         }
     }
 
-    /**
-     * Đọc thông tin từ form, validate dữ liệu đầu vào và gửi dữ liệu lên Server để Lưu hoặc Cập nhật
-     */
-    function saveDrug() {
-        const form = document.getElementById('drugForm');
+    async function saveDrug() {
+        const saveBtn = document.getElementById('saveDrugBtn');
+        const btnText = document.getElementById('saveBtnText');
+        const msgDiv = document.getElementById('formMessage');
 
-        // Kiểm tra tính hợp lệ của Form theo các ràng buộc HTML5 (như thuộc tính 'required')
-        if (!form.checkValidity()) {
-            form.reportValidity(); // Tự động hiển thị bong bóng cảnh báo của trình duyệt tại ô trống
+        // THU THẬP DỮ LIỆU AN TOÀN CHỐNG CRASH
+        const drugData = {
+            Id: parseInt(document.getElementById('drugId')?.value) || 0,
+            Name: document.getElementById('drugName')?.value?.trim() || "",
+            ActiveIngredient: document.getElementById('activeIngredient')?.value?.trim() || "",
+            Dosage: document.getElementById('dosage')?.value?.trim() || "",
+            Manufacturer: document.getElementById('manufacturer')?.value?.trim() || "",
+            Function: (document.getElementById('drugUse') || document.getElementById('function'))?.value?.trim() || "",
+            SideEffects: document.getElementById('sideEffects')?.value?.trim() || "",
+            Contraindications: document.getElementById('contraindications')?.value?.trim() || "",
+            Description: document.getElementById('description')?.value?.trim() || "",
+            IsActive: document.getElementById('statusActive')?.checked || false
+        };
+
+        if (!drugData.Name || !drugData.ActiveIngredient || !drugData.Dosage || !drugData.Function) {
+            showMsg("Vui lòng điền đầy đủ các thông tin thuốc bắt buộc (*)", "bg-amber-100 text-amber-800 border-amber-200");
             return;
         }
 
-        // Tạo object chứa toàn bộ dữ liệu từ form chuẩn bị gửi đi JSON
-        const drugData = {
-            id: parseInt(document.getElementById('drugId').value) || 0,
-            name: document.getElementById('drugName').value,
-            activeIngredient: document.getElementById('activeIngredient').value,
-            dosage: document.getElementById('dosage').value,
-            manufacturer: document.getElementById('manufacturer').value,
-            function: document.getElementById('function').value,
-            sideEffects: document.getElementById('sideEffects').value,
-            contraindications: document.getElementById('contraindications').value,
-            description: document.getElementById('description').value,
-            isActive: document.getElementById('statusActive').checked
-        };
+        if (saveBtn) saveBtn.disabled = true;
+        if (btnText) btnText.innerText = "Đang lưu...";
+        if (msgDiv) msgDiv.classList.add('hidden');
 
-        // Khóa nút bấm lại nhằm tránh việc người dùng nhấp chuột liên tục (Spam click) tạo trùng lặp bản ghi
-        const saveBtn = document.getElementById('saveDrugBtn');
-        saveBtn.disabled = true;
-        const originalText = saveBtn.innerHTML;
-        saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang xử lý...'; // Thêm hiệu ứng quay tròn chờ tải
-
-        // Tiến hành gọi API gửi dữ liệu lên Server xử lý
-        fetch('/Drug/SaveDrug', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(drugData)
-        })
-            .then(response => response.json())
-            .then(data => {
-                // Khôi phục lại trạng thái ban đầu của nút bấm sau khi nhận phản hồi từ Server
-                saveBtn.disabled = false;
-                saveBtn.innerHTML = originalText;
-
-                if (data.success) {
-                    showMessage(true, data.message); // Hiển thị thanh thông báo xanh thành công
-                    setTimeout(() => {
-                        closeDrugModal();
-                        location.reload(); // Tải lại trang sau 1.5 giây để cập nhật dữ liệu mới nhất lên bảng hiển thị
-                    }, 1500);
-                } else {
-                    showMessage(false, data.message || 'Lỗi không xác định xảy ra từ Server');
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                saveBtn.disabled = false;
-                saveBtn.innerHTML = originalText;
-                showMessage(false, 'Mất kết nối tới máy chủ. Vui lòng thử lại sau.');
+        try {
+            const response = await fetch('/Drug/SaveDrug', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]')?.value || ''
+                },
+                body: JSON.stringify(drugData)
             });
+
+            if (response.ok) {
+                showMsg("🎉 Cập nhật thông tin thuốc thành công!", "bg-green-100 text-green-800 border-green-200");
+                setTimeout(() => { location.reload(); }, 1200);
+            } else {
+                const errorResult = await response.text();
+                console.error("🔴 Chi tiết lỗi ModelState từ Back-end C# trả về:\n", errorResult);
+                showMsg("❌ Không thể lưu dữ liệu. Vui lòng kiểm tra lại cấu hình hoặc xem tab Console!", "bg-red-100 text-red-800 border-red-200");
+                if (saveBtn) saveBtn.disabled = false;
+                if (btnText) btnText.innerText = "Lưu";
+            }
+        } catch (error) {
+            console.error("🔴 Lỗi kết nối mạng:", error);
+            showMsg("⚠️ Có lỗi mạng xảy ra khi lưu thông tin!", "bg-red-100 text-red-800 border-red-200");
+            if (saveBtn) saveBtn.disabled = false;
+            if (btnText) btnText.innerText = "Lưu";
+        }
     }
 
-    /**
-     * Gửi yêu cầu xóa bản ghi lên Server sau khi người dùng đã xác nhận đồng ý xóa
-     */
+    function showMsg(message, className) {
+        const msgDiv = document.getElementById('formMessage');
+        if (msgDiv) {
+            msgDiv.className = `px-4 py-3 rounded-lg text-sm font-medium transition-all duration-300 ${className}`;
+            msgDiv.innerText = message;
+            msgDiv.classList.remove('hidden');
+        }
+    }
+
     function deleteDrugConfirmed() {
-        if (currentDeleteId === 0) return;
+        if (!IS_ADMIN || currentDeleteId === 0) return;
+
+        const tokenInput = document.querySelector('input[name="__RequestVerificationToken"]');
+        if (!tokenInput) {
+            alert('Lỗi bảo mật: Không tìm thấy Token xác thực (AntiForgeryToken).');
+            return;
+        }
+        const token = tokenInput.value;
 
         const deleteBtn = document.getElementById('confirmDeleteBtn');
-        deleteBtn.disabled = true; // Khóa nút xóa
+        deleteBtn.disabled = true; 
         const originalText = deleteBtn.innerHTML;
         deleteBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang xóa...';
 
-        // Gọi API xóa thực tế
-        fetch(`/Drug/DeleteDrug?id=${currentDeleteId}`, {
+        fetch('/Drug/DeleteDrug', {
             method: 'POST',
             headers: {
-                'Content-Type': 'application/json',
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'RequestVerificationToken': token
+            },
+            body: new URLSearchParams({ id: currentDeleteId })
+        })
+        .then(response => {
+            if (!response.ok) throw new Error(`Mã trạng thái từ máy chủ: ${response.status}`);
+            return response.json();
+        })
+        .then(data => {
+            deleteBtn.disabled = false;
+            deleteBtn.innerHTML = originalText;
+
+            if (data.success) {
+                alert(data.message);
+                closeDeleteModal();
+                location.reload(); 
+            } else {
+                alert('Lỗi từ hệ thống: ' + data.message);
             }
         })
-            .then(response => response.json())
-            .then(data => {
-                deleteBtn.disabled = false;
-                deleteBtn.innerHTML = originalText;
-
-                if (data.success) {
-                    alert(data.message);
-                    closeDeleteModal();
-                    location.reload(); // Tải lại trang để cập nhật danh sách mất đi phần tử đã bị xóa
-                } else {
-                    alert('Lỗi hệ thống: ' + data.message);
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                deleteBtn.disabled = false;
-                deleteBtn.innerHTML = originalText;
-                alert('Không thể thực hiện kết nối máy chủ để xóa thuốc');
-            });
-    }
-
-    /**
-     * Hiển thị thanh thông báo trạng thái đẹp mắt ngay bên trong Form Modal
-     * param {boolean} isSuccess - Đạt trạng thái thành công (true) hay thất bại (false)
-     * param {string} message - Nội dung chuỗi thông báo hiển thị tới người dùng
-     */
-    function showMessage(isSuccess, message) {
-        const messageDiv = document.getElementById('formMessage');
-        messageDiv.textContent = message;
-        messageDiv.classList.remove('hidden');
-
-        if (isSuccess) {
-            messageDiv.className = 'px-4 py-3 rounded-lg text-sm font-medium bg-green-100 text-green-800'; // Theme xanh lá
-        } else {
-            messageDiv.className = 'px-4 py-3 rounded-lg text-sm font-medium bg-red-100 text-red-800';     // Theme đỏ cảnh báo
-        }
+        .catch(error => {
+            console.error('Error:', error);
+            deleteBtn.disabled = false;
+            deleteBtn.innerHTML = originalText;
+            alert('Không thể thực hiện kết nối máy chủ để xóa thuốc. Lỗi: ' + error.message);
+        });
     }
 
     // ==========================================
     // LOGIC XỬ LÝ TÌM KIẾM VÀ BỘ LỌC (SEARCH & FILTER)
     // ==========================================
-
-    /**
-     * Điều hướng trang kèm theo các tham số tìm kiếm và bộ lọc trạng thái hiện tại
-     * param {number} page - Số trang cần chuyển đến (Ví dụ: Trang 1, Trang 2...)
-     */
     function goToPage(page) {
         if (page < 1) return;
 
-        // Thu thập giá trị hiện có trong các ô input lọc ngoài giao diện tại thời điểm kích hoạt hàm
-        const searchTerm = document.getElementById('drugSearch').value;
-        const status = document.getElementById('statusFilter').value;
+        const searchTerm = document.getElementById('drugSearch')?.value || '';
+        const status = document.getElementById('statusFilter')?.value || '';
 
-        // Thiết lập URL cơ sở điều hướng tới Action Index trong Controller Drug
         let url = `/Drug/Index?page=${page}`;
-        
-        // Nối chuỗi điều kiện tìm kiếm và mã hóa an toàn dữ liệu đầu vào tránh lỗi URL (encodeURIComponent)
         if (searchTerm) url += `&searchTerm=${encodeURIComponent(searchTerm.trim())}`;
         if (status) url += `&status=${encodeURIComponent(status)}`;
 
-        // Thực hiện chuyển trang thực tế
         window.location.href = url;
     }
 
-    /**
-     * Hàm trung gian kích hoạt việc tìm kiếm, mặc định đưa người dùng quay trở lại trang 1
-     */
     function searchAndFilter() {
         goToPage(1);
     }
 
-    // --- ĐÃ THAY ĐỔI CƠ CHẾ LẮNG NGHE SỰ KIỆN TÌM KIẾM THEO YÊU CẦU ---
-
-    /**
-     * Lắng nghe sự kiện người dùng nhấn phím trong ô Input tìm kiếm thuốc mã hiệu 'drugSearch'
-     * Thao tác: Ngừng theo dõi sự kiện liên tục gõ 'keyup' tự động chạy cũ, thay bằng chỉ kiểm tra phím Enter.
-     */
-    document.getElementById('drugSearch').addEventListener('keydown', function (e) {
+    document.getElementById('drugSearch')?.addEventListener('keydown', function (e) {
         if (e.key === 'Enter') {
-            e.preventDefault(); // Ngăn chặn sự kiện submit form mặc định (tránh reload trang ngoài kiểm soát)
-            searchAndFilter();  // Thực hiện tìm kiếm theo Keyword hiện tại
+            e.preventDefault(); 
+            searchAndFilter();  
         }
     });
 
-    /**
-     * Lắng nghe sự kiện Thay đổi giá trị của bộ chọn Trạng Thái (dropdown list lọc hoạt động)
-     * Thao tác: Tự động chạy lại tìm kiếm lọc ngay lập tức khi người dùng click chọn trạng thái khác để tiện trải nghiệm.
-     */
-    document.getElementById('statusFilter').addEventListener('change', function (e) {
+    document.getElementById('statusFilter')?.addEventListener('change', function (e) {
         searchAndFilter();
     });
 </script>

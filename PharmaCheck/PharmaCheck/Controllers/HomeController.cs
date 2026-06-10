@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using PharmaCheck.Data;
@@ -5,6 +6,7 @@ using PharmaCheck.Models;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Claims;
 using System.Threading.Tasks;
 
 namespace PharmaCheck.Controllers
@@ -19,13 +21,13 @@ namespace PharmaCheck.Controllers
         }
 
         /// <summary>
-        /// Hiển thị trang chủ kèm theo danh sách các thuốc nổi bật (được xem nhiều nhất)
+        /// Hiển thị trang chủ kèm theo danh sách các thuốc nổi bật (Ai cũng có thể xem)
         /// </summary>
+        [AllowAnonymous]
         public async Task<IActionResult> Index()
         {
             try
             {
-                // Lấy ra danh sách thuốc đang hoạt động, sắp xếp theo lượt xem giảm dần (Top 6 thuốc)
                 var featuredDrugs = await _context.Set<Drug>()
                     .Where(d => d.IsActive)
                     .OrderByDescending(d => d.ViewCount)
@@ -36,16 +38,15 @@ namespace PharmaCheck.Controllers
             }
             catch (Exception)
             {
-                // Thực tế bạn có thể dùng ILogger để ghi log: _logger.LogError(ex, "Lỗi tải danh sách thuốc");
                 ViewBag.ErrorMessage = "Đã xảy ra lỗi khi tải danh sách thuốc.";
                 return View(new List<Drug>());
             }
         }
 
         /// <summary>
-        /// API endpoint: Tìm kiếm gợi ý thuốc (Autocomplete) phục vụ cho Alpine.js
-        /// URL: /Home/SearchDrugs?term=...
+        /// API endpoint: Tìm kiếm gợi ý thuốc (Chỉ cho phép khi đã login)
         /// </summary>
+        [Authorize]
         [HttpGet]
         public async Task<IActionResult> SearchDrugs(string term)
         {
@@ -54,7 +55,6 @@ namespace PharmaCheck.Controllers
 
             var normalizedTerm = term.ToLower().Trim();
 
-            // Đã bổ sung OrderBy để khắc phục cảnh báo EF Core Query 10102
             var drugs = await _context.Set<Drug>()
                 .Where(d => d.IsActive &&
                            (d.Name.ToLower().Contains(normalizedTerm) ||
@@ -68,9 +68,9 @@ namespace PharmaCheck.Controllers
         }
 
         /// <summary>
-        /// API endpoint: Tìm kiếm gợi ý bệnh lý (Autocomplete) phục vụ cho Alpine.js
-        /// URL: /Home/SearchDiseases?term=...
+        /// API endpoint: Tìm kiếm gợi ý bệnh lý (Chỉ cho phép khi đã login)
         /// </summary>
+        [Authorize]
         [HttpGet]
         public async Task<IActionResult> SearchDiseases(string term)
         {
@@ -79,7 +79,6 @@ namespace PharmaCheck.Controllers
 
             var normalizedTerm = term.ToLower().Trim();
 
-            // Đã bổ sung OrderBy để khắc phục cảnh báo EF Core Query 10102
             var diseases = await _context.Set<Disease>()
                 .Where(d => d.IsActive && d.Name.ToLower().Contains(normalizedTerm))
                 .OrderBy(d => d.Name)
@@ -91,63 +90,39 @@ namespace PharmaCheck.Controllers
         }
 
         /// <summary>
-        /// API endpoint: Kiểm tra tương tác thuốc-thuốc và thuốc-bệnh lý bằng dữ liệu thực tế từ DB
-        /// URL: /Home/CheckInteractions (POST)
+        /// Dẫn tới giao diện Phòng Tra Cứu biệt lập (Chỉ cho phép khi đã login)
         /// </summary>
+        [Authorize]
+        public IActionResult Check()
+        {
+            return View();
+        }
+
+        /// <summary>
+        /// API endpoint: Thực hiện tính toán kiểm tra tương tác thuốc (Chỉ cho phép khi đã login)
+        /// </summary>
+        [Authorize]
         [HttpPost]
         public async Task<IActionResult> CheckInteractions([FromBody] InteractionCheckRequest request)
         {
             try
             {
-                System.Diagnostics.Debug.WriteLine("═══════════════════════════════════════════");
-                System.Diagnostics.Debug.WriteLine("🔍 [CheckInteractions] REQUEST NHẬN ĐƯỢC");
-                System.Diagnostics.Debug.WriteLine("═══════════════════════════════════════════");
-                System.Diagnostics.Debug.WriteLine($"   Request object: {(request == null ? "NULL" : "OK")}");
-
-                if (request != null)
+                if (!ModelState.IsValid || request == null || 
+                    ((request.DrugIds == null || !request.DrugIds.Any()) &&
+                     (request.DiseaseIds == null || !request.DiseaseIds.Any())))
                 {
-                    System.Diagnostics.Debug.WriteLine($"   DrugIds count: {request.DrugIds?.Count ?? 0}");
-                    System.Diagnostics.Debug.WriteLine($"   DrugIds: [{string.Join(", ", request.DrugIds ?? new List<int>())}]");
-                    System.Diagnostics.Debug.WriteLine($"   DiseaseIds count: {request.DiseaseIds?.Count ?? 0}");
-                    System.Diagnostics.Debug.WriteLine($"   DiseaseIds: [{string.Join(", ", request.DiseaseIds ?? new List<int>())}]");
-                }
-
-                // Kiểm tra Model State
-                if (!ModelState.IsValid)
-                {
-                    System.Diagnostics.Debug.WriteLine("❌ ModelState KHÔNG HỢP LỆ!");
-                    foreach (var modelState in ModelState.Values)
-                    {
-                        foreach (var error in modelState.Errors)
-                        {
-                            System.Diagnostics.Debug.WriteLine($"   Error: {error.ErrorMessage}");
-                        }
-                    }
-                    return BadRequest(new
-                    {
-                        message = "Model State không hợp lệ",
-                        errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage).ToList()
-                    });
-                }
-
-                if (request == null || ((request.DrugIds == null || !request.DrugIds.Any()) &&
-                                        (request.DiseaseIds == null || !request.DiseaseIds.Any())))
-                {
-                    System.Diagnostics.Debug.WriteLine("❌ [CheckInteractions] Request null hoặc không có dữ liệu");
-                    return BadRequest(new { message = "Dữ liệu yêu cầu không hợp lệ.", error = "EmptyRequest" });
+                    return BadRequest(new { message = "Dữ liệu yêu cầu không hợp lệ hoặc trống." });
                 }
 
                 var drugDrugInteractionsResult = new List<object>();
                 var drugDiseaseContraindicationsResult = new List<object>();
 
-                // 1. Lưu lịch sử tìm kiếm vào DB
+                // 1. Lưu vết lịch sử tìm kiếm gắn với UserId thật của người đang đăng nhập
                 await SaveSearchHistoryAsync(request);
 
                 // 2. Kiểm tra tương tác THUỐC - THUỐC
                 if (request.DrugIds != null && request.DrugIds.Count >= 2)
                 {
-                    System.Diagnostics.Debug.WriteLine("🔍 [CheckInteractions] Kiểm tra Drug-Drug Interactions...");
-
                     var interactions = await _context.Set<DrugInteraction>()
                         .Include(di => di.SourceDrug)
                         .Include(di => di.TargetDrug)
@@ -156,14 +131,10 @@ namespace PharmaCheck.Controllers
                                      di.SourceDrugId != di.TargetDrugId)
                         .ToListAsync();
 
-                    System.Diagnostics.Debug.WriteLine($"   📊 Tìm thấy {interactions.Count} interactions");
-
                     foreach (var item in interactions)
                     {
                         string severityText = item.SeverityLevel == 3 ? "NGUY HIỂM" :
                                               item.SeverityLevel == 2 ? "THẬN TRỌNG" : "NHẸ";
-
-                        string icon = item.SeverityLevel == 3 ? "fa-exclamation-triangle" : "fa-exclamation-circle";
 
                         drugDrugInteractionsResult.Add(new
                         {
@@ -171,7 +142,7 @@ namespace PharmaCheck.Controllers
                             level = item.SeverityLevel,
                             title = $"{item.SourceDrug?.Name} + {item.TargetDrug?.Name} - {severityText}",
                             description = item.Description,
-                            icon = icon,
+                            icon = item.SeverityLevel == 3 ? "fa-exclamation-triangle" : "fa-exclamation-circle",
                             recommendation = item.Recommendation
                         });
                     }
@@ -180,8 +151,6 @@ namespace PharmaCheck.Controllers
                 // 3. Kiểm tra tương tác THUỐC - BỆNH LÝ
                 if (request.DrugIds != null && request.DrugIds.Any() && request.DiseaseIds != null && request.DiseaseIds.Any())
                 {
-                    System.Diagnostics.Debug.WriteLine("🔍 [CheckInteractions] Kiểm tra Drug-Disease Contraindications...");
-
                     var contraindications = await _context.Set<DrugDiseaseContraindication>()
                         .Include(ddc => ddc.Drug)
                         .Include(ddc => ddc.Disease)
@@ -189,15 +158,10 @@ namespace PharmaCheck.Controllers
                                      request.DiseaseIds.Contains(ddc.DiseaseId))
                         .ToListAsync();
 
-                    System.Diagnostics.Debug.WriteLine($"   📊 Tìm thấy {contraindications.Count} contraindications");
-
                     foreach (var item in contraindications)
                     {
                         string riskText = item.RiskLevel == 3 ? "CHỐNG CHỈ ĐỊNH" :
                                           item.RiskLevel == 2 ? "THẬN TRỌNG" : "THẤP";
-
-                        string icon = item.RiskLevel == 3 ? "fa-ban" :
-                                      item.RiskLevel == 2 ? "fa-exclamation-circle" : "fa-check-circle";
 
                         drugDiseaseContraindicationsResult.Add(new
                         {
@@ -205,16 +169,12 @@ namespace PharmaCheck.Controllers
                             level = item.RiskLevel,
                             title = $"{item.Drug?.Name} + {item.Disease?.Name} - {riskText}",
                             description = $"{item.Warning}. {item.Risk}",
-                            icon = icon,
+                            icon = item.RiskLevel == 3 ? "fa-ban" : "fa-exclamation-circle",
                             recommendation = item.Recommendation
                         });
                     }
                 }
 
-                System.Diagnostics.Debug.WriteLine($"✅ [CheckInteractions] Trả về {drugDrugInteractionsResult.Count} drug-drug, {drugDiseaseContraindicationsResult.Count} drug-disease");
-                System.Diagnostics.Debug.WriteLine("═══════════════════════════════════════════");
-
-                // Trả về định dạng JSON camelCase đồng bộ hoàn toàn với giao diện Alpine.js
                 return Json(new
                 {
                     drugDrugInteractions = drugDrugInteractionsResult,
@@ -223,137 +183,132 @@ namespace PharmaCheck.Controllers
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"❌ [CheckInteractions] Exception: {ex.Message}");
-                System.Diagnostics.Debug.WriteLine($"❌ Stack Trace: {ex.StackTrace}");
-                System.Diagnostics.Debug.WriteLine("═══════════════════════════════════════════");
-
-                return StatusCode(500, new
-                {
-                    message = "Lỗi xử lý dữ liệu trên máy chủ.",
-                    error = ex.Message,
-                    details = ex.InnerException?.Message
-                });
+                return StatusCode(500, new { message = "Lỗi xử lý dữ liệu trên máy chủ.", error = ex.Message });
             }
         }
 
+/// <summary>
+/// Hàm bổ trợ: Lưu vết lịch sử tìm kiếm vào Database theo cấu trúc tối ưu mới
+/// </summary>
+private async Task SaveSearchHistoryAsync(InteractionCheckRequest request)
+{
+    try
+    {
+        // Lấy ra Id của User từ phiên đăng nhập
+        string rawUserId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        int? currentUserId = int.TryParse(rawUserId, out int parsedId) ? parsedId : null;
+
+        var histories = new List<SearchHistory>();
+        DateTime currentTime = DateTime.UtcNow;
+
+        // An toàn dữ liệu: Đảm bảo danh sách không bị null để tránh lỗi NullReferenceException
+        var drugIds = request.DrugIds ?? new List<int>();
+        var diseaseIds = request.DiseaseIds ?? new List<int>();
+
+        // ===================================================================
+        // KỊCH BẢN 1: TRA CỨU TƯƠNG TÁC THUỐC - THUỐC (Chọn từ 2 thuốc trở lên)
+        // ===================================================================
+        if (drugIds.Count >= 2)
+        {
+            // Lấy ra tên của các thuốc để ghi vào trường SearchQuery hỗ trợ hiển thị chuỗi text thô nhanh
+            var drugNames = await _context.Set<Drug>()
+                .Where(d => drugIds.Contains(d.Id))
+                .ToDictionaryAsync(d => d.Id, d => d.Name);
+
+            // Duyệt qua toàn bộ các cặp kết hợp (Tổ hợp chập 2 của danh sách thuốc được chọn)
+            for (int i = 0; i < drugIds.Count; i++)
+            {
+                for (int j = i + 1; j < drugIds.Count; j++)
+                {
+                    int drugId1 = drugIds[i];
+                    int drugId2 = drugIds[j];
+
+                    string name1 = drugNames.ContainsKey(drugId1) ? drugNames[drugId1] : $"ID {drugId1}";
+                    string name2 = drugNames.ContainsKey(drugId2) ? drugNames[drugId2] : $"ID {drugId2}";
+
+                    histories.Add(new SearchHistory
+                    {
+                        UserId = currentUserId,
+                        SearchType = "Drug-Drug",
+                        SearchQuery = $"{name1} + {name2}", // Lưu chuỗi text tường minh trực quan
+                        DrugId = drugId1,       // Thuốc gốc thứ nhất
+                        TargetDrugId = drugId2, // Thuốc đích thứ hai được so sánh tương tác
+                        DiseaseId = null,
+                        CreatedAt = currentTime
+                    });
+                }
+            }
+        }
+        // ===================================================================
+        // KỊCH BẢN 2: TRA CỨU TƯƠNG TÁC THUỐC - BỆNH LÝ (CHỐNG CHỈ ĐỊNH)
+        // ===================================================================
+        else if (drugIds.Any() && diseaseIds.Any())
+        {
+            // Tải danh sách tên thuốc và tên bệnh lý lên bộ nhớ tạm để build chuỗi text thô
+            var drugNames = await _context.Set<Drug>().Where(d => drugIds.Contains(d.Id)).ToDictionaryAsync(d => d.Id, d => d.Name);
+            var diseaseNames = await _context.Set<Disease>().Where(d => diseaseIds.Contains(d.Id)).ToDictionaryAsync(d => d.Id, d => d.Name);
+
+            foreach (var drugId in drugIds)
+            {
+                foreach (var diseaseId in diseaseIds)
+                {
+                    string drugName = drugNames.ContainsKey(drugId) ? drugNames[drugId] : $"Thuốc ID {drugId}";
+                    string diseaseName = diseaseNames.ContainsKey(diseaseId) ? diseaseNames[diseaseId] : $"Bệnh ID {diseaseId}";
+
+                    histories.Add(new SearchHistory
+                    {
+                        UserId = currentUserId,
+                        SearchType = "Drug-Disease",
+                        SearchQuery = $"{drugName} trên nền {diseaseName}",
+                        DrugId = drugId,
+                        TargetDrugId = null,
+                        DiseaseId = diseaseId, // Lưu định danh mã bệnh lý để làm thống kê bệnh lý hay gặp
+                        CreatedAt = currentTime
+                    });
+                }
+            }
+        }
+        // ===================================================================
+        // KỊCH BẢN 3: TRA CỨU ĐƠN LẺ (Chỉ chọn 1 thuốc duy nhất hoặc không rơi vào 2 cụm trên)
+        // ===================================================================
+        else if (drugIds.Count == 1 && !diseaseIds.Any())
+        {
+            int singleDrugId = drugIds.First();
+            var drug = await _context.Set<Drug>().FindAsync(singleDrugId);
+
+            histories.Add(new SearchHistory
+            {
+                UserId = currentUserId,
+                SearchType = "Drug",
+                SearchQuery = drug?.Name ?? $"Xem chi tiết thuốc ID {singleDrugId}",
+                DrugId = singleDrugId,
+                TargetDrugId = null,
+                DiseaseId = null,
+                CreatedAt = currentTime
+            });
+        }
+
+        // Thực hiện lưu hàng loạt bản ghi lịch sử vào database nếu có dữ liệu sinh ra
+        if (histories.Any())
+        {
+            await _context.Set<SearchHistory>().AddRangeAsync(histories);
+            await _context.SaveChangesAsync();
+        }
+    }
+    catch
+    {
+        // Khối lệnh Fail-safe an toàn tuyệt đối: Không ném ra Exception làm gián đoạn
+        // trải nghiệm nhận kết quả tương tác của y bác sĩ / người dùng nếu việc lưu log lỗi.
+    }
+}
+
+        [AllowAnonymous]
         public IActionResult Privacy()
         {
             return View();
         }
-
-        // Action dẫn tới trang tra cứu riêng biệt
-        public IActionResult Check()
-        {
-            return View();
-        }
-        /// <summary>
-        /// DEBUG ENDPOINT: Kiểm tra dữ liệu trong database
-        /// URL: /Home/DiagnosticData
-        /// </summary>
-        [HttpGet]
-        public async Task<IActionResult> DiagnosticData()
-        {
-            try
-            {
-                var drugCount = await _context.Set<Drug>().CountAsync();
-                var diseaseCount = await _context.Set<Disease>().CountAsync();
-                var interactionCount = await _context.Set<DrugInteraction>().CountAsync();
-                var contraindicationCount = await _context.Set<DrugDiseaseContraindication>().CountAsync();
-
-                var drugs = await _context.Set<Drug>().Take(5).ToListAsync();
-                var diseases = await _context.Set<Disease>().Take(5).ToListAsync();
-                var interactions = await _context.Set<DrugInteraction>()
-                    .Include(di => di.SourceDrug)
-                    .Include(di => di.TargetDrug)
-                    .Take(3)
-                    .ToListAsync();
-                var contraindications = await _context.Set<DrugDiseaseContraindication>()
-                    .Include(ddc => ddc.Drug)
-                    .Include(ddc => ddc.Disease)
-                    .Take(3)
-                    .ToListAsync();
-
-                return Json(new
-                {
-                    summary = new
-                    {
-                        totalDrugs = drugCount,
-                        totalDiseases = diseaseCount,
-                        totalDrugInteractions = interactionCount,
-                        totalContraindications = contraindicationCount
-                    },
-                    sampleDrugs = drugs.Select(d => new { d.Id, d.Name, d.IsActive }).ToList(),
-                    sampleDiseases = diseases.Select(d => new { d.Id, d.Name, d.IsActive }).ToList(),
-                    sampleInteractions = interactions.Select(di => new
-                    {
-                        di.Id,
-                        SourceDrugId = di.SourceDrugId,
-                        SourceDrugName = di.SourceDrug?.Name,
-                        TargetDrugId = di.TargetDrugId,
-                        TargetDrugName = di.TargetDrug?.Name,
-                        di.SeverityLevel
-                    }).ToList(),
-                    sampleContraindications = contraindications.Select(ddc => new
-                    {
-                        ddc.Id,
-                        DrugId = ddc.DrugId,
-                        DrugName = ddc.Drug?.Name,
-                        DiseaseId = ddc.DiseaseId,
-                        DiseaseName = ddc.Disease?.Name,
-                        ddc.RiskLevel
-                    }).ToList()
-                });
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, new
-                {
-                    error = "Lỗi kiểm tra database",
-                    message = ex.Message,
-                    stackTrace = ex.StackTrace
-                });
-            }
-        }
-
-        /// <summary>
-        /// Hàm bổ trợ: Lưu vết lịch sử tìm kiếm vào Database
-        /// </summary>
-        private async Task SaveSearchHistoryAsync(InteractionCheckRequest request)
-        {
-            try
-            {
-                var histories = new List<SearchHistory>();
-
-                if (request.DrugIds != null)
-                {
-                    foreach (var drugId in request.DrugIds)
-                    {
-                        histories.Add(new SearchHistory
-                        {
-                            DrugId = drugId,
-                            SearchType = "InteractionCheck",
-                            SearchQuery = $"Kiểm tra tương tác thuốc ID: {drugId}",
-                            CreatedAt = DateTime.UtcNow
-                        });
-                    }
-                }
-
-                if (histories.Any())
-                {
-                    _context.Set<SearchHistory>().AddRange(histories);
-                    await _context.SaveChangesAsync();
-                }
-            }
-            catch
-            {
-                // Thực hiện Fail-safe: Lịch sử lỗi không được làm ngắt quãng luồng chính trả thông tin tương tác
-            }
-        }
     }
 
-    /// <summary>
-    /// DTO nhận dữ liệu từ Client gửi lên (JSON body)
-    /// </summary>
     public class InteractionCheckRequest
     {
         public List<int> DrugIds { get; set; } = new List<int>();

@@ -19,6 +19,7 @@ namespace PharmaCheck.Models
         public string Recommendation { get; set; } = string.Empty; // khuyến nghị cụ thể cho bệnh nhân (ví dụ: "Nếu bạn bị bệnh tim mạch nặng, hãy thảo luận với bác sĩ về các lựa chọn điều trị thay thế và theo dõi chặt chẽ các triệu chứng của bạn")
 
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow; // thời điểm tạo bản ghi
+        public DateTime? UpdatedAt { get; set; } // thời điểm cập nhật bản ghi (nếu có)
 
         // Navigation
         public Drug? Drug { get; set; } // tham chiếu đến thuốc

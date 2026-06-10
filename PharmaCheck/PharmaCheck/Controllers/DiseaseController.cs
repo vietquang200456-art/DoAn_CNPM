@@ -1,40 +1,47 @@
+using System;
 using System.Diagnostics;
+using System.Linq;
+using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using PharmaCheck.Data;
 using PharmaCheck.Models;
+using PharmaCheck.Services; // 1. THÊM NAMESPACE NÀY ĐỂ SỬ DỤNG SERVICE
 
 namespace PharmaCheck.Controllers;
 
+[Authorize]
 public class DiseaseController : Controller
 {
     private readonly ApplicationDbContext _context;
+    private readonly IAuditLogService _logService; // 2. KHAI BÁO BIẾN DỊCH VỤ LOG
     private const int PageSize = 10;
 
-    public DiseaseController(ApplicationDbContext context)
+    // 3. INJECT IAUDITLOGSERVICE VÀO CONSTRUCTOR
+    public DiseaseController(ApplicationDbContext context, IAuditLogService logService)
     {
         _context = context;
+        _logService = logService;
     }
 
     /// <summary>
     /// Hiển thị danh sách bệnh lý với hỗ trợ tìm kiếm, lọc và phân trang
     /// </summary>
+    [HttpGet]
     public async Task<IActionResult> Index(string searchTerm = "", string severity = "", int page = 1)
     {
         try
         {
-            // Lấy tất cả dữ liệu từ cơ sở dữ liệu
             var query = _context.Diseases.AsQueryable();
 
-            // Tìm kiếm theo tên, triệu chứng hoặc nguyên nhân
             if (!string.IsNullOrEmpty(searchTerm))
             {
                 query = query.Where(d => d.Name.Contains(searchTerm) ||
-                                        d.Symptoms.Contains(searchTerm) ||
-                                        d.Causes.Contains(searchTerm));
+                                         d.Symptoms.Contains(searchTerm) ||
+                                         d.Causes.Contains(searchTerm));
             }
 
-            // Lọc theo trạng thái
             if (!string.IsNullOrEmpty(severity))
             {
                 switch (severity.ToLower())
@@ -48,17 +55,14 @@ public class DiseaseController : Controller
                 }
             }
 
-            // Tính toán số bản ghi tổng cộng
             int totalRecords = await query.CountAsync();
 
-            // Phân trang
             var diseases = await query
                 .OrderByDescending(d => d.CreatedAt)
                 .Skip((page - 1) * PageSize)
                 .Take(PageSize)
                 .ToListAsync();
 
-            // Tạo ViewModel
             var viewModel = new DiseasePagedListViewModel
             {
                 Diseases = diseases,
@@ -79,7 +83,7 @@ public class DiseaseController : Controller
     }
 
     /// <summary>
-    /// Lấy thông tin chi tiết của một bệnh lý theo ID (trả về JSON)
+    /// Lấy thông tin chi tiết của một bệnh lý theo ID
     /// </summary>
     [HttpGet]
     public async Task<IActionResult> GetDiseaseById(int id)
@@ -115,14 +119,14 @@ public class DiseaseController : Controller
     }
 
     /// <summary>
-    /// Lưu bệnh lý mới hoặc cập nhật bệnh lý hiện có
+    /// Lưu bệnh lý mới hoặc cập nhật bệnh lý hiện có (CHỈ ADMIN)
     /// </summary>
     [HttpPost]
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> SaveDisease([FromBody] Disease model)
     {
         try
         {
-            // Kiểm tra ModelState
             if (!ModelState.IsValid)
             {
                 var errors = ModelState.Values.SelectMany(v => v.Errors)
@@ -131,7 +135,6 @@ public class DiseaseController : Controller
                 return Json(new { success = false, message = "Dữ liệu không hợp lệ", errors });
             }
 
-            // Kiểm tra xem tên bệnh lý đã tồn tại chưa (ngoài trừ bản ghi hiện tại)
             if (!string.IsNullOrEmpty(model.Name))
             {
                 var existingDisease = await _context.Diseases
@@ -143,15 +146,24 @@ public class DiseaseController : Controller
                 }
             }
 
+            string username = User.Identity?.Name ?? "Admin";
+            string logMessage = "";
+            string actionType = "";
+
             if (model.Id == 0)
             {
-                // Thêm mới
+                // Thêm mới dữ liệu bệnh lý
                 model.CreatedAt = DateTime.UtcNow;
                 _context.Diseases.Add(model);
+                await _context.SaveChangesAsync(); // Lưu DB trước để chắc chắn thành công
+
+                // Thiết lập thông tin Log
+                logMessage = $"Admin '{username}' đã thêm mới bệnh lý '{model.Name}' vào hệ thống.";
+                actionType = "Create";
             }
             else
             {
-                // Cập nhật
+                // Cập nhật dữ liệu bệnh lý hiện có
                 var existingDisease = await _context.Diseases.FirstOrDefaultAsync(d => d.Id == model.Id);
                 
                 if (existingDisease == null)
@@ -168,9 +180,15 @@ public class DiseaseController : Controller
                 existingDisease.UpdatedAt = DateTime.UtcNow;
 
                 _context.Diseases.Update(existingDisease);
+                await _context.SaveChangesAsync();
+
+                // Thiết lập thông tin Log
+                logMessage = $"Admin '{username}' đã cập nhật thông tin bệnh lý '{model.Name}'.";
+                actionType = "Edit";
             }
 
-            await _context.SaveChangesAsync();
+            // 4. GỌI HÀM GHI LOG THỰT KHI LƯU THÀNH CÔNG
+            await _logService.LogAsync(logMessage, actionType, username);
 
             return Json(new
             {
@@ -181,15 +199,15 @@ public class DiseaseController : Controller
         }
         catch (Exception ex)
         {
-            return Json(new { success = false, message = $"Lỗi: {ex.Message}" });
+            return Json(new { success = false, message = $"Lỗi hệ thống: {ex.Message}" });
         }
     }
 
     /// <summary>
-    /// Xóa bệnh lý theo ID
+    /// Xóa bệnh lý dựa theo ID (CHỈ ADMIN)
     /// </summary>
-    [HttpDelete]
     [HttpPost]
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> DeleteDisease(int id)
     {
         try
@@ -201,14 +219,23 @@ public class DiseaseController : Controller
                 return Json(new { success = false, message = "Không tìm thấy bệnh lý để xóa" });
             }
 
+            string diseaseName = disease.Name;
             _context.Diseases.Remove(disease);
             await _context.SaveChangesAsync();
+
+            // 5. GỌI HÀM GHI LOG THỰT KHI XÓA THÀNH CÔNG
+            string username = User.Identity?.Name ?? "Admin";
+            await _logService.LogAsync(
+                message: $"Admin '{username}' đã xóa bệnh lý '{diseaseName}' khỏi hệ thống.",
+                actionType: "Delete",
+                username: username
+            );
 
             return Json(new { success = true, message = "Xóa bệnh lý thành công" });
         }
         catch (Exception ex)
         {
-            return Json(new { success = false, message = $"Lỗi: {ex.Message}" });
+            return Json(new { success = false, message = $"Lỗi hệ thống: {ex.Message}" });
         }
     }
 
@@ -222,14 +249,12 @@ public class DiseaseController : Controller
         {
             var query = _context.Diseases.AsQueryable();
 
-            // Tìm kiếm
             if (!string.IsNullOrEmpty(searchTerm))
             {
                 query = query.Where(d => d.Name.Contains(searchTerm) ||
-                                        d.Symptoms.Contains(searchTerm));
+                                         d.Symptoms.Contains(searchTerm));
             }
 
-            // Lọc theo trạng thái
             if (!string.IsNullOrEmpty(severity))
             {
                 switch (severity.ToLower())

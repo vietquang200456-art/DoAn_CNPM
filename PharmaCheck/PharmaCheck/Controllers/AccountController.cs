@@ -6,7 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 using PharmaCheck.Data;
 using PharmaCheck.Models;
 using PharmaCheck.Models.ViewModels;
-using System.ComponentModel.DataAnnotations;
+using PharmaCheck.Services; // 1. THÊM NAMESPACE DỊCH VỤ LOG
 using System.Security.Claims;
 
 namespace PharmaCheck.Controllers
@@ -18,11 +18,14 @@ namespace PharmaCheck.Controllers
     {
         private readonly ApplicationDbContext _context;
         private readonly ILogger<AccountController> _logger;
+        private readonly IAuditLogService _logService; // 2. KHAI BÁO BIẾN DỊCH VỤ LOG
 
-        public AccountController(ApplicationDbContext context, ILogger<AccountController> logger)
+        // 3. INJECT IAUDITLOGSERVICE VÀO HÀM KHỞI TẠO
+        public AccountController(ApplicationDbContext context, ILogger<AccountController> logger, IAuditLogService logService)
         {
             _context = context;
             _logger = logger;
+            _logService = logService;
         }
 
         // ==================== ĐĂNG NHẬP ====================
@@ -66,6 +69,14 @@ namespace PharmaCheck.Controllers
                 if (user == null)
                 {
                     _logger.LogWarning($"Đăng nhập không thành công: Tài khoản '{model.UsernameOrEmail}' không tồn tại");
+                    
+                    // 4. LOG HOẠT ĐỘNG: Đăng nhập thất bại (Tài khoản không tồn tại)
+                    await _logService.LogAsync(
+                        message: $"Cố gắng đăng nhập bất thành với tài khoản không tồn tại hoặc đã bị khóa: '{model.UsernameOrEmail}'",
+                        actionType: "Login_Failed",
+                        username: model.UsernameOrEmail ?? "Anonymous"
+                    );
+
                     ModelState.AddModelError("", "Tên đăng nhập hoặc email không tồn tại.");
                     return View(model);
                 }
@@ -74,6 +85,14 @@ namespace PharmaCheck.Controllers
                 if (!BCrypt.Net.BCrypt.Verify(model.Password, user.PasswordHash))
                 {
                     _logger.LogWarning($"Đăng nhập không thành công: Mật khẩu sai cho tài khoản '{user.Username}'");
+                    
+                    // 5. LOG HOẠT ĐỘNG: Đăng nhập thất bại (Sai mật khẩu)
+                    await _logService.LogAsync(
+                        message: $"Người dùng '{user.Username}' đăng nhập không thành công (Sai mật khẩu).",
+                        actionType: "Login_Failed",
+                        username: user.Username
+                    );
+
                     ModelState.AddModelError("", "Mật khẩu không chính xác.");
                     return View(model);
                 }
@@ -109,8 +128,15 @@ namespace PharmaCheck.Controllers
                     authProperties);
 
                 _logger.LogInformation($"Đăng nhập thành công cho tài khoản: {user.Username}");
-                TempData["SuccessMessage"] = $"Xin chào {user.FullName}! Đăng nhập thành công.";
+                
+                // 6. LOG HOẠT ĐỘNG: Đăng nhập thành công
+                await _logService.LogAsync(
+                    message: $"Người dùng '{user.Username}' (Quyền: {user.Role}) đã đăng nhập thành công vào hệ thống.",
+                    actionType: "Login",
+                    username: user.Username
+                );
 
+                TempData["SuccessMessage"] = $"Xin chào {user.FullName}! Đăng nhập thành công.";
                 return RedirectToLocal(returnUrl);
             }
             catch (Exception ex)
@@ -120,19 +146,34 @@ namespace PharmaCheck.Controllers
                 return View(model);
             }
         }
+
+        /// <summary>
         /// Đăng xuất khỏi hệ thống
+        /// </summary>
         [HttpPost]
         [Authorize]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Logout()
         {
-            var username = User.FindFirst(ClaimTypes.Name)?.Value;
+            string username = User.Identity?.Name ?? "N/A";
+            
             await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
             _logger.LogInformation($"Đăng xuất thành công: {username}");
+            
+            // 7. LOG HOẠT ĐỘNG: Đăng xuất
+            await _logService.LogAsync(
+                message: $"Người dùng '{username}' đã đăng xuất khỏi hệ thống.",
+                actionType: "Logout",
+                username: username
+            );
+
             TempData["SuccessMessage"] = "Đã đăng xuất thành công.";
             return RedirectToAction("Index", "Home");
         }
+
+        /// <summary>
         /// Hiển thị trang Đăng ký
+        /// </summary>
         [HttpGet]
         public IActionResult Register()
         {
@@ -142,7 +183,10 @@ namespace PharmaCheck.Controllers
             }
             return View();
         }
+
+        /// <summary>
         /// Xử lý đăng ký (POST)
+        /// </summary>
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Register(RegisterViewModel model)
@@ -162,6 +206,7 @@ namespace PharmaCheck.Controllers
                     ModelState.AddModelError("Username", "Tên đăng nhập này đã được sử dụng. Vui lòng chọn tên khác.");
                     return View(model);
                 }
+                
                 // Kiểm tra Email đã tồn tại
                 var existingEmail = await Task.Run(() =>
                     _context.Users.Any(u => u.Email.ToLower() == model.Email.ToLower())
@@ -171,6 +216,7 @@ namespace PharmaCheck.Controllers
                     ModelState.AddModelError("Email", "Email này đã được đăng ký. Vui lòng sử dụng email khác.");
                     return View(model);
                 }
+                
                 // Băm mật khẩu sử dụng BCrypt
                 var passwordHash = BCrypt.Net.BCrypt.HashPassword(model.Password);
 
@@ -190,6 +236,14 @@ namespace PharmaCheck.Controllers
                 await _context.SaveChangesAsync();
 
                 _logger.LogInformation($"Đăng ký tài khoản mới thành công: {model.Username}");
+                
+                // 8. LOG HOẠT ĐỘNG: Đăng ký thành công
+                await _logService.LogAsync(
+                    message: $"Tài khoản mới được tạo thành công: '{model.Username}' (Email: {model.Email}, Họ tên: {model.FullName}).",
+                    actionType: "Register",
+                    username: model.Username
+                );
+
                 TempData["SuccessMessage"] = "Đăng ký tài khoản thành công! Bây giờ hãy đăng nhập.";
                 return RedirectToAction("Login");
             }
@@ -200,7 +254,10 @@ namespace PharmaCheck.Controllers
                 return View(model);
             }
         }
+
+        /// <summary>
         /// Hiển thị trang Quên mật khẩu
+        /// </summary>
         [HttpGet]
         public IActionResult ForgotPassword()
         {
@@ -210,7 +267,10 @@ namespace PharmaCheck.Controllers
             }
             return View();
         }
+
+        /// <summary>
         /// Xử lý yêu cầu quên mật khẩu (POST)
+        /// </summary>
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> ForgotPassword(ForgotPasswordViewModel model)
@@ -228,8 +288,15 @@ namespace PharmaCheck.Controllers
 
                 if (user == null)
                 {
-                    // Không tiết lộ email có tồn tại hay không (bảo mật)
                     _logger.LogWarning($"Yêu cầu quên mật khẩu cho email không tồn tại: {model.Email}");
+                    
+                    // 9. LOG HOẠT ĐỘNG: Yêu cầu đặt lại mật khẩu với email không có trong hệ thống
+                    await _logService.LogAsync(
+                        message: $"Yêu cầu đặt lại mật khẩu thất bại do Email không tồn tại: '{model.Email}'",
+                        actionType: "ForgotPassword_Failed",
+                        username: "Anonymous"
+                    );
+
                     TempData["InfoMessage"] = "Nếu email này tồn tại trong hệ thống, bạn sẽ nhận được email hướng dẫn đặt lại mật khẩu.";
                     return RedirectToAction("Login");
                 }
@@ -238,15 +305,21 @@ namespace PharmaCheck.Controllers
                 var resetToken = GenerateResetToken();
                 var tokenExpiry = DateTime.UtcNow.AddHours(24);
 
-                // Lưu token tạm thời trong session hoặc database
-                // Trong thực tế, bạn nên lưu vào database với một bảng riêng
                 HttpContext.Session.SetString($"ResetToken_{user.Id}", resetToken);
                 HttpContext.Session.SetString($"ResetTokenExpiry_{user.Id}", tokenExpiry.ToString("o"));
 
-                // Mô phỏng gửi email (TODO: Cấu hình SMTP email)
+                // Gửi email 
                 await SendPasswordResetEmailAsync(user.Email, user.Username, resetToken, user.Id);
 
                 _logger.LogInformation($"Yêu cầu đặt lại mật khẩu được gửi đến: {user.Email}");
+                
+                // 10. LOG HOẠT ĐỘNG: Yêu cầu đặt lại mật khẩu thành công
+                await _logService.LogAsync(
+                    message: $"Người dùng '{user.Username}' đã yêu cầu một liên kết đặt lại mật khẩu qua email '{user.Email}'.",
+                    actionType: "ForgotPassword_Request",
+                    username: user.Username
+                );
+
                 TempData["InfoMessage"] = "Nếu email này tồn tại trong hệ thống, bạn sẽ nhận được email hướng dẫn đặt lại mật khẩu.";
                 return RedirectToAction("Login");
             }
@@ -280,7 +353,6 @@ namespace PharmaCheck.Controllers
                 return RedirectToAction("Login");
             }
 
-            // Kiểm tra token hết hạn
             var storedToken = HttpContext.Session.GetString($"ResetToken_{user.Id}");
             var storedExpiry = HttpContext.Session.GetString($"ResetTokenExpiry_{user.Id}");
 
@@ -329,7 +401,6 @@ namespace PharmaCheck.Controllers
                     return View(model);
                 }
 
-                // Kiểm tra token
                 var storedToken = HttpContext.Session.GetString($"ResetToken_{user.Id}");
                 var storedExpiry = HttpContext.Session.GetString($"ResetTokenExpiry_{user.Id}");
 
@@ -358,6 +429,14 @@ namespace PharmaCheck.Controllers
                 HttpContext.Session.Remove($"ResetTokenExpiry_{user.Id}");
 
                 _logger.LogInformation($"Đặt lại mật khẩu thành công cho tài khoản: {user.Username}");
+                
+                // 11. LOG HOẠT ĐỘNG: Đổi mật khẩu thành công bằng token email
+                await _logService.LogAsync(
+                    message: $"Người dùng '{user.Username}' đã đặt lại mật khẩu mới thành công thông qua liên kết xác thực email.",
+                    actionType: "ResetPassword_Success",
+                    username: user.Username
+                );
+
                 TempData["SuccessMessage"] = "Mật khẩu đã được đặt lại thành công. Bây giờ bạn có thể đăng nhập với mật khẩu mới.";
                 return RedirectToAction("Login");
             }
@@ -369,22 +448,8 @@ namespace PharmaCheck.Controllers
             }
         }
 
-        // ==================== HỖ TRỢ ROUTES ====================
-
-        /// <summary>
-        /// Trang từ chối truy cập
-        /// </summary>
-        [HttpGet]
-        public IActionResult AccessDenied()
-        {
-            return View();
-        }
-
         // ==================== HELPER METHODS ====================
 
-        /// <summary>
-        /// Tạo token ngẫu nhiên để đặt lại mật khẩu
-        /// </summary>
         private string GenerateResetToken()
         {
             const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
@@ -395,12 +460,8 @@ namespace PharmaCheck.Controllers
             return token;
         }
 
-        /// <summary>
-        /// Mô phỏng gửi email đặt lại mật khẩu (TODO: Cấu hình SMTP)
-        /// </summary>
         private async Task SendPasswordResetEmailAsync(string email, string username, string resetToken, int userId)
         {
-            // Hiện tại mô phỏng in log
             var resetLink = Url.Action("ResetPassword", "Account",
                 new { token = resetToken, email = email },
                 protocol: HttpContext.Request.Scheme);
@@ -409,12 +470,10 @@ namespace PharmaCheck.Controllers
             _logger.LogInformation($"  Đến: {email}");
             _logger.LogInformation($"  Tên: {username}");
             _logger.LogInformation($"  Link: {resetLink}");
-            _logger.LogInformation($"  Token: {resetToken}");
-            _logger.LogInformation($"  Hạn: 24 giờ từ bây giờ");
 
             await Task.CompletedTask;
         }
-        /// Chuyển hướng an toàn tới URL được yêu cầu hoặc trang chủ
+
         private IActionResult RedirectToLocal(string? returnUrl)
         {
             if (Url.IsLocalUrl(returnUrl))
@@ -426,62 +485,5 @@ namespace PharmaCheck.Controllers
                 return RedirectToAction("Index", "Home");
             }
         }
-    }
-    /// ViewModel cho trang Đăng nhập
-    public class LoginViewModel
-    {
-        [Required(ErrorMessage = "Vui lòng nhập tên đăng nhập hoặc email")]
-        [Display(Name = "Tên đăng nhập hoặc Email")]
-        public string UsernameOrEmail { get; set; } = string.Empty;
-
-        [Required(ErrorMessage = "Vui lòng nhập mật khẩu")]
-        [DataType(DataType.Password)]
-        [Display(Name = "Mật khẩu")]
-        public string Password { get; set; } = string.Empty;
-
-        [Display(Name = "Ghi nhớ đăng nhập")]
-        public bool RememberMe { get; set; }
-    }
-    /// ViewModel cho trang Đăng ký
-    public class RegisterViewModel
-    {
-        [Required(ErrorMessage = "Vui lòng nhập tên đăng nhập")]
-        [StringLength(50, MinimumLength = 4, ErrorMessage = "Tên đăng nhập phải từ 4 đến 50 ký tự")]
-        [Display(Name = "Tên đăng nhập")]
-        public string Username { get; set; } = string.Empty;
-
-        [Required(ErrorMessage = "Vui lòng nhập họ và tên")]
-        [StringLength(100, MinimumLength = 5, ErrorMessage = "Họ tên phải từ 5 đến 100 ký tự")]
-        [Display(Name = "Họ và tên")]
-        public string FullName { get; set; } = string.Empty;
-
-        [Required(ErrorMessage = "Vui lòng nhập email")]
-        [EmailAddress(ErrorMessage = "Email không hợp lệ")]
-        [Display(Name = "Email")]
-        public string Email { get; set; } = string.Empty;
-
-        [Required(ErrorMessage = "Vui lòng nhập mật khẩu")]
-        [StringLength(100, MinimumLength = 8, ErrorMessage = "Mật khẩu phải có ít nhất 8 ký tự")]
-        [DataType(DataType.Password)]
-        [Display(Name = "Mật khẩu")]
-        public string Password { get; set; } = string.Empty;
-
-        [Required(ErrorMessage = "Vui lòng xác nhận mật khẩu")]
-        [DataType(DataType.Password)]
-        [Compare("Password", ErrorMessage = "Mật khẩu xác nhận không khớp")]
-        [Display(Name = "Xác nhận mật khẩu")]
-        public string ConfirmPassword { get; set; } = string.Empty;
-
-        [Required(ErrorMessage = "Vui lòng chấp nhận Điều khoản sử dụng")]
-        [Display(Name = "Tôi đồng ý với Điều khoản sử dụng và Chính sách bảo mật")]
-        public bool AgreeToTerms { get; set; }
-    }
-    /// ViewModel cho trang Quên mật khẩu
-    public class ForgotPasswordViewModel
-    {
-        [Required(ErrorMessage = "Vui lòng nhập email của bạn")]
-        [EmailAddress(ErrorMessage = "Email không hợp lệ")]
-        [Display(Name = "Email")]
-        public string Email { get; set; } = string.Empty;
     }
 }

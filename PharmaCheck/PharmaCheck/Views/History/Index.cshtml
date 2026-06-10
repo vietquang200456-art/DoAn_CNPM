@@ -1,0 +1,139 @@
+@{
+    ViewData["Title"] = "Lịch Sử Tra Cứu";
+    bool isAdmin = User.IsInRole("Admin");
+    var historyList = ViewBag.HistoryList as IEnumerable<dynamic>;
+}
+
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
+        <div>
+            <h1 class="text-2xl font-black text-slate-900 tracking-tight flex items-center gap-2.5">
+                <div class="bg-medical-100 text-medical-700 p-2 rounded-xl">
+                    <i class="fas fa-history text-lg"></i>
+                </div>
+                Lịch Sử Nhật Ký Tra Cứu @(isAdmin ? "(Quyền Admin)" : "")
+            </h1>
+            <p class="text-sm text-slate-500 mt-1">
+                @(isAdmin ? "Hệ thống hiển thị nhật ký tra cứu của toàn bộ người dùng." : "Xem lại danh sách các thuốc, cặp tương tác và chống chỉ định bạn đã kiểm tra.")
+            </p>
+        </div>
+        
+        <a asp-controller="Home" asp-action="Check" 
+           class="inline-flex items-center gap-2 bg-gradient-to-r from-medical-600 to-medical-700 text-white px-5 py-2.5 rounded-xl font-semibold text-sm shadow-md shadow-medical-100 hover:shadow-none transition-all active:scale-95 cursor-pointer">
+            <i class="fas fa-plus text-xs"></i> Tra cứu mới
+        </a>
+    </div>
+
+    @if (ViewBag.ErrorMessage != null)
+    {
+        <div class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl mb-6 flex items-center gap-3 text-sm">
+            <i class="fas fa-exclamation-circle text-base"></i>
+            <span>@ViewBag.ErrorMessage</span>
+        </div>
+    }
+
+    @if (historyList == null || !historyList.Any())
+    {
+        <div class="bg-white border border-slate-100 rounded-2xl p-12 text-center shadow-sm">
+            <div class="w-16 h-16 bg-slate-50 text-slate-400 flex items-center justify-center rounded-full mx-auto mb-4 text-xl">
+                <i class="fas fa-folder-open"></i>
+            </div>
+            <h3 class="text-base font-bold text-slate-800">Chưa có lịch sử tra cứu</h3>
+            <p class="text-sm text-slate-400 max-w-sm mx-auto mt-1 mb-6">Mọi lượt kiểm tra tương tác thuốc sẽ được tự động lưu vết tại đây.</p>
+        </div>
+    }
+    else
+    {
+        <div class="bg-white border border-slate-100 rounded-2xl shadow-sm overflow-hidden">
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="bg-slate-50/70 border-b border-slate-100 text-slate-500 text-xs font-bold uppercase tracking-wider">
+                            <th class="py-4 px-6">Thời gian</th>
+                            @if (isAdmin)
+                            {
+                                <th class="py-4 px-6">Tài Khoản Tra Cứu</th>
+                            }
+                            <th class="py-4 px-6">Phân Loại</th>
+                            <th class="py-4 px-6">Nội Dung Tra Cứu</th>
+                            @if (isAdmin)
+                            {
+                                <th class="py-4 px-6 text-center">Thao tác</th>
+                            }
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100 text-sm text-slate-700">
+                        @foreach (var item in historyList)
+                        {
+                            <tr class="hover:bg-slate-50/50 transition-colors">
+                                <td class="py-4 px-6 whitespace-nowrap text-slate-500 font-medium text-xs">
+                                    <div class="flex items-center gap-2">
+                                        <i class="far fa-clock text-slate-400"></i>
+                                        @item.Time
+                                    </div>
+                                </td>
+                                
+                                @if (isAdmin)
+                                {
+                                    <td class="py-4 px-6 text-slate-600 font-medium">
+                                        <div class="flex flex-col">
+                                            <span class="text-slate-800 font-semibold">@item.UserName</span>
+                                            <span class="text-xs text-slate-400 font-mono">@item.UserEmail</span>
+                                        </div>
+                                    </td>
+                                }
+
+                                <td class="py-4 px-6 whitespace-nowrap">
+                                    <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-bold border @item.BadgeColor uppercase tracking-wide">
+                                        <i class="fas @item.Icon text-[10px]"></i>
+                                        @item.TypeName
+                                    </span>
+                                </td>
+
+                                <td class="py-4 px-6 text-slate-900 font-medium max-w-md">
+                                    <div class="flex items-center gap-2 flex-wrap">
+                                        @if (item.SearchType == "Drug-Drug")
+                                        {
+                                            <i class="fas fa-exchange-alt text-purple-400 text-xs mr-1"></i>
+                                            <span class="text-slate-800 font-semibold">@item.SearchQuery</span>
+                                        }
+                                        else if (item.SearchType == "Drug-Disease")
+                                        {
+                                            <i class="fas fa-shield-virus text-amber-400 text-xs mr-1"></i>
+                                            <span class="text-slate-800 font-semibold">@item.SearchQuery</span>
+                                        }
+                                        else
+                                        {
+                                            <i class="fas fa-pills text-teal-400 text-xs mr-1"></i>
+                                            <span class="text-slate-800 font-semibold">@item.SearchQuery</span>
+                                        }
+                                    </div>
+                                </td>
+
+                                @if (isAdmin)
+                                {
+                                    <td class="py-4 px-6 text-center whitespace-nowrap">
+                                        <form asp-action="Delete" asp-route-id="@item.Id" method="post" 
+                                              onsubmit="return confirm('Bạn chắc chắn muốn xóa bản ghi lịch sử tra cứu này khỏi hệ thống?');" class="inline">
+                                            <button type="submit" class="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors cursor-pointer" title="Xóa lịch sử">
+                                                <i class="far fa-trash-alt text-sm"></i>
+                                            </button>
+                                        </form>
+                                    </td>
+                                }
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+            
+            <div class="bg-slate-50/50 border-t border-slate-100 px-6 py-3.5 flex items-center justify-between text-xs text-slate-500 font-medium">
+                <span>Tổng cộng: <strong class="text-slate-700">@historyList.Count()</strong> lượt tra cứu</span>
+                <span class="italic text-slate-400 flex items-center gap-1">
+                    <i class="fas @(isAdmin ? "fa-user-shield text-red-400" : "fa-lock text-emerald-400")"></i>
+                    @(isAdmin ? "Cơ sở dữ liệu Nhật ký Hệ thống (Quản trị viên)" : "Lịch sử cá nhân của bạn được bảo mật mã hóa")
+                </span>
+            </div>
+        </div>
+    }
+</div>
