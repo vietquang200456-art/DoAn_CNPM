@@ -24,7 +24,8 @@ namespace PharmaCheck.Models
         public DateTime? UpdatedAt { get; set; } // thời điểm cập nhật thông tin người dùng gần nhất
 
         public DateTime? LastLoginAt { get; set; } // thời điểm đăng nhập gần nhất của người dùng
-
+        public string? ResetToken { get; set; }
+        public DateTime? ResetTokenExpiry { get; set; }
         // Navigation
         public ICollection<SearchHistory> SearchHistories { get; set; }
             = new List<SearchHistory>();

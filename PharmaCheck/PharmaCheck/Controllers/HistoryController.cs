@@ -62,7 +62,7 @@ namespace PharmaCheck.Controllers
                 var formattedHistories = rawHistories.Select(h => new {
                     Id = h.Id,
                     UserEmail = h.User?.Email ?? "Khách vãng lai/Ẩn danh",
-                    UserName = h.User?.FullName ?? "N/A",
+                    UserName = h.User?.Username ?? "N/A",
                     SearchType = h.SearchType,
                     SearchQuery = h.SearchQuery,
                     Time = h.CreatedAt.AddHours(7).ToString("dd/MM/yyyy HH:mm:ss"), // Convert sang múi giờ VN chi tiết

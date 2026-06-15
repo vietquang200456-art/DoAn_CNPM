@@ -14,6 +14,8 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
         builder.Configuration.GetConnectionString("DefaultConnection")));
 // Đăng ký dịch vụ ghi nhật ký hệ thống
 builder.Services.AddScoped<IAuditLogService, AuditLogService>();
+// Đăng ký dịch vụ gửi email
+builder.Services.AddTransient<IEmailService, EmailService>();
 // Cấu hình Cookie Authentication
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(options =>
@@ -38,7 +40,8 @@ builder.Services.AddSession(options =>
 });
 
 var app = builder.Build();
-
+// Kích hoạt Session Middleware (Phải đặt TRƯỚC UseAuthorization)
+app.UseSession();
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
 {

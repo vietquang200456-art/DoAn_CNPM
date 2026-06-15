@@ -149,6 +149,12 @@
                        class="nav-link px-3.5 h-full flex items-center text-sm font-medium text-slate-600 hover:text-indigo-700 gap-1.5">
                         <i class="fas fa-shadow-alt text-slate-400 text-xs"></i>Bảo Mật
                     </a>
+                    @if(User.Identity.IsAuthenticated){
+                        <a asp-controller="Account" asp-action="Profile"
+                           class="nav-link px-3.5 h-full flex items-center text-sm font-medium text-slate-600 hover:text-indigo-700 gap-1.5">
+                            <i class="fas fa-user text-slate-400 text-xs"></i>Hồ Sơ
+                        </a>
+                    }
                 </div>
 
                 <div class="hidden md:flex items-center gap-3">
@@ -343,7 +349,7 @@
                                 </div>
                             </div>
                         </footer>
-
+                        <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
                         <script src="~/js/site.js" asp-append-version="true"></script>
                         @await RenderSectionAsync("Scripts", required: false)
                     </body>
