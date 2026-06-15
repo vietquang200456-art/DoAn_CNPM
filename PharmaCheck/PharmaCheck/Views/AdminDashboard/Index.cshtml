@@ -4,263 +4,132 @@
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-<div class="min-h-screen bg-slate-50 py-8">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-
-        <div class="mb-8 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+<div class="min-h-screen bg-slate-50 p-6">
+    <div class="max-w-7xl mx-auto space-y-8">
+        
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div>
-                <h1 class="text-3xl font-extrabold text-slate-900 tracking-tight flex items-center gap-3">
-                    <i class="fas fa-chart-pie text-medical-600"></i>
-                    Tổng Quan Hệ Thống
+                <h1 class="text-2xl font-bold text-slate-800 flex items-center gap-2">
+                    <i class="fas fa-chart-pie text-blue-600"></i> Tổng Quan Hệ Thống
                 </h1>
-                <p class="text-slate-500 mt-1">Chào mừng trở lại, Admin. Dưới đây là phân tích và trung tâm kiểm soát
-                    PharmaCheck.</p>
-                </div>
-                <div class="flex gap-3">
-                    <a href="/Drug/Index"
-                       class="px-4 py-2 bg-white border border-slate-200 text-slate-700 rounded-lg font-semibold hover:bg-slate-50 shadow-sm transition flex items-center gap-2">
-                        <i class="fas fa-pills text-slate-400"></i> Xem trang quản lý thuốc
-                    </a>
-                    <button onclick="window.location.reload()"
-                            class="px-4 py-2 bg-medical-600 text-white rounded-lg font-semibold hover:bg-medical-700 shadow-sm transition flex items-center gap-2">
-                        <i class="fas fa-sync-alt"></i> Tải lại dữ liệu
-                    </button>
-                </div>
+                <p class="text-slate-500 text-sm mt-1">Chào mừng trở lại, Admin. Trung tâm điều khiển PharmaCheck.</p>
+            </div>
+            <div class="flex gap-3">
+                <a href="/Drug/Index" class="px-4 py-2 bg-white border border-slate-200 text-slate-700 rounded-lg text-sm font-semibold hover:bg-slate-50 transition flex items-center gap-2">
+                    <i class="fas fa-pills"></i> Trang quản lý thuốc
+                </a>
+                <button onclick="window.location.reload()" class="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-semibold hover:bg-blue-700 transition flex items-center gap-2">
+                    <i class="fas fa-sync-alt"></i> Tải lại
+                </button>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            @* Sử dụng template helper hoặc code block tùy bạn, ở đây giữ nguyên logic ViewBag *@
+            <div class="bg-white p-6 rounded-xl border border-slate-100 shadow-sm hover:shadow-md transition">
+                <p class="text-xs font-bold text-slate-400 uppercase">Tổng số thuốc</p>
+                <h3 class="text-3xl font-extrabold text-slate-800 mt-2">@ViewBag.TotalDrugs</h3>
+            </div>
+            <div class="bg-white p-6 rounded-xl border border-slate-100 shadow-sm hover:shadow-md transition">
+                <p class="text-xs font-bold text-slate-400 uppercase">Đang hoạt động</p>
+                <h3 class="text-3xl font-extrabold text-green-600 mt-2">@ViewBag.ActiveDrugs</h3>
+            </div>
+            <div class="bg-white p-6 rounded-xl border border-slate-100 shadow-sm hover:shadow-md transition">
+                <p class="text-xs font-bold text-slate-400 uppercase">Sắp hết hạn (3th)</p>
+                <h3 class="text-3xl font-extrabold text-amber-600 mt-2">@ViewBag.ExpiredWarningDrugs</h3>
+            </div>
+            <div class="bg-white p-6 rounded-xl border border-slate-100 shadow-sm hover:shadow-md transition">
+                <p class="text-xs font-bold text-slate-400 uppercase">Tổng User</p>
+                <h3 class="text-3xl font-extrabold text-indigo-600 mt-2">@ViewBag.TotalUsers</h3>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-100 lg:col-span-2">
+                <h3 class="font-bold text-slate-800 mb-6">Tốc độ cập nhật thuốc (6 tháng qua)</h3>
+                <div class="h-64"><canvas id="drugTrendChart"></canvas></div>
             </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-                <div
-                    class="bg-white p-6 rounded-xl shadow-sm border border-slate-100 flex items-center justify-between hover:shadow-md transition">
-                    <div>
-                        <p class="text-sm font-semibold text-slate-400 uppercase tracking-wider">Tổng số thuốc</p>
-                        <h3 class="text-3xl font-bold text-slate-800 mt-1">@ViewBag.TotalDrugs</h3>
-                    </div>
-                    <div class="w-12 h-12 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center text-xl">
-                        <i class="fas fa-capsules"></i>
-                    </div>
-                </div>
-
-                <div
-                    class="bg-white p-6 rounded-xl shadow-sm border border-slate-100 flex items-center justify-between hover:shadow-md transition">
-                    <div>
-                        <p class="text-sm font-semibold text-slate-400 uppercase tracking-wider">Đang hoạt động</p>
-                        <h3 class="text-3xl font-bold text-green-600 mt-1">@ViewBag.ActiveDrugs</h3>
-                    </div>
-                    <div class="w-12 h-12 bg-green-50 text-green-600 rounded-xl flex items-center justify-center text-xl">
-                        <i class="fas fa-check-circle"></i>
-                    </div>
-                </div>
-
-                <div
-                    class="bg-white p-6 rounded-xl shadow-sm border border-slate-100 flex items-center justify-between hover:shadow-md transition">
-                    <div>
-                        <p class="text-sm font-semibold text-slate-400 uppercase tracking-wider">Sắp hết hạn (3th)</p>
-                        <h3 class="text-3xl font-bold text-amber-600 mt-1">@ViewBag.ExpiredWarningDrugs</h3>
-                    </div>
-                    <div class="w-12 h-12 bg-amber-50 text-amber-600 rounded-xl flex items-center justify-center text-xl">
-                        <i class="fas fa-hourglass-end"></i>
-                    </div>
-                </div>
-
-                <div
-                    class="bg-white p-6 rounded-xl shadow-sm border border-slate-100 flex items-center justify-between hover:shadow-md transition">
-                    <div>
-                        <p class="text-sm font-semibold text-slate-400 uppercase tracking-wider">Tổng số User</p>
-                        <h3 class="text-3xl font-bold text-indigo-600 mt-1">@ViewBag.TotalUsers</h3>
-                    </div>
-                    <div class="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-xl flex items-center justify-center text-xl">
-                        <i class="fas fa-users"></i>
-                    </div>
-                </div>
-            </div>
-
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
-
-                <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-100 lg:col-span-2">
-                    <div class="flex items-center justify-between mb-4">
-                        <h3 class="text-lg font-bold text-slate-800">Tốc độ cập nhật dữ liệu thuốc</h3>
-                        <span class="text-xs bg-slate-100 text-slate-600 px-2.5 py-1 rounded-full font-medium">6 tháng
-                            qua</span>
-                        </div>
-                        <div class="h-64 w-full flex items-center justify-center">
-                            <canvas id="drugTrendChart"></canvas>
-                        </div>
-                    </div>
-
-                    <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-100 flex flex-col justify-between">
-                        <div>
-                            <h3 class="text-lg font-bold text-slate-800 mb-4">Nhật ký hoạt động</h3>
-                            <div class="space-y-4">
-                                @if (ViewBag.SystemLogs == null || !((IEnumerable<dynamic>)ViewBag.SystemLogs).Any())
-                                {
-                                    <div class="text-center py-6 text-slate-400 text-sm">
-                                        <i class="fas fa-folder-open block text-2xl mb-2"></i>
-                                        Chưa có nhật ký hoạt động nào được ghi nhận.
-                                    </div>
-                                }
-                                else
-                                {
-                                    @foreach (var log in ViewBag.SystemLogs)
-                                    {
-                                        <div class="flex items-start gap-3">
-                                            <div
-                                                class="w-8 h-8 rounded-lg flex items-center justify-center text-sm shrink-0 @log.Color">
-                                                <i class="fas @log.Icon"></i>
-                                            </div>
-                                            <div class="flex-1 min-w-0">
-                                                <p class="text-sm text-slate-700 font-medium break-words leading-tight">@log.Message</p>
-                                                <span class="text-xs text-slate-400">@log.Time</span>
-                                            </div>
-                                        </div>
-                                    }
-                                }
-                            </div>
-                        </div>
-                        <a href="/AdminDashboard/Logs"
-                           class="text-sm text-center text-medical-600 hover:text-medical-700 font-semibold block mt-4 border-t border-slate-100 pt-3">
-                            Xem tất cả lịch sử log <i class="fas fa-arrow-right text-xs ml-1"></i>
-                        </a>
-                    </div>
-                </div>
-
-                <div class="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden mb-8">
-                    <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
-                        <h3 class="text-lg font-bold text-slate-800 flex items-center gap-2">
-                            <i class="fas fa-user-shield text-indigo-600"></i> Quản Lý Tài Khoản Người Dùng
-                        </h3>
-                        <span class="text-xs font-semibold px-2.5 py-1 bg-indigo-50 text-indigo-700 rounded-full">Hệ thống phân
-                            quyền</span>
-                        </div>
-                        <div class="overflow-x-auto">
-                            <table class="w-full text-left border-collapse">
-                                <thead>
-                                    <tr
-                                        class="bg-slate-50/70 border-b border-slate-100 text-xs font-bold uppercase tracking-wider text-slate-400">
-                                        <th class="py-3 px-6">Tên Thành Viên</th>
-                                        <th class="py-3 px-6">Địa chỉ Email</th>
-                                        <th class="py-3 px-6">Quyền hạn (Role)</th>
-                                        <th class="py-3 px-6">Trạng thái</th>
-                                        <th class="py-3 px-6 text-center">Hành Động Quản Trị</th>
-                                    </tr>
-                                </thead>
-                                <tbody class="divide-y divide-slate-100 text-sm text-slate-600">
-                                    @foreach (var user in ViewBag.UserList)
-                                    {
-                                        <tr class="hover:bg-slate-50/50 transition-colors">
-                                            <td class="py-4 px-6 font-semibold text-slate-800 flex items-center gap-3">
-                                                <div
-                                                    class="w-8 h-8 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold text-xs">
-                                                    @user.AvatarInitials
-                                                </div>
-                                                @user.Name
-                                            </td>
-                                            <td class="py-4 px-6">@user.Email</td>
-                                            <td class="py-4 px-6">
-                                                @if (user.Role == "Moderator")
-                                                {
-                                                    <span
-                                                    class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-purple-50 text-purple-700">@user.Role</span>
-                                                }
-                                                else
-                                                {
-                                                    <span
-                                                    class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-50 text-blue-700">@user.Role</span>
-                                                }
-                                            </td>
-                                            <td class="py-4 px-6">
-                                                @if (user.IsActive)
-                                                {
-                                                    <span
-                                                        class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-green-50 text-green-700">
-                                                        <span class="w-1.5 h-1.5 rounded-full bg-green-600"></span> Đang hoạt động
-                                                    </span>
-                                                }
-                                                else
-                                                {
-                                                    <span
-                                                        class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-red-50 text-red-700">
-                                                        <span class="w-1.5 h-1.5 rounded-full bg-red-600"></span> Đang bị khóa
-                                                    </span>
-                                                }
-                                            </td>
-                                            <td class="py-4 px-6 text-center space-x-3">
-                                                <button onclick="changeUserRole(@user.Id)"
-                                                        class="text-xs font-bold text-indigo-600 hover:text-indigo-800 transition cursor-pointer">
-                                                    <i class="fas fa-user-tag"></i> Đổi quyền
-                                                </button>
-                                                @if (user.IsActive)
-                                                {
-                                                    <button onclick="toggleUserStatus(@user.Id, false)"
-                                                            class="text-xs font-bold text-red-600 hover:text-red-800 transition cursor-pointer">
-                                                        <i class="fas fa-lock"></i> Khóa tài khoản
-                                                    </button>
-                                                }
-                                                else
-                                                {
-                                                    <button onclick="toggleUserStatus(@user.Id, true)"
-                                                            class="text-xs font-bold text-green-600 hover:text-green-800 transition cursor-pointer">
-                                                        <i class="fas fa-unlock"></i> Mở khóa
-                                                    </button>
-                                                }
-                                            </td>
-                                        </tr>
-                                    }
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-
-                    <div class="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden">
-                        <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
-                            <h3 class="text-lg font-bold text-slate-800 flex items-center gap-2">
-                                <i class="fas fa-history text-blue-600"></i> Dữ liệu thuốc mới cập nhật gần đây
-                            </h3>
-                            <span class="text-xs font-semibold px-2.5 py-1 bg-blue-50 text-blue-700 rounded-full">Sắp xếp: Mới
-                                nhất</span>
-                            </div>
-                            <div class="overflow-x-auto">
-                                <table class="w-full text-left border-collapse">
-                                    <thead>
-                                        <tr
-                                            class="bg-slate-50/70 border-b border-slate-100 text-xs font-bold uppercase tracking-wider text-slate-400">
-                                            <th class="py-3 px-6">Tên thuốc</th>
-                                            <th class="py-3 px-6">Hoạt chất chính</th>
-                                            <th class="py-3 px-6">Nhà sản xuất</th>
-                                            <th class="py-3 px-6">Thời gian cập nhật</th>
-                                            <th class="py-3 px-6 text-center">Trạng thái</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody class="divide-y divide-slate-100 text-sm text-slate-600">
-                                        @foreach (var drug in ViewBag.RecentDrugs)
-                                        {
-                                            <tr class="hover:bg-slate-50/50 transition-colors">
-                                                <td class="py-4 px-6 font-semibold text-slate-800">@drug.Name</td>
-                                                <td class="py-4 px-6">@drug.ActiveIngredient</td>
-                                                <td class="py-4 px-6">@drug.Manufacturer</td>
-                                                <td class="py-4 px-6 text-slate-400 text-xs">@drug.UpdatedAt</td>
-                                                <td class="py-4 px-6 text-center">
-                                                    @if (drug.Status == "Active")
-                                                    {
-                                                        <span
-                                                            class="inline-flex px-2.5 py-0.5 rounded-full text-xs font-semibold bg-green-50 text-green-700">Hoạt
-                                                            động</span>
-                                                        }
-                                    else
-                                                        {
-                                                            <span
-                                                                class="inline-flex px-2.5 py-0.5 rounded-full text-xs font-semibold bg-red-50 text-red-700">Tạm
-                                                                khóa</span>
-                                                            }
-                                                        </td>
-                                                    </tr>
-                                                }
-                                            </tbody>
-                                        </table>
-                                    </div>
+            <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-100 flex flex-col">
+                <h3 class="font-bold text-slate-800 mb-4">Nhật ký hoạt động</h3>
+                <div class="space-y-4 flex-1">
+                    @if (ViewBag.SystemLogs != null) {
+                        @foreach (var log in ViewBag.SystemLogs) {
+                            <div class="flex items-start gap-3">
+                                <div class="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 @log.Color bg-opacity-10 text-sm">
+                                    <i class="fas @log.Icon"></i>
                                 </div>
-
+                                <div>
+                                    <p class="text-sm text-slate-700 leading-tight">@log.Message</p>
+                                    <span class="text-[10px] text-slate-400 uppercase font-bold">@log.Time</span>
+                                </div>
                             </div>
-                        </div>
+                        }
+                    }
+                </div>
+                <a href="/AdminDashboard/Logs" class="text-xs text-blue-600 font-bold mt-4 pt-4 border-t border-slate-100 block hover:underline">
+                    Xem tất cả lịch sử log <i class="fas fa-arrow-right ml-1"></i>
+                </a>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 xl:grid-cols-2 gap-8">
+            <div class="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden">
+                <div class="px-6 py-4 border-b border-slate-100 bg-slate-50/50">
+                    <h3 class="font-bold text-slate-800">Quản lý tài khoản</h3>
+                </div>
+                <table class="w-full text-sm">
+                    <thead class="bg-slate-50 text-slate-400 uppercase text-[10px]">
+                        <tr>
+                            <th class="py-3 px-6 text-left">Thành viên</th>
+                            <th class="py-3 px-6 text-left">Quyền</th>
+                            <th class="py-3 px-6 text-center">Hành động</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100">
+                        @foreach (var user in ViewBag.UserList) {
+                            <tr class="hover:bg-slate-50">
+                                <td class="py-4 px-6 font-semibold text-slate-700">@user.Name</td>
+                                <td class="py-4 px-6"><span class="px-2 py-1 rounded-full bg-blue-50 text-blue-700 text-[10px] font-bold uppercase">@user.Role</span></td>
+                                <td class="py-4 px-6 text-center space-x-2">
+                                    <button onclick="changeUserRole(@user.Id)" class="text-indigo-600 font-bold text-[10px] hover:underline">ĐỔI QUYỀN</button>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden">
+                <div class="px-6 py-4 border-b border-slate-100 bg-slate-50/50">
+                    <h3 class="font-bold text-slate-800">Thuốc mới cập nhật</h3>
+                </div>
+                <table class="w-full text-sm">
+                    <thead class="bg-slate-50 text-slate-400 uppercase text-[10px]">
+                        <tr>
+                            <th class="py-3 px-6 text-left">Tên thuốc</th>
+                            <th class="py-3 px-6 text-left">Nhà sản xuất</th>
+                            <th class="py-3 px-6 text-center">Trạng thái</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100">
+                        @foreach (var drug in ViewBag.RecentDrugs) {
+                            <tr class="hover:bg-slate-50">
+                                <td class="py-4 px-6 font-semibold text-slate-700">@drug.Name</td>
+                                <td class="py-4 px-6 text-slate-500">@drug.Manufacturer</td>
+                                <td class="py-4 px-6 text-center">
+                                    <span class="px-2 py-1 rounded-full text-[10px] font-bold @(drug.Status == "Active" ? "bg-green-50 text-green-700" : "bg-red-50 text-red-700")">
+                                        @(drug.Status == "Active" ? "HOẠT ĐỘNG" : "KHÓA")
+                                    </span>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
 
                         <script>
                             document.addEventListener("DOMContentLoaded", function () {

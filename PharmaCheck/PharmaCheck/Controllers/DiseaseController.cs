@@ -29,22 +29,25 @@ public class DiseaseController : Controller
     /// Hiển thị danh sách bệnh lý với hỗ trợ tìm kiếm, lọc và phân trang
     /// </summary>
     [HttpGet]
-    public async Task<IActionResult> Index(string searchTerm = "", string severity = "", int page = 1)
+    public async Task<IActionResult> Index(string searchTerm = "", string status = "", int page = 1)
     {
         try
         {
             var query = _context.Diseases.AsQueryable();
 
+            // Lọc theo từ khóa tìm kiếm
             if (!string.IsNullOrEmpty(searchTerm))
             {
+                searchTerm = searchTerm.Trim();
                 query = query.Where(d => d.Name.Contains(searchTerm) ||
                                          d.Symptoms.Contains(searchTerm) ||
                                          d.Causes.Contains(searchTerm));
             }
 
-            if (!string.IsNullOrEmpty(severity))
+            // ĐỔI TÊN BIẾN: Lọc theo trạng thái ẩn/hiện (Active/Inactive) từ tham số 'status'
+            if (!string.IsNullOrEmpty(status))
             {
-                switch (severity.ToLower())
+                switch (status.ToLower())
                 {
                     case "active":
                         query = query.Where(d => d.IsActive);
@@ -70,7 +73,7 @@ public class DiseaseController : Controller
                 TotalRecords = totalRecords,
                 PageSize = PageSize,
                 SearchTerm = searchTerm,
-                SeverityFilter = severity
+                SeverityFilter = status // ĐỒNG BỘ: Gán tham số status vào thuộc tính SeverityFilter của bạn
             };
 
             return View(viewModel);
@@ -240,10 +243,10 @@ public class DiseaseController : Controller
     }
 
     /// <summary>
-    /// API để lấy danh sách bệnh lý khi tìm kiếm/lọc (AJAX)
+    /// API để lấy danh sách bệnh lý khi tìm kiếm/lọc (AJAX) - Đã đồng bộ parameter sang 'status'
     /// </summary>
     [HttpGet]
-    public async Task<IActionResult> GetDiseasesPartial(string searchTerm = "", string severity = "", int page = 1)
+    public async Task<IActionResult> GetDiseasesPartial(string searchTerm = "", string status = "", int page = 1)
     {
         try
         {
@@ -255,9 +258,9 @@ public class DiseaseController : Controller
                                          d.Symptoms.Contains(searchTerm));
             }
 
-            if (!string.IsNullOrEmpty(severity))
+            if (!string.IsNullOrEmpty(status))
             {
-                switch (severity.ToLower())
+                switch (status.ToLower())
                 {
                     case "active":
                         query = query.Where(d => d.IsActive);

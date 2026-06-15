@@ -4,6 +4,18 @@
     ViewData["Title"] = "Thêm Mới Chống Chỉ Định | PharmaCheck";
 }
 
+<link href="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/css/tom-select.tailwind.min.css" rel="stylesheet">
+<style>
+    /* Đồng bộ giao diện Tom Select với thiết kế rounded-xl của hệ thống */
+    .ts-control {
+        border-radius: 0.75rem !important;
+        padding: 0.75rem 1rem !important;
+    }
+    .ts-wrapper.single .ts-control::after {
+        right: 15px !important;
+    }
+</style>
+
 <div class="bg-gradient-to-r from-red-700 via-red-600 to-pink-800 text-white py-8">
     <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex items-center gap-4">
@@ -43,7 +55,7 @@
                         <label asp-for="DrugId" class="block text-sm font-semibold text-gray-700 mb-2">
                             <i class="fas fa-pills mr-1.5 text-red-600"></i> Tên Thuốc <span class="text-red-500">*</span>
                         </label>
-                        <select asp-for="DrugId" asp-items="Model.DrugList" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500 bg-white transition-shadow">
+                        <select asp-for="DrugId" asp-items="Model.DrugList" class="searchable-select w-full" placeholder="Gõ tên thuốc để tìm kiếm...">
                             <option value="">-- Chọn thuốc cảnh báo --</option>
                         </select>
                         <span asp-validation-for="DrugId" class="text-xs text-red-500 mt-1 block font-medium"></span>
@@ -53,18 +65,18 @@
                         <label asp-for="DiseaseId" class="block text-sm font-semibold text-gray-700 mb-2">
                             <i class="fas fa-heartbeat mr-1.5 text-pink-600"></i> Bệnh Lý Nền / Chống Chỉ Định <span class="text-red-500">*</span>
                         </label>
-                        <select asp-for="DiseaseId" asp-items="Model.DiseaseList" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500 bg-white transition-shadow">
+                        <select asp-for="DiseaseId" asp-items="Model.DiseaseList" class="searchable-select w-full" placeholder="Gõ tên hoặc mã ICD bệnh lý...">
                             <option value="">-- Chọn bệnh lý chống chỉ định --</option>
                         </select>
                         <span asp-validation-for="DiseaseId" class="text-xs text-red-500 mt-1 block font-medium"></span>
                     </div>
                 </div>
 
-                <div class="mb-6">
+                <div class="mb-6 p-4 rounded-xl transition-all duration-300" id="risk-container">
                     <label asp-for="RiskLevel" class="block text-sm font-semibold text-gray-700 mb-2">
                         <i class="fas fa-radiation mr-1.5 text-red-600"></i> Mức Độ Rủi Ro <span class="text-red-500">*</span>
                     </label>
-                    <select asp-for="RiskLevel" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500 bg-white transition-shadow">
+                    <select asp-for="RiskLevel" id="risk-select" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500 bg-white transition-shadow">
                         <option value="">-- Chọn mức độ rủi ro --</option>
                         <option value="1">1 - Thấp (Thận trọng sử dụng nhẹ)</option>
                         <option value="2">2 - Vừa (Theo dõi sát chỉ số lâm sàng)</option>
@@ -111,8 +123,49 @@
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
+    <script src="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/js/tom-select.complete.min.js"></script>
+    
     <script>
-        // Đồng bộ hóa: Khi nhấn Hủy bỏ/Quay lại, hệ thống sẽ mở trực tiếp Tab chống chỉ định
+        // 1. Lưu giữ trạng thái Tab chống chỉ định thuốc - bệnh lý cho Index
         localStorage.setItem('pharmaCheck_activeTab', 'contraindications');
+
+        // 2. Kích hoạt tính năng tìm kiếm thông minh cho danh mục Thuốc và Bệnh lý lý nền
+        document.querySelectorAll('.searchable-select').forEach(function(el) {
+            new TomSelect(el, {
+                create: false,
+                sortField: { field: "text", direction: "asc" },
+                placeholder: el.getAttribute('placeholder')
+            });
+        });
+
+        // 3. Xử lý logic thay đổi màu nền động theo mức độ rủi ro (Risk Level)
+        const riskSelect = document.getElementById('risk-select');
+        const riskContainer = document.getElementById('risk-container');
+
+        const riskStyles = {
+            '1': { bg: 'bg-green-50', border: 'border-l-4 border-green-500' },
+            '2': { bg: 'bg-yellow-50', border: 'border-l-4 border-yellow-400' },
+            '3': { bg: 'bg-orange-50', border: 'border-l-4 border-orange-400' },
+            '4': { bg: 'bg-red-50', border: 'border-l-4 border-red-500' },
+            '5': { bg: 'bg-purple-950/10', border: 'border-l-4 border-purple-700' } // Cấp 5 đổi màu đậm hơn để cảnh báo nguy kịch
+        };
+
+        riskSelect.addEventListener('change', function() {
+            const level = this.value;
+            
+            // Khôi phục class gốc
+            riskContainer.className = "mb-6 p-4 rounded-xl transition-all duration-300";
+            
+            // Gán class mới theo cấu hình lựa chọn
+            if (riskStyles[level]) {
+                riskContainer.classList.add(riskStyles[level].bg);
+                riskStyles[level].border.split(' ').forEach(className => riskContainer.classList.add(className));
+            }
+        });
+        
+        // Kích hoạt màu mặc định nếu có dữ liệu cũ từ ModelState trả về
+        if (riskSelect.value) {
+            riskSelect.dispatchEvent(new Event('change'));
+        }
     </script>
 }

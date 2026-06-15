@@ -10,6 +10,7 @@ using Microsoft.EntityFrameworkCore;
 using PharmaCheck.Data;
 using PharmaCheck.Models;
 using PharmaCheck.Services;
+using PharmaCheck.Models.ViewModels;
 
 namespace PharmaCheck.Controllers;
 
@@ -50,7 +51,8 @@ public class InteractionController : Controller
         viewModel.AvailableDrugs = await _context.Drugs
             .Where(d => d.IsActive)
             .OrderBy(d => d.Name)
-            .Select(d => new SelectListItem {
+            .Select(d => new SelectListItem
+            {
                 Value = d.Id.ToString(),
                 Text = d.Name
             }).ToListAsync();
@@ -58,7 +60,8 @@ public class InteractionController : Controller
         viewModel.AvailableDiseases = await _context.Diseases
             .Where(d => d.IsActive)
             .OrderBy(d => d.Name)
-            .Select(d => new SelectListItem {
+            .Select(d => new SelectListItem
+            {
                 Value = d.Id.ToString(),
                 Text = d.Name
             }).ToListAsync();
@@ -96,7 +99,8 @@ public class InteractionController : Controller
             DrugList = await _context.Drugs
                 .Where(d => d.IsActive)
                 .OrderBy(d => d.Name)
-                .Select(d => new SelectListItem {
+                .Select(d => new SelectListItem
+                {
                     Value = d.Id.ToString(),
                     Text = d.Name
                 }).ToListAsync()
@@ -121,7 +125,7 @@ public class InteractionController : Controller
         // 2. Kiểm tra trùng lặp bản ghi dưới database
         if (model.SourceDrugId.HasValue && model.TargetDrugId.HasValue)
         {
-            bool isExist = await _context.DrugInteractions.AnyAsync(di => 
+            bool isExist = await _context.DrugInteractions.AnyAsync(di =>
                 (di.SourceDrugId == model.SourceDrugId && di.TargetDrugId == model.TargetDrugId) ||
                 (di.SourceDrugId == model.TargetDrugId && di.TargetDrugId == model.SourceDrugId));
 
@@ -134,7 +138,7 @@ public class InteractionController : Controller
         // 3. Nếu form hợp lệ thì thực hiện lưu vào database
         if (ModelState.IsValid)
         {
-            var newInteraction = new DrugInteraction 
+            var newInteraction = new DrugInteraction
             {
                 SourceDrugId = model.SourceDrugId!.Value,
                 TargetDrugId = model.TargetDrugId!.Value,
@@ -161,7 +165,8 @@ public class InteractionController : Controller
         model.DrugList = await _context.Drugs
             .Where(d => d.IsActive)
             .OrderBy(d => d.Name)
-            .Select(d => new SelectListItem {
+            .Select(d => new SelectListItem
+            {
                 Value = d.Id.ToString(),
                 Text = d.Name
             }).ToListAsync();
@@ -181,7 +186,8 @@ public class InteractionController : Controller
             DrugList = await _context.Drugs
                 .Where(d => d.IsActive)
                 .OrderBy(d => d.Name)
-                .Select(d => new SelectListItem {
+                .Select(d => new SelectListItem
+                {
                     Value = d.Id.ToString(),
                     Text = d.Name
                 }).ToListAsync(),
@@ -190,7 +196,8 @@ public class InteractionController : Controller
             DiseaseList = await _context.Diseases
                 .Where(d => d.IsActive)
                 .OrderBy(d => d.Name)
-                .Select(d => new SelectListItem {
+                .Select(d => new SelectListItem
+                {
                     Value = d.Id.ToString(),
                     Text = d.Name
                 }).ToListAsync()
@@ -209,7 +216,7 @@ public class InteractionController : Controller
         // 1. Kiểm tra trùng lặp cấu hình
         if (model.DrugId.HasValue && model.DiseaseId.HasValue)
         {
-            bool isExist = await _context.DrugDiseaseContraindications.AnyAsync(ddc => 
+            bool isExist = await _context.DrugDiseaseContraindications.AnyAsync(ddc =>
                 ddc.DrugId == model.DrugId && ddc.DiseaseId == model.DiseaseId);
 
             if (isExist)
@@ -248,7 +255,8 @@ public class InteractionController : Controller
         model.DrugList = await _context.Drugs
             .Where(d => d.IsActive)
             .OrderBy(d => d.Name)
-            .Select(d => new SelectListItem {
+            .Select(d => new SelectListItem
+            {
                 Value = d.Id.ToString(),
                 Text = d.Name
             }).ToListAsync();
@@ -256,77 +264,158 @@ public class InteractionController : Controller
         model.DiseaseList = await _context.Diseases
             .Where(d => d.IsActive)
             .OrderBy(d => d.Name)
-            .Select(d => new SelectListItem {
+            .Select(d => new SelectListItem
+            {
                 Value = d.Id.ToString(),
                 Text = d.Name
             }).ToListAsync();
 
         return View(model);
     }
-
-    #endregion
-
-    #region KHÔNG GIAN CŨ: SỬA ĐỔI / XOÁ TRÊN TRANG INDEX (MẪU MODAL/AJAX GIỮ NGUYÊN)
-
-    [HttpPost]
-    public async Task<IActionResult> EditInteraction(int id, int sourceDrugId, int targetDrugId, int severityLevel, string description, string recommendation)
+    // hàm GET để hiển thị trang EditInteraction.cshtml với dữ liệu đã tồn tại của tương tác cần sửa đổi
+    [HttpGet]
+    public async Task<IActionResult> EditInteraction(int id)
     {
-        try
+        var interaction = await _context.DrugInteractions
+            .Include(x => x.SourceDrug)
+            .Include(x => x.TargetDrug)
+            .FirstOrDefaultAsync(x => x.Id == id);
+
+        if (interaction == null)
         {
-            var existing = await _context.DrugInteractions.FindAsync(id);
-            if (existing == null) return Json(new { success = false, message = "Không tìm thấy dữ liệu tương tác để cập nhật." });
-
-            if (sourceDrugId == targetDrugId)
-                return Json(new { success = false, message = "Một loại thuốc không thể tự tương tác với chính nó!" });
-
-            existing.SourceDrugId = sourceDrugId;
-            existing.TargetDrugId = targetDrugId;
-            existing.SeverityLevel = severityLevel;
-            existing.Description = description ?? string.Empty;
-            existing.Recommendation = recommendation ?? string.Empty;
-            existing.UpdatedAt = DateTime.UtcNow;
-
-            _context.DrugInteractions.Update(existing);
-            await _context.SaveChangesAsync();
-
-            string username = User.Identity?.Name ?? "Admin";
-            await _logService.LogAsync($"Admin '{username}' đã cập nhật thông tin tương tác mã số #{id}", "Edit", username);
-
-            return Json(new { success = true, message = "Cập nhật dữ liệu tương tác thành công!" });
+            return NotFound();
         }
-        catch (Exception ex)
+
+        var model = new EditInteractionViewModel
         {
-            return Json(new { success = false, message = "Có lỗi xảy ra: " + ex.Message });
-        }
+            Id = interaction.Id,
+
+            SourceDrugId = interaction.SourceDrugId,
+            TargetDrugId = interaction.TargetDrugId,
+
+            SourceDrugName = interaction.SourceDrug?.Name ?? "",
+            TargetDrugName = interaction.TargetDrug?.Name ?? "",
+
+            SeverityLevel = interaction.SeverityLevel,
+            Description = interaction.Description,
+            Recommendation = interaction.Recommendation
+        };
+
+        return View(model);
     }
-
+    #endregion
+    #region KHÔNG GIAN CŨ: SỬA ĐỔI / XOÁ TRÊN TRANG INDEX (MẪU MODAL/AJAX GIỮ NGUYÊN)
+    // hàm POST để tiếp nhận dữ liệu đã sửa đổi từ form EditInteraction.cshtml gửi lên và lưu thay đổi vào database
     [HttpPost]
-    public async Task<IActionResult> EditContraindication(int id, int drugId, int diseaseId, int riskLevel, string warning, string risk)
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> EditInteraction(EditInteractionViewModel model)
     {
-        try
+        if (!ModelState.IsValid)
         {
-            var existing = await _context.DrugDiseaseContraindications.FindAsync(id);
-            if (existing == null) return Json(new { success = false, message = "Không tìm thấy dữ liệu chống chỉ định để cập nhật." });
-
-            existing.DrugId = drugId;
-            existing.DiseaseId = diseaseId;
-            existing.RiskLevel = riskLevel;
-            existing.Warning = warning ?? string.Empty;
-            existing.Risk = risk ?? string.Empty;
-            existing.UpdatedAt = DateTime.UtcNow;
-
-            _context.DrugDiseaseContraindications.Update(existing);
-            await _context.SaveChangesAsync();
-
-            string username = User.Identity?.Name ?? "Admin";
-            await _logService.LogAsync($"Admin '{username}' đã sửa đổi thông tin chống chỉ định mã số #{id}", "Edit", username);
-
-            return Json(new { success = true, message = "Cập nhật chống chỉ định thành công!" });
+            return View(model);
         }
-        catch (Exception ex)
+
+        var interaction = await _context.DrugInteractions
+            .Include(x => x.SourceDrug)
+            .Include(x => x.TargetDrug)
+            .FirstOrDefaultAsync(x => x.Id == model.Id);
+
+        if (interaction == null)
         {
-            return Json(new { success = false, message = "Có lỗi xảy ra: " + ex.Message });
+            return NotFound();
         }
+
+        interaction.SeverityLevel = model.SeverityLevel;
+        interaction.Description = model.Description;
+        interaction.Recommendation = model.Recommendation;
+        interaction.UpdatedAt = DateTime.UtcNow;
+
+        await _context.SaveChangesAsync();
+
+        string username = User.Identity?.Name ?? "Admin";
+
+        await _logService.LogAsync(
+            $"Admin '{username}' đã cập nhật tương tác giữa '{interaction.SourceDrug?.Name}' và '{interaction.TargetDrug?.Name}'",
+            "Edit",
+            username);
+
+        TempData["SuccessMessage"] =
+            "Cập nhật tương tác thuốc thành công.";
+
+        return RedirectToAction(nameof(Index));
+    }
+    // hàm get để hiển thị trang EditContraindication.cshtml với dữ liệu đã tồn tại của chống chỉ định cần sửa đổi
+    [HttpGet]
+    public async Task<IActionResult> EditContraindication(int id)
+    {
+        var contraindication = await _context
+            .DrugDiseaseContraindications
+            .Include(x => x.Drug)
+            .Include(x => x.Disease)
+            .FirstOrDefaultAsync(x => x.Id == id);
+
+        if (contraindication == null)
+        {
+            return NotFound();
+        }
+
+        var model = new EditContraindicationViewModel
+        {
+            Id = contraindication.Id,
+
+            DrugId = contraindication.DrugId,
+            DiseaseId = contraindication.DiseaseId,
+
+            DrugName = contraindication.Drug?.Name ?? "",
+            DiseaseName = contraindication.Disease?.Name ?? "",
+
+            RiskLevel = contraindication.RiskLevel,
+            Warning = contraindication.Warning,
+            Risk = contraindication.Risk
+        };
+
+        return View(model);
+    }
+    // hàm POST để tiếp nhận dữ liệu đã sửa đổi từ form EditContraindication.cshtml gửi lên và lưu thay đổi vào database
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> EditContraindication(
+    EditContraindicationViewModel model)
+    {
+        if (!ModelState.IsValid)
+        {
+            return View(model);
+        }
+
+        var contraindication = await _context
+            .DrugDiseaseContraindications
+            .Include(x => x.Drug)
+            .Include(x => x.Disease)
+            .FirstOrDefaultAsync(x => x.Id == model.Id);
+
+        if (contraindication == null)
+        {
+            return NotFound();
+        }
+
+        contraindication.RiskLevel = model.RiskLevel;
+        contraindication.Warning = model.Warning;
+        contraindication.Risk = model.Risk;
+        contraindication.UpdatedAt = DateTime.UtcNow;
+
+        await _context.SaveChangesAsync();
+
+        string username = User.Identity?.Name ?? "Admin";
+
+        await _logService.LogAsync(
+            $"Admin '{username}' đã cập nhật chống chỉ định giữa thuốc '{contraindication.Drug?.Name}' và bệnh '{contraindication.Disease?.Name}'",
+            "Edit",
+            username);
+
+        TempData["SuccessMessage"] =
+            "Cập nhật cấu hình chống chỉ định thành công.";
+
+        return RedirectToAction(nameof(Index));
     }
 
     [HttpPost]
@@ -393,7 +482,8 @@ public class InteractionController : Controller
 
         var interactions = query.OrderByDescending(di => di.CreatedAt).Skip((validPage - 1) * PageSize).Take(PageSize).ToList();
 
-        var dtoList = interactions.Select(di => new DrugInteractionDisplayDto {
+        var dtoList = interactions.Select(di => new DrugInteractionDisplayDto
+        {
             Id = di.Id,
             SourceDrugId = di.SourceDrugId,
             TargetDrugId = di.TargetDrugId,
@@ -433,7 +523,8 @@ public class InteractionController : Controller
 
         var contraindications = query.OrderByDescending(ddc => ddc.CreatedAt).Skip((validPage - 1) * PageSize).Take(PageSize).ToList();
 
-        var dtoList = contraindications.Select(ddc => new DrugDiseaseContraindicationDisplayDto {
+        var dtoList = contraindications.Select(ddc => new DrugDiseaseContraindicationDisplayDto
+        {
             Id = ddc.Id,
             DrugId = ddc.DrugId,
             DiseaseId = ddc.DiseaseId,

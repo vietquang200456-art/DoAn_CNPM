@@ -4,6 +4,18 @@
     ViewData["Title"] = "Thêm Mới Tương Tác Thuốc | PharmaCheck";
 }
 
+<link href="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/css/tom-select.tailwind.min.css" rel="stylesheet">
+<style>
+    /* Custom nhẹ cho Tom Select đồng bộ với bo góc tròn của form */
+    .ts-control {
+        border-radius: 0.75rem !important;
+        padding: 0.75rem 1rem !important;
+    }
+    .ts-wrapper.single .ts-control::after {
+        right: 15px !important;
+    }
+</style>
+
 <div class="bg-gradient-to-r from-blue-700 via-blue-600 to-indigo-800 text-white py-8">
     <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex items-center gap-4">
@@ -43,7 +55,7 @@
                         <label asp-for="SourceDrugId" class="block text-sm font-semibold text-gray-700 mb-2">
                             <i class="fas fa-pills mr-1.5 text-blue-600"></i> Thuốc Nguồn (Thuốc A) <span class="text-red-500">*</span>
                         </label>
-                        <select asp-for="SourceDrugId" asp-items="Model.DrugList" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white transition-shadow">
+                        <select asp-for="SourceDrugId" asp-items="Model.DrugList" class="searchable-select w-full" placeholder="Gõ tên thuốc để tìm kiếm...">
                             <option value="">-- Chọn thuốc nguồn --</option>
                         </select>
                         <span asp-validation-for="SourceDrugId" class="text-xs text-red-500 mt-1 block font-medium"></span>
@@ -53,18 +65,19 @@
                         <label asp-for="TargetDrugId" class="block text-sm font-semibold text-gray-700 mb-2">
                             <i class="fas fa-pills mr-1.5 text-indigo-600"></i> Thuốc Tương Tác (Thuốc B) <span class="text-red-500">*</span>
                         </label>
-                        <select asp-for="TargetDrugId" asp-items="Model.DrugList" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white transition-shadow">
+                        <select asp-for="TargetDrugId" asp-items="Model.DrugList" class="searchable-select w-full" placeholder="Gõ tên thuốc để tìm kiếm...">
                             <option value="">-- Chọn thuốc tương tác --</option>
                         </select>
                         <span asp-validation-for="TargetDrugId" class="text-xs text-red-500 mt-1 block font-medium"></span>
+                        <span id="duplicate-drug-error" class="text-xs text-red-500 mt-1 hidden font-medium"></span>
                     </div>
                 </div>
 
-                <div class="mb-6">
+                <div class="mb-6 p-4 rounded-xl transition-all duration-300" id="severity-container">
                     <label asp-for="SeverityLevel" class="block text-sm font-semibold text-gray-700 mb-2">
                         <i class="fas fa-sliders-h mr-1.5 text-blue-600"></i> Mức Độ Nghiêm Trọng <span class="text-red-500">*</span>
                     </label>
-                    <select asp-for="SeverityLevel" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white transition-shadow">
+                    <select asp-for="SeverityLevel" id="severity-select" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white transition-shadow">
                         <option value="">-- Chọn mức độ nghiêm trọng --</option>
                         <option value="1">1 - Nhẹ (Cần theo dõi thêm)</option>
                         <option value="2">2 - Vừa (Có tác động nhỏ)</option>
@@ -98,7 +111,7 @@
                        class="px-6 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold rounded-xl transition-colors flex items-center gap-2">
                         <i class="fas fa-times"></i> Hủy Bỏ
                     </a>
-                    <button type="submit" 
+                    <button type="submit" id="btn-submit"
                             class="px-8 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl transition-colors shadow-md flex items-center gap-2">
                         <i class="fas fa-save"></i> Lưu Cấu Hình
                     </button>
@@ -111,8 +124,79 @@
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
+    <script src="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/js/tom-select.complete.min.js"></script>
+    
     <script>
-        // Thiết lập tab hiển thị mặc định khi nhấn Hủy bỏ/Quay lại là tab tương tác thuốc
+        // 1. Khởi tạo lưu trữ Tab hoạt động
         localStorage.setItem('pharmaCheck_activeTab', 'interactions');
+
+        // 2. Tích hợp Tìm kiếm thông minh cho Thẻ Chọn Thuốc bằng Tom Select
+        var sourceSelect, targetSelect;
+        document.querySelectorAll('.searchable-select').forEach(function(el, index) {
+            let ts = new TomSelect(el, {
+                create: false,
+                sortField: { field: "text", direction: "asc" },
+                placeholder: el.getAttribute('placeholder')
+            });
+            if (index === 0) sourceSelect = ts;
+            if (index === 1) targetSelect = ts;
+        });
+
+        // 3. Logic chặn chọn trùng lặp Thuốc A và Thuốc B
+        const form = document.getElementById('create-interaction-form');
+        const duplicateError = document.getElementById('duplicate-drug-error');
+        const btnSubmit = document.getElementById('btn-submit');
+
+        function validateDuplicateDrugs() {
+            const valA = sourceSelect.getValue();
+            const valB = targetSelect.getValue();
+
+            if (valA && valB && valA === valB) {
+                duplicateError.textContent = "Thuốc tương tác không được trùng với thuốc nguồn!";
+                duplicateError.classList.remove('hidden');
+                btnSubmit.disabled = true;
+                btnSubmit.classList.add('opacity-50', 'cursor-not-allowed');
+                return false;
+            } else {
+                duplicateError.classList.add('hidden');
+                btnSubmit.disabled = false;
+                btnSubmit.classList.remove('opacity-50', 'cursor-not-allowed');
+                return true;
+            }
+        }
+
+        sourceSelect.on('change', validateDuplicateDrugs);
+        targetSelect.on('change', validateDuplicateDrugs);
+        form.addEventListener('submit', function(e) {
+            if (!validateDuplicateDrugs()) {
+                e.preventDefault();
+            }
+        });
+
+        // 4. Động hóa màu nền theo mức độ nghiêm trọng (Severity Level)
+        const severitySelect = document.getElementById('severity-select');
+        const severityContainer = document.getElementById('severity-container');
+
+        const severityStyles = {
+            '1': { bg: 'bg-green-50', border: 'border-l-4 border-green-500' },
+            '2': { bg: 'bg-yellow-50', border: 'border-l-4 border-yellow-400' },
+            '3': { bg: 'bg-orange-50', border: 'border-l-4 border-orange-400' },
+            '4': { bg: 'bg-red-50', border: 'border-l-4 border-red-500' },
+            '5': { bg: 'bg-purple-50', border: 'border-l-4 border-purple-600' }
+        };
+
+        severitySelect.addEventListener('change', function() {
+            const level = this.value;
+            
+            // Reset class cũ
+            severityContainer.className = "mb-6 p-4 rounded-xl transition-all duration-300";
+            
+            // Áp dụng class mới nếu có lựa chọn mức độ
+            if(severityStyles[level]) {
+                severityContainer.classList.add(severityStyles[level].bg);
+                // Biến đổi chuỗi class border tách biệt để Tailwind nhận diện chuẩn
+                severityStyles[level].border.split(' ').forEach(c => severityContainer.classList.add(c));
+            }
+        });
     </script>
 }

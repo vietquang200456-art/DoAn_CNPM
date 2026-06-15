@@ -2,23 +2,34 @@
 
 @{
     ViewData["Title"] = "Quản Lý Bệnh Lý | PharmaCheck";
-    bool isAdmin = User.IsInRole("Admin");
+    bool isAdmin = User.Identity.IsAuthenticated && User.IsInRole("Admin");
 }
 
-<div class="bg-gradient-to-r from-medical-700 to-medical-600 text-white py-8">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="flex items-center justify-between">
+<div class="bg-slate-900 text-white py-10 border-b border-slate-800 relative overflow-hidden">
+    <div class="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-slate-800/50 via-slate-900 to-slate-900 z-0"></div>
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
             <div>
-                <h1 class="text-4xl font-bold flex items-center gap-3">
-                    <i class="fas fa-heartbeat"></i>
-                    Quản Lý Danh Mục Bệnh Lý
-                </h1>
-                <p class="text-blue-100 mt-2">Tra cứu, tạo, sửa và quản lý thông tin các bệnh lý trong cơ sở dữ liệu</p>
+                <div class="flex items-center gap-3">
+                    <div class="w-12 h-12 rounded-xl bg-slate-800 border border-slate-700 flex items-center justify-center text-emerald-400 shadow-inner">
+                        <i class="fas fa-heartbeat text-xl animate-pulse"></i>
+                    </div>
+                    <div>
+                        <h1 class="text-3xl font-extrabold tracking-tight bg-gradient-to-r from-white via-slate-200 to-slate-400 bg-clip-text text-transparent">
+                            Hồ Sơ Danh Mục Bệnh Lý
+                        </h1>
+                        <p class="text-xs text-slate-400 font-medium mt-0.5 uppercase tracking-wider">Hệ thống quản lý thông tin lâm sàng chuyên sâu</p>
+                    </div>
+                </div>
+                <p class="text-slate-400 text-sm mt-3 max-w-xl">
+                    Hỗ trợ tra cứu, cập nhật triệu chứng, phân tích nguyên nhân và thiết lập phác đồ điều trị chuẩn hóa trong cơ sở dữ liệu PharmaCheck.
+                </p>
             </div>
             @if (isAdmin)
             {
-                <button onclick="openDiseaseModal()" class="bg-white text-medical-700 px-6 py-3 rounded-lg font-semibold hover:bg-blue-50 transition-colors flex items-center gap-2 shadow-md">
-                    <i class="fas fa-plus"></i> Thêm Bệnh Lý Mới
+                <button onclick="openDiseaseModal()" 
+                        class="bg-white hover:bg-slate-100 text-slate-900 px-5 py-3 rounded-xl font-bold transition-all duration-150 flex items-center gap-2 shadow-sm border border-slate-200 cursor-pointer text-sm self-start md:self-center">
+                    <i class="fas fa-plus text-xs"></i> Khai báo bệnh lý mới
                 </button>
             }
         </div>
@@ -27,162 +38,76 @@
 
 <section class="py-8 bg-slate-50 min-h-screen">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="bg-white rounded-xl shadow-lg border border-slate-200 p-6 mb-8">
-            <div class="grid md:grid-cols-3 gap-4">
-                <div class="md:col-span-2">
-                    <div class="relative">
-                        <input type="text"
-                               id="diseaseSearch"
-                               value="@Model.SearchTerm"
-                               placeholder="Tìm kiếm bệnh lý (tên, triệu chứng, nguyên nhân)..."
-                               class="w-full px-4 py-3 border-2 border-slate-300 rounded-lg focus:outline-none focus:border-medical-600 transition-colors">
-                        <i class="fas fa-search absolute right-4 top-4 text-medical-600"></i>
+        
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 mb-6">
+            <div class="flex flex-col lg:flex-row gap-4 items-center">
+                <div class="w-full lg:flex-1 relative">
+                    <input type="text"
+                           id="diseaseSearch"
+                           value="@Model.SearchTerm"
+                           placeholder="Tìm tên bệnh, triệu chứng lâm sàng, nguyên nhân..."
+                           class="w-full pl-11 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-slate-400 focus:bg-white text-sm transition-all font-medium text-slate-800 placeholder-slate-400">
+                    <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400">
+                        <i class="fas fa-search text-xs"></i>
                     </div>
                 </div>
 
-                <div>
-                    <select id="severityFilter" class="w-full px-4 py-3 border-2 border-slate-300 rounded-lg focus:outline-none focus:border-medical-600 transition-colors">
-                        <option value="">Tất cả Trạng Thái</option>
-                        <!option value="active" @(Model.SeverityFilter?.ToLower() == "active" ? "selected" : "")>Đang Hoạt Động</!option>
-                        <!option value="inactive" @(Model.SeverityFilter?.ToLower() == "inactive" ? "selected" : "")>Ngừng Hoạt Động</!option>
-                    </select>
+                <div class="w-full lg:w-auto flex flex-col sm:flex-row gap-3 items-center min-w-[350px]">
+                    <div class="w-full sm:flex-1">
+                        <select id="statusFilter" 
+                                class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-slate-400 focus:bg-white text-sm transition-all font-semibold text-slate-700">
+                            <option value="">Tất cả trạng thái</option>
+                            <!option value="active" @(Model.SeverityFilter?.ToLower() == "active" ? "selected" : "")>Đang Hoạt Động</!option>
+                            <!option value="inactive" @(Model.SeverityFilter?.ToLower() == "inactive" ? "selected" : "")>Ngừng Hoạt Động</!option>
+                        </select>
+                    </div>
+                    
+                    <button onclick="searchAndFilter()" 
+                            class="w-full sm:w-auto bg-slate-900 hover:bg-slate-800 text-white px-6 py-2.5 rounded-xl font-bold text-sm transition-all flex items-center justify-center gap-2 cursor-pointer shadow-sm">
+                        <i class="fas fa-filter text-xs"></i> Lọc kết quả
+                    </button>
                 </div>
             </div>
         </div>
 
-        <div class="bg-white rounded-xl shadow-lg border border-slate-200 overflow-hidden">
-            <div class="overflow-x-auto">
-                <table class="w-full">
-                    <thead class="bg-medical-700 text-white">
-                        <tr>
-                            <th class="px-6 py-4 text-left font-semibold text-sm w-16">
-                                <i class="fas fa-list mr-2"></i>STT
-                            </th>
-                            <th class="px-6 py-4 text-left font-semibold text-sm">
-                                <i class="fas fa-heartbeat mr-2"></i>Tên Bệnh Lý
-                            </th>
-                            <th class="px-6 py-4 text-left font-semibold text-sm">
-                                <i class="fas fa-exclamation-circle mr-2"></i>Triệu Chứng
-                            </th>
-                            <th class="px-6 py-4 text-left font-semibold text-sm">
-                                <i class="fas fa-question-circle mr-2"></i>Nguyên Nhân
-                            </th>
-                            <th class="px-6 py-4 text-left font-semibold text-sm">
-                                <i class="fas fa-stethoscope mr-2"></i>Phương Pháp Điều Trị
-                            </th>
-                            <th class="px-6 py-4 text-left font-semibold text-sm">
-                                <i class="fas fa-circle text-sm mr-2"></i>Trạng Thái
-                            </th>
-                            @if (isAdmin)
-                            {
-                                <th class="px-6 py-4 text-center font-semibold text-sm w-32">
-                                    <i class="fas fa-cog mr-2"></i>Thao Tác
-                                </th>
-                            }
-                        </tr>
-                    </thead>
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200/80 overflow-hidden mb-6">
+            <partial name="~/Views/Disease/listdisease.cshtml" />
+        </div>
 
-                    <tbody class="divide-y divide-slate-200">
-                        @if (Model.Diseases != null && Model.Diseases.Any())
-                        {
-                            int stt = (Model.CurrentPage - 1) * Model.PageSize + 1;
-                            @foreach (var disease in Model.Diseases)
-                            {
-                                <tr class="hover:bg-slate-50 transition-colors">
-                                    <td class="px-6 py-4 font-semibold text-gray-900">@stt</td>
-                                    <td class="px-6 py-4">
-                                        <div class="font-semibold text-gray-900">@disease.Name</div>
-                                        <div class="text-sm text-gray-500">ID: @disease.Id</div>
-                                    </td>
-                                    <td class="px-6 py-4">
-                                        <span class="inline-block bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium max-w-xs truncate" title="@disease.Symptoms">
-                                            @(string.IsNullOrEmpty(disease.Symptoms) ? "N/A" : disease.Symptoms)
-                                        </span>
-                                    </td>
-                                    <td class="px-6 py-4">
-                                        <div class="text-sm text-gray-700 max-w-xs truncate" title="@disease.Causes">
-                                            @(string.IsNullOrEmpty(disease.Causes) ? "N/A" : disease.Causes)
-                                        </div>
-                                    </td>
-                                    <td class="px-6 py-4">
-                                        <div class="text-sm text-gray-700 max-w-xs truncate" title="@disease.TreatmentMethod">
-                                            @(string.IsNullOrEmpty(disease.TreatmentMethod) ? "N/A" : disease.TreatmentMethod)
-                                        </div>
-                                    </td>
-                                    <td class="px-6 py-4">
-                                        @if (disease.IsActive)
-                                        {
-                                            <span class="inline-flex items-center gap-2 bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-medium">
-                                                <i class="fas fa-check-circle"></i>Đang Hoạt Động
-                                            </span>
-                                        }
-                                        else
-                                        {
-                                            <span class="inline-flex items-center gap-2 bg-red-100 text-red-800 px-3 py-1 rounded-full text-sm font-medium">
-                                                <i class="fas fa-times-circle"></i>Ngừng Hoạt Động
-                                            </span>
-                                        }
-                                    </td>
-                                    @if (isAdmin)
-                                    {
-                                        <td class="px-6 py-4">
-                                            <div class="flex justify-center gap-2">
-                                                <button onclick="editDisease(@disease.Id)" class="bg-blue-100 text-blue-700 hover:bg-blue-200 p-2 rounded-lg transition-colors" title="Sửa">
-                                                    <i class="fas fa-edit"></i>
-                                                </button>
-                                                <button onclick="confirmDeleteDisease(@disease.Id, '@disease.Name')" class="bg-red-100 text-red-700 hover:bg-red-200 p-2 rounded-lg transition-colors" title="Xóa">
-                                                    <i class="fas fa-trash"></i>
-                                                </button>
-                                            </div>
-                                        </td>
-                                    }
-                                </tr>
-                                stt++;
-                            }
-                        }
-                        else
-                        {
-                            <tr>
-                                <td colspan="@(isAdmin ? 7 : 6)" class="px-6 py-8 text-center text-gray-500">
-                                    <i class="fas fa-inbox text-3xl mb-2 block opacity-50"></i>
-                                    Không có bệnh lý nào để hiển thị
-                                </td>
-                            </tr>
-                        }
-                    </tbody>
-                </table>
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 px-6 py-4 flex items-center justify-between flex-wrap gap-4">
+            <div class="text-xs font-bold text-slate-400 uppercase tracking-wider">
+                Hiển thị <span class="text-slate-800 font-extrabold">@((Model.CurrentPage - 1) * Model.PageSize + 1) - @Math.Min(Model.CurrentPage * Model.PageSize, Model.TotalRecords)</span> 
+                trên tổng <span class="text-slate-800 font-extrabold">@Model.TotalRecords</span> mục dữ liệu
             </div>
+            
+            <div class="flex items-center gap-1 flex-wrap">
+                <button onclick="goToPage(@(Model.CurrentPage - 1))" 
+                        class="w-9 h-9 flex items-center justify-center border border-slate-200 rounded-lg text-slate-600 hover:bg-slate-50 transition-colors disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+                        @(Model.HasPreviousPage ? "" : "disabled") interstitial-button-click>
+                    <i class="fas fa-chevron-left text-xs"></i>
+                </button>
 
-            <div class="bg-slate-50 border-t border-slate-200 px-6 py-4 flex items-center justify-between flex-wrap gap-4">
-                <div class="text-sm text-gray-600">
-                    Hiển thị <span class="font-semibold">@((Model.CurrentPage - 1) * Model.PageSize + 1)-@Math.Min(Model.CurrentPage * Model.PageSize, Model.TotalRecords)</span> 
-                    của <span class="font-semibold">@Model.TotalRecords</span> bệnh lý
-                </div>
-                <div class="flex gap-2 flex-wrap">
-                    <button onclick="goToPage(@(Model.CurrentPage - 1))" 
-                            class="px-4 py-2 border border-slate-300 rounded-lg text-gray-700 hover:bg-slate-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                            @(Model.HasPreviousPage ? "" : "disabled")>
-                        <i class="fas fa-chevron-left"></i>
-                    </button>
-
-                    @for (int i = 1; i <= Model.TotalPages; i++)
+                @for (int i = 1; i <= Model.TotalPages; i++)
+                {
+                    if (i == Model.CurrentPage)
                     {
-                        if (i == Model.CurrentPage)
-                        {
-                            <button class="px-3 py-2 bg-medical-700 text-white rounded-lg font-medium">@i</button>
-                        }
-                        else
-                        {
-                            <button onclick="goToPage(@i)" class="px-3 py-2 border border-slate-300 rounded-lg text-gray-700 hover:bg-slate-50 transition-colors">@i</button>
-                        }
+                        <button class="w-9 h-9 flex items-center justify-center bg-slate-900 text-white font-bold rounded-lg text-sm shadow-sm">@i</button>
                     }
+                    else if (i <= 3 || i >= Model.TotalPages - 2 || Math.Abs(i - Model.CurrentPage) <= 1)
+                    {
+                        <button onclick="goToPage(@i)" class="w-9 h-9 flex items-center justify-center border border-slate-200 rounded-lg text-slate-600 hover:bg-slate-50 transition-colors font-bold text-sm cursor-pointer">@i</button>
+                    }
+                    else if (i == 4 || i == Model.TotalPages - 3)
+                    {
+                        <span class="w-9 h-9 flex items-center justify-center text-slate-400 font-bold">...</span>
+                    }
+                }
 
-                    <button onclick="goToPage(@(Model.CurrentPage + 1))" 
-                            class="px-4 py-2 border border-slate-300 rounded-lg text-gray-700 hover:bg-slate-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                            @(Model.HasNextPage ? "" : "disabled")>
-                        <i class="fas fa-chevron-right"></i>
-                    </button>
-                </div>
+                <button onclick="goToPage(@(Model.CurrentPage + 1))" 
+                        class="w-9 h-9 flex items-center justify-center border border-slate-200 rounded-lg text-slate-600 hover:bg-slate-50 transition-colors disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+                        @(Model.HasNextPage ? "" : "disabled")>
+                    <i class="fas fa-chevron-right text-xs"></i>
+                </button>
             </div>
         </div>
     </div>
@@ -190,137 +115,120 @@
 
 @if (isAdmin)
 {
-    <div id="diseaseModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-        <div class="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-            <div class="sticky top-0 bg-medical-700 text-white px-6 py-4 flex items-center justify-between border-b border-medical-600">
-                <h2 class="text-2xl font-bold flex items-center gap-3">
-                    <i class="fas fa-heartbeat"></i>
-                    <span id="modalTitle">Thêm Bệnh Lý Mới</span>
-                </h2>
-                <button onclick="closeDiseaseModal()" class="text-white hover:bg-medical-600 p-2 rounded-lg transition-colors">
-                    <i class="fas fa-times text-xl"></i>
+    <div id="diseaseModal" class="hidden fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center z-50 p-4 transition-opacity duration-200">
+        <div class="bg-white rounded-2xl shadow-xl max-w-2xl w-full max-h-[85vh] flex flex-col border border-slate-200 transform scale-100 transition-transform duration-200">
+            <div class="bg-slate-900 text-white px-6 py-4.5 flex items-center justify-between border-b border-slate-800 rounded-t-2xl">
+                <div class="flex items-center gap-2.5">
+                    <i class="fas fa-heartbeat text-emerald-400"></i>
+                    <h2 class="text-lg font-bold tracking-tight" id="modalTitle">Thêm Bệnh Lý Mới</h2>
+                </div>
+                <button onclick="closeDiseaseModal()" class="text-slate-400 hover:text-white hover:bg-slate-800 w-8 h-8 rounded-lg flex items-center justify-center transition-colors cursor-pointer">
+                    <i class="fas fa-times"></i>
                 </button>
             </div>
 
-            <form id="diseaseForm" class="p-6 space-y-4">
+            <form id="diseaseForm" class="p-6 space-y-4 overflow-y-auto flex-1 text-sm">
                 <input type="hidden" id="diseaseId" value="0">
 
                 <div>
-                    <label class="block text-sm font-semibold text-gray-900 mb-2">
-                        <i class="fas fa-heartbeat text-medical-700 mr-2"></i>Tên Bệnh Lý <span class="text-red-600">*</span>
-                    </label>
-                    <input type="text" id="diseaseName" placeholder="VD: Tiểu đường loại 2"
-                           class="w-full px-4 py-3 border-2 border-slate-300 rounded-lg focus:outline-none focus:border-medical-600 transition-colors"
-                           required>
+                    <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Tên Bệnh Lý <span class="text-red-500">*</span></label>
+                    <input type="text" id="diseaseName" placeholder="Nhập tên bệnh lý chuẩn hóa..."
+                           class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-slate-400 focus:bg-white font-medium text-slate-800" required>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Triệu Chứng Lâm Sàng</label>
+                        <textarea rows="4" id="symptoms" placeholder="Các biểu hiện đặc trưng..."
+                                  class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-slate-400 focus:bg-white font-medium text-slate-800 resize-none"></textarea>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Nguyên Nhân Gây Bệnh</label>
+                        <textarea rows="4" id="causes" placeholder="Cơ chế sinh học hoặc tác nhân..."
+                                  class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-slate-400 focus:bg-white font-medium text-slate-800 resize-none"></textarea>
+                    </div>
                 </div>
 
                 <div>
-                    <label class="block text-sm font-semibold text-gray-900 mb-2">
-                        <i class="fas fa-exclamation-circle text-medical-700 mr-2"></i>Triệu Chứng
-                    </label>
-                    <textarea rows="3" id="symptoms" placeholder="Nhập các triệu chứng..."
-                              class="w-full px-4 py-3 border-2 border-slate-300 rounded-lg focus:outline-none focus:border-medical-600 transition-colors resize-none"></textarea>
+                    <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Phác Đồ & Phương Pháp Điều Trị</label>
+                    <textarea rows="3" id="treatmentMethod" placeholder="Hướng dẫn điều trị hoặc nhóm thuốc chỉ định chính..."
+                              class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-slate-400 focus:bg-white font-medium text-slate-800 resize-none"></textarea>
                 </div>
 
                 <div>
-                    <label class="block text-sm font-semibold text-gray-900 mb-2">
-                        <i class="fas fa-question-circle text-medical-700 mr-2"></i>Nguyên Nhân
-                    </label>
-                    <textarea rows="3" id="causes" placeholder="Nhập nguyên nhân gây bệnh..."
-                              class="w-full px-4 py-3 border-2 border-slate-300 rounded-lg focus:outline-none focus:border-medical-600 transition-colors resize-none"></textarea>
+                    <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Mô Tả Chi Tiết / Ghi Chú Y Khoa</label>
+                    <textarea rows="3" id="description" placeholder="Ghi chú thêm thông tin lưu ý..."
+                              class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-slate-400 focus:bg-white font-medium text-slate-800 resize-none"></textarea>
                 </div>
 
                 <div>
-                    <label class="block text-sm font-semibold text-gray-900 mb-2">
-                        <i class="fas fa-stethoscope text-medical-700 mr-2"></i>Phương Pháp Điều Trị
-                    </label>
-                    <textarea rows="3" id="treatmentMethod" placeholder="Nhập phương pháp điều trị..."
-                              class="w-full px-4 py-3 border-2 border-slate-300 rounded-lg focus:outline-none focus:border-medical-600 transition-colors resize-none"></textarea>
-                </div>
-
-                <div>
-                    <label class="block text-sm font-semibold text-gray-900 mb-2">
-                        <i class="fas fa-align-left text-medical-700 mr-2"></i>Mô Tả / Ghi Chú
-                    </label>
-                    <textarea rows="3" id="description" placeholder="Nhập mô tả chi tiết..."
-                              class="w-full px-4 py-3 border-2 border-slate-300 rounded-lg focus:outline-none focus:border-medical-600 transition-colors resize-none"></textarea>
-                </div>
-
-                <div>
-                    <label class="block text-sm font-semibold text-gray-900 mb-2">
-                        <i class="fas fa-circle text-medical-700 mr-2"></i>Trạng Thái
-                    </label>
-                    <div class="flex gap-4">
-                        <label class="flex items-center gap-2 cursor-pointer">
-                            <input type="radio" name="isActive" id="statusActive" value="true" checked class="w-4 h-4">
-                            <span class="text-gray-700">Đang Hoạt Động</span>
+                    <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Trạng Thái Quản Lý</label>
+                    <div class="flex gap-6 mt-1">
+                        <label class="flex items-center gap-2 cursor-pointer group font-medium text-slate-700">
+                            <input type="radio" name="isActive" id="statusActive" value="true" checked class="w-4 h-4 accent-slate-900">
+                            <span class="group-hover:text-slate-900 transition-colors">Đang Theo Dõi (Active)</span>
                         </label>
-                        <label class="flex items-center gap-2 cursor-pointer">
-                            <input type="radio" name="isActive" id="statusInactive" value="false" class="w-4 h-4">
-                            <span class="text-gray-700">Ngừng Hoạt Động</span>
+                        <label class="flex items-center gap-2 cursor-pointer group font-medium text-slate-700">
+                            <input type="radio" name="isActive" id="statusInactive" value="false" class="w-4 h-4 accent-slate-900">
+                            <span class="group-hover:text-slate-900 transition-colors">Ngừng Kê Khai (Inactive)</span>
                         </label>
                     </div>
                 </div>
 
-                <div id="formMessage" class="hidden px-4 py-3 rounded-lg text-sm font-medium"></div>
+                <div id="formMessage" class="hidden px-4 py-3 rounded-xl font-semibold text-center"></div>
             </form>
 
-            <div class="sticky bottom-0 bg-slate-50 border-t border-slate-200 px-6 py-4 flex gap-3 justify-end">
+            <div class="bg-slate-50 border-t border-slate-100 px-6 py-4 flex gap-2.5 justify-end rounded-b-2xl">
                 <button onclick="closeDiseaseModal()"
-                        class="px-6 py-3 border-2 border-slate-300 text-gray-700 rounded-lg font-semibold hover:bg-slate-50 transition-colors">
-                    Hủy
+                        class="px-5 py-2.5 border border-slate-200 text-slate-700 rounded-xl font-bold hover:bg-slate-100 transition-colors cursor-pointer">
+                    Hủy bỏ
                 </button>
                 <button onclick="saveDisease()" id="saveDiseaseBtn"
-                        class="px-6 py-3 bg-medical-700 text-white rounded-lg font-semibold hover:bg-medical-800 transition-colors flex items-center gap-2">
-                    <i class="fas fa-save"></i> <span id="saveBtnText">Lưu</span>
+                        class="px-5 py-2.5 bg-slate-900 text-white rounded-xl font-bold hover:bg-slate-800 transition-colors flex items-center gap-2 shadow-sm cursor-pointer">
+                    <i class="fas fa-check text-xs"></i> <span id="saveBtnText">Xác nhận</span>
                 </button>
             </div>
         </div>
     </div>
 
-    <div id="deleteModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-        <div class="bg-white rounded-xl shadow-2xl max-w-md w-full">
-            <div class="p-6">
-                <div class="flex items-center justify-center w-12 h-12 mx-auto bg-red-100 rounded-full mb-4">
-                    <i class="fas fa-exclamation-triangle text-red-600 text-xl"></i>
-                </div>
-                <h3 class="text-xl font-bold text-center text-gray-900 mb-2">Xác Nhận Xóa</h3>
-                <p class="text-center text-gray-600 mb-6">
-                    Bạn chắc chắn muốn xóa <span id="deleteItemName" class="font-semibold"></span>? Hành động này không thể hoàn tác.
-                </p>
+    <div id="deleteModal" class="hidden fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+        <div class="bg-white rounded-2xl shadow-xl max-w-sm w-full border border-slate-200 p-6">
+            <div class="flex items-center justify-center w-11 h-11 bg-red-50 text-red-600 rounded-xl mb-4 border border-red-100">
+                <i class="fas fa-trash-alt text-base"></i>
             </div>
-            <div class="bg-slate-50 border-t border-slate-200 px-6 py-4 flex gap-3 justify-end">
+            <h3 class="text-base font-bold text-slate-900 mb-1">Xóa bản ghi bệnh lý?</h3>
+            <p class="text-sm text-slate-500 leading-relaxed mb-5">
+                Hệ thống sẽ loại bỏ hoàn toàn thông tin của bệnh <span id="deleteItemName" class="font-bold text-slate-800"></span> khỏi danh mục. Hành động này không thể hoàn tác.
+            </p>
+            <div class="flex gap-2 justify-end text-sm">
                 <button onclick="closeDeleteModal()"
-                        class="px-6 py-2 border border-slate-300 text-gray-700 rounded-lg font-semibold hover:bg-slate-50 transition-colors">
-                    Hủy
+                        class="px-4 py-2 border border-slate-200 text-slate-600 rounded-lg font-bold hover:bg-slate-50 transition-colors cursor-pointer">
+                    Quay lại
                 </button>
                 <button onclick="deleteDiseaseConfirmed()" id="confirmDeleteBtn"
-                        class="px-6 py-2 bg-red-600 text-white rounded-lg font-semibold hover:bg-red-700 transition-colors flex items-center gap-2">
-                    <i class="fas fa-trash"></i> Xóa
+                        class="px-4 py-2 bg-red-600 text-white rounded-lg font-bold hover:bg-red-700 transition-colors cursor-pointer flex items-center gap-1.5">
+                    Đồng ý xóa
                 </button>
             </div>
         </div>
     </div>
 }
-
 <script>
 let currentDeleteId = 0;
 let currentDeleteName = '';
-let searchTimeout;
 const isAdminUser = @(isAdmin ? "true" : "false");
 
-// ===== Modal Management =====
+// ===== QUẢN LÝ ĐÓNG/MỞ MODAL =====
 function openDiseaseModal() {
     if(!isAdminUser) return;
     resetForm();
     document.getElementById('diseaseModal').classList.remove('hidden');
     document.getElementById('modalTitle').textContent = 'Thêm Bệnh Lý Mới';
-    document.getElementById('saveBtnText').textContent = 'Lưu';
+    document.getElementById('saveBtnText').textContent = 'Xác nhận';
 }
 
 function editDisease(id) {
-    if(!isAdminUser) return;
-    if (!id || id === 0) return;
+    if(!isAdminUser || !id) return;
     
     fetch(`/Disease/GetDiseaseById?id=${id}`)
         .then(response => response.json())
@@ -329,14 +237,14 @@ function editDisease(id) {
                 fillFormWithData(data.data);
                 document.getElementById('diseaseModal').classList.remove('hidden');
                 document.getElementById('modalTitle').textContent = 'Chỉnh Sửa Bệnh Lý';
-                document.getElementById('saveBtnText').textContent = 'Cập Nhật';
+                document.getElementById('saveBtnText').textContent = 'Cập nhật bản ghi';
             } else {
                 alert('Lỗi: ' + data.message);
             }
         })
         .catch(error => {
             console.error('Error:', error);
-            alert('Lỗi khi lấy dữ liệu bệnh lý');
+            alert('Không thể kết nối lấy dữ liệu lâm sàng');
         });
 }
 
@@ -347,8 +255,7 @@ function closeDiseaseModal() {
 }
 
 function confirmDeleteDisease(id, diseaseName) {
-    if(!isAdminUser) return;
-    if (!id || id === 0) return;
+    if(!isAdminUser || !id) return;
     currentDeleteId = id;
     currentDeleteName = diseaseName;
     document.getElementById('deleteItemName').textContent = diseaseName;
@@ -362,22 +269,20 @@ function closeDeleteModal() {
     currentDeleteName = '';
 }
 
-// Close modals when clicking outside
 document.addEventListener('click', function(e) {
     if(!isAdminUser) return;
     const diseaseModal = document.getElementById('diseaseModal');
     const deleteModal = document.getElementById('deleteModal');
     
     if (e.target === diseaseModal) {
-        diseaseModal.classList.add('hidden');
-        resetForm();
+        closeDiseaseModal();
     }
     if (e.target === deleteModal) {
-        deleteModal.classList.add('hidden');
+        closeDeleteModal();
     }
 });
 
-// ===== Form Management =====
+// ===== THAO TÁC TRÊN FORM DỮ LIỆU =====
 function resetForm() {
     if(!isAdminUser) return;
     const form = document.getElementById('diseaseForm');
@@ -425,13 +330,11 @@ function saveDisease() {
     const saveBtn = document.getElementById('saveDiseaseBtn');
     saveBtn.disabled = true;
     const originalText = saveBtn.innerHTML;
-    saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang xử lý...';
+    saveBtn.innerHTML = '<i class="fas fa-circle-notch fa-spin text-xs"></i> Xử lý...';
 
     fetch('/Disease/SaveDisease', {
         method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(diseaseData)
     })
     .then(response => response.json())
@@ -444,16 +347,16 @@ function saveDisease() {
             setTimeout(() => {
                 closeDiseaseModal();
                 location.reload();
-            }, 1500);
+            }, 1200);
         } else {
-            showMessage(false, data.message || 'Lỗi không xác định');
+            showMessage(false, data.message || 'Lỗi lưu trữ dữ liệu');
         }
     })
     .catch(error => {
         console.error('Error:', error);
         saveBtn.disabled = false;
         saveBtn.innerHTML = originalText;
-        showMessage(false, 'Lỗi kết nối máy chủ');
+        showMessage(false, 'Mất kết nối tới máy chủ API');
     });
 }
 
@@ -463,13 +366,11 @@ function deleteDiseaseConfirmed() {
     const deleteBtn = document.getElementById('confirmDeleteBtn');
     deleteBtn.disabled = true;
     const originalText = deleteBtn.innerHTML;
-    deleteBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang xóa...';
+    deleteBtn.innerHTML = '<i class="fas fa-spinner fa-spin text-xs"></i> Đang xóa...';
 
     fetch(`/Disease/DeleteDisease?id=${currentDeleteId}`, {
         method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        }
+        headers: { 'Content-Type': 'application/json' }
     })
     .then(response => response.json())
     .then(data => {
@@ -477,7 +378,6 @@ function deleteDiseaseConfirmed() {
         deleteBtn.innerHTML = originalText;
 
         if (data.success) {
-            alert(data.message);
             closeDeleteModal();
             location.reload();
         } else {
@@ -488,7 +388,7 @@ function deleteDiseaseConfirmed() {
         console.error('Error:', error);
         deleteBtn.disabled = false;
         deleteBtn.innerHTML = originalText;
-        alert('Lỗi kết nối máy chủ');
+        alert('Lỗi kết nối máy chủ không phản hồi');
     });
 }
 
@@ -499,40 +399,42 @@ function showMessage(isSuccess, message) {
     messageDiv.classList.remove('hidden');
     
     if (isSuccess) {
-        messageDiv.className = 'px-4 py-3 rounded-lg text-sm font-medium bg-green-100 text-green-800';
+        messageDiv.className = "px-4 py-2.5 rounded-xl text-center font-semibold bg-emerald-50 text-emerald-700 border border-emerald-100";
     } else {
-        messageDiv.className = 'px-4 py-3 rounded-lg text-sm font-medium bg-red-100 text-red-800';
+        messageDiv.className = "px-4 py-2.5 rounded-xl text-center font-semibold bg-red-50 text-red-700 border border-red-100";
     }
 }
 
-// ===== Search & Filter =====
+// ===== LOGIC TÌM KIẾM CHỦ ĐỘNG THEO YÊU CẦU =====
 function goToPage(page) {
     if (page < 1) return;
     
     const searchTerm = document.getElementById('diseaseSearch').value;
-    const severity = document.getElementById('severityFilter').value;
+    const status = document.getElementById('statusFilter').value; 
     
     let url = `/Disease/Index?page=${page}`;
-    if (searchTerm) url += `&searchTerm=${encodeURIComponent(searchTerm)}`;
-    if (severity) url += `&severity=${encodeURIComponent(severity)}`;
+    if (searchTerm) url += `&searchTerm=${encodeURIComponent(searchTerm.trim())}`;
+    if (status) url += `&status=${encodeURIComponent(status)}`; 
     
     window.location.href = url;
 }
 
+// Hàm kích hoạt hành động tìm kiếm & lọc khi có tương tác chuẩn
 function searchAndFilter() {
     goToPage(1);
 }
 
-// Search with debounce
-document.getElementById('diseaseSearch').addEventListener('keyup', function(e) {
-    clearTimeout(searchTimeout);
-    searchTimeout = setTimeout(() => {
+// Bắt sự kiện gõ phím: Loại bỏ hoàn toàn setTimeout tự động load dữ liệu
+document.getElementById('diseaseSearch').addEventListener('keydown', function(e) {
+    // Chỉ kích hoạt lọc khi người dùng bấm phím Enter trực tiếp trên ô tìm kiếm
+    if (e.key === 'Enter') {
         searchAndFilter();
-    }, 500);
+    }
 });
 
-// Status filter change
-document.getElementById('severityFilter').addEventListener('change', function(e) {
+// Lưu ý: Đối với thẻ select lọc trạng thái, thông thường trang thuốc sẽ tự động reload luôn khi đổi lựa chọn.
+// Nếu bạn muốn thẻ select này CŨNG PHẢI đợi nhấn nút "Lọc kết quả" mới chạy, hãy comment/xóa 3 dòng dưới đây:
+document.getElementById('statusFilter').addEventListener('change', function(e) {
     searchAndFilter();
 });
 </script>

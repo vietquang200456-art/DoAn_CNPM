@@ -102,90 +102,110 @@ namespace PharmaCheck.Controllers
         /// API endpoint: Thực hiện tính toán kiểm tra tương tác thuốc (Chỉ cho phép khi đã login)
         /// </summary>
         [Authorize]
-        [HttpPost]
-        public async Task<IActionResult> CheckInteractions([FromBody] InteractionCheckRequest request)
+[HttpPost]
+public async Task<IActionResult> CheckInteractions([FromBody] InteractionCheckRequest request)
+{
+    try
+    {
+        if (!ModelState.IsValid || request == null || 
+            ((request.DrugIds == null || !request.DrugIds.Any()) &&
+             (request.DiseaseIds == null || !request.DiseaseIds.Any())))
         {
-            try
+            return BadRequest(new { message = "Dữ liệu yêu cầu không hợp lệ hoặc trống." });
+        }
+
+        // 1. Lưu vết lịch sử tìm kiếm
+        await SaveSearchHistoryAsync(request);
+
+        // Khởi tạo trước object kết quả để trả về (tránh dùng List<object> chung chung nếu có thể)
+        var drugDrugInteractionsResult = new List<object>();
+        var drugDiseaseContraindicationsResult = new List<object>();
+
+        // 2. Kiểm tra tương tác THUỐC - THUỐC
+        if (request.DrugIds != null && request.DrugIds.Count >= 2)
+        {
+            // Tối ưu bằng cách Select trực tiếp, bỏ Include để tăng tốc độ truy vấn
+            var interactions = await _context.Set<DrugInteraction>()
+                .Where(di => request.DrugIds.Contains(di.SourceDrugId) &&
+                             request.DrugIds.Contains(di.TargetDrugId) &&
+                             di.SourceDrugId != di.TargetDrugId)
+                .Select(di => new 
+                {
+                    di.Id,
+                    di.SeverityLevel,
+                    SourceDrugName = di.SourceDrug.Name,
+                    TargetDrugName = di.TargetDrug.Name,
+                    di.Description,
+                    di.Recommendation
+                })
+                .ToListAsync();
+
+            foreach (var item in interactions)
             {
-                if (!ModelState.IsValid || request == null || 
-                    ((request.DrugIds == null || !request.DrugIds.Any()) &&
-                     (request.DiseaseIds == null || !request.DiseaseIds.Any())))
+                string severityText = item.SeverityLevel == 3 ? "NGUY HIỂM" :
+                                      item.SeverityLevel == 2 ? "THẬN TRỌNG" : "NHẸ";
+
+                drugDrugInteractionsResult.Add(new
                 {
-                    return BadRequest(new { message = "Dữ liệu yêu cầu không hợp lệ hoặc trống." });
-                }
-
-                var drugDrugInteractionsResult = new List<object>();
-                var drugDiseaseContraindicationsResult = new List<object>();
-
-                // 1. Lưu vết lịch sử tìm kiếm gắn với UserId thật của người đang đăng nhập
-                await SaveSearchHistoryAsync(request);
-
-                // 2. Kiểm tra tương tác THUỐC - THUỐC
-                if (request.DrugIds != null && request.DrugIds.Count >= 2)
-                {
-                    var interactions = await _context.Set<DrugInteraction>()
-                        .Include(di => di.SourceDrug)
-                        .Include(di => di.TargetDrug)
-                        .Where(di => request.DrugIds.Contains(di.SourceDrugId) &&
-                                     request.DrugIds.Contains(di.TargetDrugId) &&
-                                     di.SourceDrugId != di.TargetDrugId)
-                        .ToListAsync();
-
-                    foreach (var item in interactions)
-                    {
-                        string severityText = item.SeverityLevel == 3 ? "NGUY HIỂM" :
-                                              item.SeverityLevel == 2 ? "THẬN TRỌNG" : "NHẸ";
-
-                        drugDrugInteractionsResult.Add(new
-                        {
-                            id = item.Id,
-                            level = item.SeverityLevel,
-                            title = $"{item.SourceDrug?.Name} + {item.TargetDrug?.Name} - {severityText}",
-                            description = item.Description,
-                            icon = item.SeverityLevel == 3 ? "fa-exclamation-triangle" : "fa-exclamation-circle",
-                            recommendation = item.Recommendation
-                        });
-                    }
-                }
-
-                // 3. Kiểm tra tương tác THUỐC - BỆNH LÝ
-                if (request.DrugIds != null && request.DrugIds.Any() && request.DiseaseIds != null && request.DiseaseIds.Any())
-                {
-                    var contraindications = await _context.Set<DrugDiseaseContraindication>()
-                        .Include(ddc => ddc.Drug)
-                        .Include(ddc => ddc.Disease)
-                        .Where(ddc => request.DrugIds.Contains(ddc.DrugId) &&
-                                     request.DiseaseIds.Contains(ddc.DiseaseId))
-                        .ToListAsync();
-
-                    foreach (var item in contraindications)
-                    {
-                        string riskText = item.RiskLevel == 3 ? "CHỐNG CHỈ ĐỊNH" :
-                                          item.RiskLevel == 2 ? "THẬN TRỌNG" : "THẤP";
-
-                        drugDiseaseContraindicationsResult.Add(new
-                        {
-                            id = item.Id,
-                            level = item.RiskLevel,
-                            title = $"{item.Drug?.Name} + {item.Disease?.Name} - {riskText}",
-                            description = $"{item.Warning}. {item.Risk}",
-                            icon = item.RiskLevel == 3 ? "fa-ban" : "fa-exclamation-circle",
-                            recommendation = item.Recommendation
-                        });
-                    }
-                }
-
-                return Json(new
-                {
-                    drugDrugInteractions = drugDrugInteractionsResult,
-                    drugDiseaseContraindications = drugDiseaseContraindicationsResult
+                    id = item.Id,
+                    level = item.SeverityLevel,
+                    title = $"{item.SourceDrugName} + {item.TargetDrugName} - {severityText}",
+                    description = item.Description,
+                    icon = item.SeverityLevel == 3 ? "fa-exclamation-triangle" : "fa-exclamation-circle",
+                    recommendation = item.Recommendation
                 });
             }
-            catch (Exception ex)
+        }
+
+        // 3. Kiểm tra tương tác THUỐC - BỆNH LÝ
+        if (request.DrugIds != null && request.DrugIds.Any() && request.DiseaseIds != null && request.DiseaseIds.Any())
+        {
+            // Tiếp tục tối ưu bằng Select trực tiếp cho tương tác Thuốc - Bệnh
+            var contraindications = await _context.Set<DrugDiseaseContraindication>()
+                .Where(ddc => request.DrugIds.Contains(ddc.DrugId) &&
+                             request.DiseaseIds.Contains(ddc.DiseaseId))
+                .Select(ddc => new 
+                {
+                    ddc.Id,
+                    ddc.RiskLevel,
+                    DrugName = ddc.Drug.Name,
+                    DiseaseName = ddc.Disease.Name,
+                    ddc.Warning,
+                    ddc.Risk,
+                    ddc.Recommendation
+                })
+                .ToListAsync();
+
+            foreach (var item in contraindications)
             {
-                return StatusCode(500, new { message = "Lỗi xử lý dữ liệu trên máy chủ.", error = ex.Message });
+                string riskText = item.RiskLevel == 3 ? "CHỐNG CHỈ ĐỊNH" :
+                                  item.RiskLevel == 2 ? "THẬN TRỌNG" : "THẤP";
+
+                drugDiseaseContraindicationsResult.Add(new
+                {
+                    id = item.Id,
+                    level = item.RiskLevel,
+                    title = $"{item.DrugName} + {item.DiseaseName} - {riskText}",
+                    description = $"{item.Warning}. {item.Risk}",
+                    icon = item.RiskLevel == 3 ? "fa-ban" : "fa-exclamation-circle",
+                    recommendation = item.Recommendation
+                });
             }
         }
+
+        // Trả về Ok (200) đồng bộ với cách viết Web API hiện đại
+        return Ok(new
+        {
+            drugDrugInteractions = drugDrugInteractionsResult,
+            drugDiseaseContraindications = drugDiseaseContraindicationsResult
+        });
+    }
+    catch (Exception ex)
+    {
+        // Bạn nên log lỗi ex ở đây nếu có Serilog hoặc NLog
+        return StatusCode(500, new { message = "Lỗi xử lý dữ liệu trên máy chủ.", error = ex.Message });
+    }
+}
 
 /// <summary>
 /// Hàm bổ trợ: Lưu vết lịch sử tìm kiếm vào Database theo cấu trúc tối ưu mới

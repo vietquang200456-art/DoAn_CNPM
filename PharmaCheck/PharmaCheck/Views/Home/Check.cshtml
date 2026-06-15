@@ -362,19 +362,66 @@
                 .finally(() => { this.isChecking = false; });
             },
             calculateOverallStatus() {
-                const blueprints = this.drugDrugInteractions || [];
-                const contraprints = this.drugDiseaseContraindications || [];
-                const hasDanger = blueprints.some(i => i.level === 3) || contraprints.some(c => c.level === 3);
-                const hasWarning = blueprints.some(i => i.level === 2) || contraprints.some(c => c.level === 2);
+    const blueprints = this.drugDrugInteractions || [];
+    const contraprints = this.drugDiseaseContraindications || [];
+    
+    // Sử dụng toán tử == để tránh lỗi lệch kiểu dữ liệu (chuỗi "5" vs số 5)
+    const hasLevel5 = blueprints.some(i => i.level == 5) || contraprints.some(c => c.level == 5);
+    const hasLevel4 = blueprints.some(i => i.level == 4) || contraprints.some(c => c.level == 4);
+    const hasLevel3 = blueprints.some(i => i.level == 3) || contraprints.some(c => c.level == 3);
+    const hasLevel2 = blueprints.some(i => i.level == 2) || contraprints.some(c => c.level == 2);
+    const hasLevel1 = blueprints.some(i => i.level == 1) || contraprints.some(c => c.level == 1);
 
-                if (hasDanger) {
-                    this.overallStatus = { class: 'border-red-400 bg-red-50 text-red-900', icon: 'fa-ban', message: 'Cảnh báo nguy hiểm xảy ra!', detail: 'Phát hiện chống chỉ định nguy hại hoặc tương tác chéo nghiêm trọng. Khuyến nghị điều chỉnh phác đồ.' };
-                } else if (hasWarning) {
-                    this.overallStatus = { class: 'border-amber-400 bg-amber-50 text-amber-900', icon: 'fa-exclamation-triangle', message: 'Cần chú ý theo dõi lâm sàng!', detail: 'Phát hiện tương tác mức độ trung bình. Cần lưu ý theo dõi sát sao tiến trình điều trị.' };
-                } else {
-                    this.overallStatus = { class: 'border-emerald-400 bg-emerald-50 text-emerald-950', icon: 'fa-check-circle', message: 'Rà soát thành công - Đơn thuốc an toàn', detail: 'Hệ thống không tìm thấy tương tác bất lợi hoặc chống chỉ định nào giữa thuốc và tình trạng bệnh hiện tại.' };
-                }
-            },
+    if (hasLevel5) {
+        // MỨC 5: RẤT NẶNG - CHỐNG CHỈ ĐỊNH TUYỆT ĐỐI (Màu đỏ sẫm báo động)
+        this.overallStatus = { 
+            class: 'border-red-600 bg-red-100 text-red-950 font-bold', 
+            icon: 'fa-ban', 
+            message: 'ĐƠN THUỐC BỊ CHỐNG CHỈ ĐỊNH TUYỆT ĐỐI!', 
+            detail: 'Phát hiện tác nhân nguy hại tính mạng. Yêu cầu dừng kê đơn và thay thế thuốc hoặc phác đồ điều trị ngay lập tức.' 
+        };
+    } else if (hasLevel4) {
+        // MỨC 4: NẶNG - NGUY CƠ BIẾN CHỨNG NGHIÊM TRỌNG (Màu đỏ tươi)
+        this.overallStatus = { 
+            class: 'border-red-400 bg-red-50 text-red-900', 
+            icon: 'fa-exclamation-triangle', 
+            message: 'Cảnh báo: Nguy cơ biến chứng nghiêm trọng!', 
+            detail: 'Đơn thuốc xuất hiện các cặp tương tác có thể gây biến chứng lâm sàng nặng. Cần rà soát kỹ lại danh mục.' 
+        };
+    } else if (hasLevel3) {
+        // MỨC 3: TRUNG BÌNH - CÂN NHẮC ĐỔI LIỀU HOẶC THUỐC (Màu cam)
+        this.overallStatus = { 
+            class: 'border-orange-400 bg-orange-50 text-orange-950', 
+            icon: 'fa-exchange-alt', 
+            message: 'Chú ý: Cân nhắc điều chỉnh liều hoặc đổi thuốc!', 
+            detail: 'Phát hiện tương tác ảnh hưởng đến dược động học thuốc. Khuyến nghị tính toán lại hàm lượng hoặc thay thế hoạt chất tương đương.' 
+        };
+    } else if (hasLevel2) {
+        // MỨC 2: VỪA - CÓ TƯƠNG TÁC NHỎ (Màu vàng)
+        this.overallStatus = { 
+            class: 'border-amber-400 bg-amber-50 text-amber-900', 
+            icon: 'fa-exclamation-circle', 
+            message: 'Khuyến cáo: Có tương tác nhỏ xảy ra', 
+            detail: 'Hệ thống ghi nhận ảnh hưởng lâm sàng nhẹ giữa các thành phần. Bác sĩ cần lưu ý ghi chú thêm cho bệnh nhân.' 
+        };
+    } else if (hasLevel1) {
+        // MỨC 1: NHẸ - CẦN THEO DÕI THÊM (Màu xanh dương / Thông tin)
+        this.overallStatus = { 
+            class: 'border-blue-400 bg-blue-50 text-blue-900', 
+            icon: 'fa-info-circle', 
+            message: 'Lưu ý điều trị: Cần theo dõi thêm', 
+            detail: 'Xuất hiện tương tác xa hoặc cơ địa nhẹ. Không cần đổi thuốc nhưng cần dặn dò theo dõi phản ứng phụ.' 
+        };
+    } else {
+        // AN TOÀN TUYỆT ĐỐI (Chỉ khi không dính bất kỳ mức nào từ 1 -> 5)
+        this.overallStatus = { 
+            class: 'border-emerald-400 bg-emerald-50 text-emerald-950', 
+            icon: 'fa-check-circle', 
+            message: 'Rà soát thành công - Đơn thuốc an toàn', 
+            detail: 'Hệ thống không tìm thấy tương tác bất lợi hoặc chống chỉ định nào giữa thuốc và tình trạng bệnh hiện tại.' 
+        };
+    }
+},
             clearAll() {
                 this.selectedDrugs = [];
                 this.selectedDiseases = [];

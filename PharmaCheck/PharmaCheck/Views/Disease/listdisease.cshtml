@@ -1,0 +1,118 @@
+@model PharmaCheck.Models.DiseasePagedListViewModel
+@{
+    ViewData["Title"] = "Danh Sách Bệnh Lý | PharmaCheck";
+    bool isAdmin = User.Identity.IsAuthenticated && User.IsInRole("Admin");
+}
+
+<div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+    <div class="overflow-x-auto">
+        <table class="w-full border-collapse text-left">
+            <thead class="bg-slate-900 border-b border-slate-800 text-slate-200">
+                <tr>
+                    <th class="px-6 py-4.5 font-bold text-xs uppercase tracking-wider w-16 text-center">
+                        <div class="flex items-center justify-center gap-1.5 text-slate-400"><i class="fas fa-list"></i> STT</div>
+                    </th>
+                    <th class="px-6 py-4.5 font-bold text-xs uppercase tracking-wider">
+                        <div class="flex items-center gap-2 text-slate-400"><i class="fas fa-heartbeat text-red-400"></i> Tên Bệnh Lý</div>
+                    </th>
+                    <th class="px-6 py-4.5 font-bold text-xs uppercase tracking-wider">
+                        <div class="flex items-center gap-2 text-slate-400"><i class="fas fa-exclamation-circle text-amber-400"></i> Triệu Chứng</div>
+                    </th>
+                    <th class="px-6 py-4.5 font-bold text-xs uppercase tracking-wider">
+                        <div class="flex items-center gap-2 text-slate-400"><i class="fas fa-question-circle text-indigo-400"></i> Nguyên Nhân</div>
+                    </th>
+                    <th class="px-6 py-4.5 font-bold text-xs uppercase tracking-wider">
+                        <div class="flex items-center gap-2 text-slate-400"><i class="fas fa-stethoscope text-blue-400"></i> Phương Pháp Điều Trị</div>
+                    </th>
+                    <th class="px-6 py-4.5 font-bold text-xs uppercase tracking-wider">
+                        <div class="flex items-center gap-2 text-slate-400"><i class="fas fa-toggle-on text-purple-400"></i> Trạng Thái</div>
+                    </th>
+                    @if (isAdmin)
+                    {
+                        <th class="px-6 py-4.5 font-bold text-xs uppercase tracking-wider text-center w-32">
+                            <div class="flex items-center justify-center gap-2 text-slate-400"><i class="fas fa-sliders-h"></i> Thao Tác</div>
+                        </th>
+                    }
+                </tr>
+            </thead>
+
+            <tbody class="divide-y divide-slate-100 text-sm">
+                @if (Model.Diseases != null && Model.Diseases.Any())
+                {
+                    int stt = (Model.CurrentPage - 1) * Model.PageSize + 1;
+                    @foreach (var disease in Model.Diseases)
+                    {
+                        <tr class="hover:bg-slate-50/80 transition-colors duration-150">
+                            <td class="px-6 py-4 font-bold text-slate-400 text-center bg-slate-50/40">@stt</td>
+                            <td class="px-6 py-4">
+                                <div class="font-bold text-slate-900 text-base">@disease.Name</div>
+                                <div class="text-xs font-semibold text-slate-400 mt-0.5">Mã số: #@disease.Id</div>
+                            </td>
+                            <td class="px-6 py-4">
+                                <span class="inline-block bg-amber-50 text-amber-800 border border-amber-200 px-3 py-1 rounded-lg font-medium max-w-xs truncate" title="@disease.Symptoms">
+                                    @(string.IsNullOrEmpty(disease.Symptoms) ? "Chưa cập nhật" : disease.Symptoms)
+                                </span>
+                            </td>
+                            <td class="px-6 py-4 text-slate-600 font-medium">
+                                <div class="max-w-xs truncate" title="@disease.Causes">
+                                    @(string.IsNullOrEmpty(disease.Causes) ? "Không có dữ liệu" : disease.Causes)
+                                </div>
+                            </td>
+                            <td class="px-6 py-4 text-slate-600 font-medium">
+                                <div class="max-w-xs truncate" title="@disease.TreatmentMethod">
+                                    @(string.IsNullOrEmpty(disease.TreatmentMethod) ? "Chưa có phác đồ" : disease.TreatmentMethod)
+                                </div>
+                            </td>
+                            <td class="px-6 py-4">
+                                @if (disease.IsActive)
+                                {
+                                    <span class="inline-flex items-center gap-1.5 bg-emerald-50 text-emerald-700 px-2.5 py-1 rounded-full text-xs font-bold border border-emerald-200">
+                                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>Đang Theo Dõi
+                                    </span>
+                                }
+                                else
+                                {
+                                    <span class="inline-flex items-center gap-1.5 bg-slate-100 text-slate-600 px-2.5 py-1 rounded-full text-xs font-bold border border-slate-200">
+                                        <span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span>Ngừng Kê Khai
+                                    </span>
+                                }
+                            </td>
+                            @if (isAdmin)
+                            {
+                                <td class="px-6 py-4">
+                                    <div class="flex justify-center items-center gap-1.5">
+                                        <button onclick="editDisease(@disease.Id)" 
+                                                class="text-slate-600 hover:text-blue-600 hover:bg-blue-50 p-2 rounded-lg transition-all duration-150 cursor-pointer" 
+                                                title="Hiệu Chỉnh">
+                                            <i class="fas fa-pen text-sm"></i>
+                                        </button>
+                                        <button onclick="confirmDeleteDisease(@disease.Id, '@disease.Name')" 
+                                                class="text-slate-600 hover:text-red-600 hover:bg-red-50 p-2 rounded-lg transition-all duration-150 cursor-pointer" 
+                                                title="Loại Bỏ">
+                                            <i class="fas fa-trash-alt text-sm"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            }
+                        </tr>
+                        stt++;
+                    }
+                }
+                else
+                {
+                    <tr>
+                        <td colspan="@(isAdmin ? 7 : 6)" class="px-6 py-16 text-center text-slate-400 bg-slate-50/30">
+                            <div class="max-w-sm mx-auto flex flex-col items-center justify-center">
+                                <div class="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center text-slate-400 mb-3">
+                                    <i class="fas fa-heart-broken text-xl"></i>
+                                </div>
+                                <p class="font-medium text-slate-900 text-sm">Hệ thống bệnh lý trống</p>
+                                <p class="text-xs text-slate-400 mt-1">Hiện không tìm thấy hồ sơ dữ liệu lâm sàng nào tương thích.</p>
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

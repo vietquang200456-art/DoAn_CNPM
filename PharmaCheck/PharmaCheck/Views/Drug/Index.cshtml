@@ -1,7 +1,7 @@
 @model PharmaCheck.Models.DrugPagedListViewModel
 
 @{
-    ViewData["Title"] = "Quản Lý Thuốc | PharmaCheck";
+    ViewData["Title"] = "Danh Mục Thuốc | PharmaCheck";
     // Kiểm tra quyền Admin
     bool isAdmin = User.IsInRole("Admin");
 }
@@ -9,59 +9,73 @@
 @* Bước sửa lỗi 1: Thêm Antiforgery Token vào đầu trang để bảo vệ các request AJAX POST *@
 @Html.AntiForgeryToken()
 
-<div class="bg-gradient-to-r from-medical-700 to-medical-600 text-white py-8">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="flex items-center justify-between">
-            <div>
-                <h1 class="text-4xl font-bold flex items-center gap-3">
-                    <i class="fas fa-pills"></i>
-                    Quản Lý Thuốc
+<div class="relative bg-gradient-to-r from-blue-700 via-blue-600 to-indigo-800 text-white py-12 overflow-hidden shadow-lg">
+    <div class="absolute top-0 right-0 -mt-12 -mr-12 w-64 h-64 bg-white opacity-5 rounded-full blur-2xl pointer-events-none"></div>
+    <div class="absolute bottom-0 left-0 -mb-16 -ml-16 w-72 h-72 bg-blue-400 opacity-10 rounded-full blur-3xl pointer-events-none"></div>
+
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6">
+            <div class="space-y-2">
+                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-white/10 text-blue-100 uppercase tracking-wider border border-white/10">
+                    <i class="fas fa-database text-emerald-400"></i> Cơ sở dữ liệu hiện hành
+                </span>
+                <h1 class="text-3xl sm:text-4xl font-extrabold tracking-tight flex items-center gap-3">
+                    <i class="fas fa-pills text-blue-300 animate-pulse"></i>
+                    Quản Lý Danh Mục Thuốc
                 </h1>
-                <p class="text-blue-100 mt-2">
-                    @(isAdmin ? "Tạo, sửa, xóa và quản lý thông tin thuốc trong cơ sở dữ liệu" : "Tra cứu và xem thông tin chi tiết các loại thuốc trong hệ thống")
+                <p class="text-blue-100 max-w-2xl font-light text-sm sm:text-base leading-relaxed">
+                    @(isAdmin ? "Hệ thống quản trị tối cao: Hỗ trợ khởi tạo, hiệu chỉnh, khóa hoặc loại bỏ thông tin các hoạt chất lâm sàng." : "Trung tâm tra cứu y khoa công cộng: Hỗ trợ rà soát thông tin chi tiết và cơ chế dược lý của các nhóm biệt dược.")
                 </p>
             </div>
             
             @if (isAdmin)
             {
-                <button onclick="openDrugModal()"
-                        class="bg-white text-medical-700 px-6 py-3 rounded-lg font-semibold hover:bg-blue-50 transition-colors flex items-center gap-2 cursor-pointer shadow-md">
-                    <i class="fas fa-plus"></i> Thêm Thuốc Mới
-                </button>
+                <div class="shrink-0">
+                    <button onclick="openDrugModal()"
+                            class="inline-flex items-center gap-2.5 bg-white text-blue-700 px-6 py-3.5 rounded-xl font-bold text-sm hover:bg-blue-50 hover:scale-[1.02] transition-all duration-300 cursor-pointer shadow-xl hover:shadow-white/10">
+                        <i class="fas fa-plus text-base"></i> Thêm Thuốc Mới
+                    </button>
+                </div>
             }
         </div>
     </div>
 </div>
 
-<section id="features" class="py-12 bg-white border-t border-slate-200">
-    <partial name="~/Views/Drug/listdrug.cshtml" />
+<section id="features" class="py-12 bg-slate-50/50">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-1 overflow-hidden">
+            <partial name="~/Views/Drug/listdrug.cshtml" />
+        </div>
+    </div>
 </section>
 
 @if (isAdmin)
 {
     <section id="features" class="py-12 bg-white border-t border-slate-200">
-        <partial name="~/Views/Drug/adddrug.cshtml" />
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <partial name="~/Views/Drug/adddrug.cshtml" />
+        </div>
     </section>
 
-    <div id="deleteModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-        <div class="bg-white rounded-xl shadow-2xl max-w-md w-full">
-            <div class="p-6">
-                <div class="flex items-center justify-center w-12 h-12 mx-auto bg-red-100 rounded-full mb-4">
-                    <i class="fas fa-exclamation-triangle text-red-600 text-xl"></i>
+    <div id="deleteModal" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 transition-all duration-300">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full overflow-hidden border border-slate-100 transform scale-100 transition-transform">
+            <div class="p-6 text-center">
+                <div class="flex items-center justify-center w-14 h-14 mx-auto bg-red-50 text-red-600 rounded-full mb-4 shadow-inner">
+                    <i class="fas fa-exclamation-triangle text-2xl"></i>
                 </div>
-                <h3 class="text-xl font-bold text-center text-gray-900 mb-2">Xác Nhận Xóa</h3>
-                <p class="text-center text-gray-600 mb-6">
-                    Bạn chắc chắn muốn xóa <span id="deleteItemName" class="font-semibold"></span>? Hành động này không thể hoàn tác.
+                <h3 class="text-xl font-bold text-gray-900 mb-2">Xác Nhận Xóa Hoạt Chất</h3>
+                <p class="text-gray-500 text-sm leading-relaxed px-2">
+                    Bạn chắc chắn muốn xóa biệt dược <span id="deleteItemName" class="font-semibold text-gray-800 underline decoration-red-500 decoration-2"></span>? Hành động này sẽ loại bỏ dữ liệu khỏi hệ thống và không thể hoàn tác.
                 </p>
             </div>
-            <div class="bg-slate-50 border-t border-slate-200 px-6 py-4 flex gap-3 justify-end">
+            <div class="bg-slate-50 px-6 py-4 flex gap-3 justify-end border-t border-slate-100">
                 <button onclick="closeDeleteModal()"
-                        class="px-6 py-2 border border-slate-300 text-gray-700 rounded-lg font-semibold hover:bg-slate-50 transition-colors cursor-pointer">
-                    Hủy
+                        class="px-5 py-2.5 border border-slate-300 text-slate-700 bg-white rounded-xl font-semibold text-sm hover:bg-slate-50 hover:text-slate-900 transition-all duration-200 cursor-pointer">
+                    Hủy Bỏ
                 </button>
                 <button onclick="deleteDrugConfirmed()" id="confirmDeleteBtn"
-                        class="px-6 py-2 bg-red-600 text-white rounded-lg font-semibold hover:bg-red-700 transition-colors flex items-center gap-2 cursor-pointer">
-                    <i class="fas fa-trash"></i> Xóa
+                        class="px-5 py-2.5 bg-red-600 text-white rounded-xl font-semibold text-sm hover:bg-red-700 hover:shadow-lg hover:shadow-red-600/20 transition-all duration-200 flex items-center gap-2 cursor-pointer">
+                    <i class="fas fa-trash-alt text-xs"></i> Đồng Ý Xóa
                 </button>
             </div>
         </div>
@@ -216,14 +230,14 @@
     function fillFormWithData(data) {
         if (!document.getElementById('drugForm')) return;
 
-        // Bọc cứu hộ an toàn an toàn bằng toán tử ?. để tránh tuyệt đối lỗi Null gãy hàm JS
+        // Bọc cứu hộ an toàn bằng toán tử ?. để tránh tuyệt đối lỗi Null gãy hàm JS
         if(document.getElementById('drugId')) document.getElementById('drugId').value = data.id ?? data.Id ?? 0;
         if(document.getElementById('drugName')) document.getElementById('drugName').value = data.name ?? data.Name ?? '';
         if(document.getElementById('activeIngredient')) document.getElementById('activeIngredient').value = data.activeIngredient ?? data.ActiveIngredient ?? '';
         if(document.getElementById('dosage')) document.getElementById('dosage').value = data.dosage ?? data.Dosage ?? '';
         if(document.getElementById('manufacturer')) document.getElementById('manufacturer').value = data.manufacturer ?? data.Manufacturer ?? '';
         
-        // SỬA LỖI TẠI ĐÂY: Thử map đổ dữ liệu Công Dụng vào id "drugUse" trước, nếu không có thì thử "function"
+        // Thử map đổ dữ liệu Công Dụng vào id "drugUse" trước, nếu không có thì thử "function"
         const inputFunction = document.getElementById('drugUse') || document.getElementById('function');
         if (inputFunction) inputFunction.value = data.function ?? data.Function ?? '';
 

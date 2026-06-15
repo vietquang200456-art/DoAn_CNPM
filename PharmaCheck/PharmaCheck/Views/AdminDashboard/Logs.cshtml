@@ -2,55 +2,62 @@
     ViewData["Title"] = "Nhật Ký Hoạt Động Hệ Thống | PharmaCheck";
 }
 
-<div class="min-h-screen bg-slate-50 py-8">
+<div class="min-h-screen bg-slate-50/50 py-10 animate-fade-in">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
-        <div class="mb-6">
-            <nav class="flex text-sm text-slate-400 mb-2 gap-2">
-                <a href="/AdminDashboard/Index" class="hover:text-medical-600 transition">Dashboard</a>
-                <span>/</span>
-                <span class="text-slate-600 font-medium">Nhật ký hoạt động</span>
+        <div class="mb-8">
+            <nav class="flex text-xs text-slate-400 mb-3 gap-2 font-medium tracking-wide uppercase select-none">
+                <a href="/AdminDashboard/Index" class="hover:text-indigo-600 transition-colors">Dashboard</a>
+                <span class="text-slate-300">/</span>
+                <span class="text-slate-600">Nhật ký hoạt động</span>
             </nav>
-            <h1 class="text-3xl font-extrabold text-slate-900 tracking-tight flex items-center gap-3">
-                <i class="fas fa-history text-medical-600"></i>
-                Toàn Bộ Nhật Ký Hệ Thống
+            <h1 class="text-2xl font-bold text-slate-900 tracking-tight flex items-center gap-3">
+                <div class="bg-indigo-50 text-indigo-600 p-2.5 rounded-xl border border-indigo-100/50 shadow-sm shadow-indigo-100">
+                    <i class="fas fa-history text-lg"></i>
+                </div>
+                <span class="bg-clip-text text-transparent bg-gradient-to-r from-slate-900 to-slate-700">Toàn Bộ Nhật Ký Hệ Thống</span>
             </h1>
-            <p class="text-slate-500 mt-1">Dữ liệu log thời gian thực ghi lại mọi biến động cấu trúc dữ liệu của PharmaCheck.</p>
+            <p class="text-sm text-slate-500 mt-2 flex items-center gap-1.5">
+                <i class="fas fa-info-circle text-slate-400"></i> Dữ liệu log thời gian thực ghi lại mọi biến động cấu trúc dữ liệu của hệ thống PharmaCheck.
+            </p>
         </div>
 
-        <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-100 mb-6 flex flex-col sm:flex-row gap-4 items-center justify-between">
+        <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 mb-6 flex flex-col sm:flex-row gap-4 items-center justify-between transition-all hover:shadow-md hover:border-slate-200/60">
             <form method="get" action="/AdminDashboard/Logs" class="w-full sm:w-96 relative flex items-center">
                 <i class="fas fa-search absolute left-3.5 text-slate-400 text-sm"></i>
                 <input type="text" name="search" value="@ViewBag.SearchKeyword" placeholder="Tìm theo nội dung log hoặc hành động..." 
-                       class="w-full pl-10 pr-4 py-2 text-sm bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:border-medical-500 focus:bg-white transition" />
+                       class="w-full pl-10 pr-4 py-2.5 text-sm bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-50/50 focus:bg-white transition-all" />
                 @if(!string.IsNullOrEmpty(ViewBag.SearchKeyword))
                 {
-                    <a href="/AdminDashboard/Logs" class="absolute right-3 text-slate-400 hover:text-slate-600 text-xs bg-slate-200/60 px-1.5 py-0.5 rounded">Xóa lọc</a>
+                    <a href="/AdminDashboard/Logs" class="absolute right-3.5 text-slate-400 hover:text-red-600 text-xs bg-slate-100 hover:bg-red-50 px-2 py-1 rounded-lg transition-colors">Xóa lọc</a>
                 }
             </form>
-            <div class="text-sm text-slate-500 font-medium shrink-0">
-                Hiển thị tối đa <span class="text-slate-800 font-bold">20</span> dòng mỗi trang
+            <div class="text-xs text-slate-500 font-medium shrink-0 bg-slate-50 px-3.5 py-2 rounded-xl border border-slate-100 select-none">
+                Hiển thị tối đa <span class="text-slate-800 font-bold bg-white px-1.5 py-0.5 rounded border border-slate-100 shadow-inner">20</span> dòng mỗi trang
             </div>
         </div>
 
-        <div class="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden">
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden transition-all duration-300 hover:shadow-md hover:border-slate-200/60">
             <div class="overflow-x-auto">
-                <table class="w-full text-left border-collapse">
+                <table class="w-full text-left border-collapse table-fixed min-w-[850px]">
                     <thead>
-                        <tr class="bg-slate-50 border-b border-slate-100 text-xs font-bold uppercase tracking-wider text-slate-400">
-                            <th class="py-3.5 px-6 w-20 text-center">ID</th>
-                            <th class="py-3.5 px-6 w-32">Hành Động</th>
-                            <th class="py-3.5 px-6">Nội Dung Chi Tiết Nhật Ký</th>
-                            <th class="py-3.5 px-6 w-48">Thời Gian Hệ Thống</th>
+                        <tr class="bg-slate-50/70 border-b border-slate-100 text-xs font-bold uppercase tracking-wider text-slate-500 select-none">
+                            <th class="py-4 px-6 w-20 text-center">ID</th>
+                            <th class="py-4 px-6 w-40">Hành Động</th>
+                            <th class="py-4 px-6">Nội Dung Chi Tiết Nhật Ký</th>
+                            <th class="py-4 px-6 w-56">Thời Gian Hệ Thống</th>
                         </tr>
                     </thead>
-                    <tbody class="divide-y divide-slate-100 text-sm text-slate-600">
+                    <tbody class="divide-y divide-slate-100 text-sm text-slate-700">
                         @if (ViewBag.AllLogs == null || !((IEnumerable<dynamic>)ViewBag.AllLogs).Any())
                         {
                             <tr>
-                                <td colspan="4" class="text-center py-12 text-slate-400">
-                                    <i class="fas fa-database block text-3xl mb-3 text-slate-300"></i>
-                                    Không tìm thấy dữ liệu lịch sử nhật ký nào phù hợp.
+                                <td colspan="4" class="text-center py-20 text-slate-400">
+                                    <div class="w-16 h-16 bg-slate-50 text-slate-300 border border-slate-100 flex items-center justify-center rounded-2xl mx-auto mb-4 text-2xl shadow-inner">
+                                        <i class="fas fa-database"></i>
+                                    </div>
+                                    <p class="text-sm font-semibold text-slate-600">Không tìm thấy bản ghi log</p>
+                                    <span class="text-xs text-slate-400 mt-0.5 block">Dữ liệu lịch sử nhật ký không phù hợp với từ khóa tra cứu.</span>
                                 </td>
                             </tr>
                         }
@@ -58,18 +65,24 @@
                         {
                             @foreach (var log in ViewBag.AllLogs)
                             {
-                                <tr class="hover:bg-slate-50/50 transition-colors">
-                                    <td class="py-4 px-6 text-center text-slate-400 font-mono text-xs">#@log.Id</td>
-                                    <td class="py-4 px-6">
-                                        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-bold border @log.Color uppercase tracking-wide shadow-sm">
-                                            <i class="fas @log.Icon"></i> @log.Action
+                                <tr class="hover:bg-slate-50/40 transition-colors group">
+                                    <td class="py-4 px-6 text-center text-slate-400 font-mono text-xs select-none">#@log.Id</td>
+                                    
+                                    <td class="py-4 px-6 whitespace-nowrap">
+                                        <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-semibold border shadow-sm uppercase tracking-wide @log.Color">
+                                            <i class="fas @log.Icon text-[10px]"></i> <span>@log.Action</span>
                                         </span>
                                     </td>
-                                    <td class="py-4 px-6 font-medium text-slate-700 break-words max-w-xl">
+                                    
+                                    <td class="py-4 px-6 font-medium text-slate-800 break-words leading-relaxed group-hover:text-indigo-900 transition-colors">
                                         @log.Message
                                     </td>
-                                    <td class="py-4 px-6 text-slate-400 font-medium text-xs">
-                                        <i class="far fa-clock mr-1"></i> @log.Time
+                                    
+                                    <td class="py-4 px-6 text-slate-500 font-medium text-xs whitespace-nowrap">
+                                        <div class="flex items-center gap-1.5">
+                                            <i class="far fa-clock text-slate-400 group-hover:text-indigo-500 transition-colors"></i>
+                                            <span class="font-mono tracking-tight">@log.Time</span>
+                                        </div>
                                     </td>
                                 </tr>
                             }
@@ -80,42 +93,51 @@
 
             @if (ViewBag.TotalPages > 1)
             {
-                <div class="px-6 py-4 bg-slate-50/50 border-t border-slate-100 flex items-center justify-between">
-                    <div class="text-sm text-slate-500">
-                        Trang <span class="font-semibold text-slate-800">@ViewBag.CurrentPage</span> / @ViewBag.TotalPages
+                <div class="px-6 py-4 bg-slate-50/50 border-t border-slate-100 flex flex-wrap items-center justify-between gap-4 select-none">
+                    <div class="text-xs text-slate-500 font-medium">
+                        Trang <span class="font-bold text-slate-800 bg-white px-2 py-0.5 rounded border border-slate-200/60 shadow-inner">@ViewBag.CurrentPage</span> / <span class="font-bold text-slate-700">@ViewBag.TotalPages</span>
                     </div>
                     <div class="flex items-center gap-2">
                         @if (ViewBag.CurrentPage > 1)
                         {
                             <a href="/AdminDashboard/Logs?search=@ViewBag.SearchKeyword&page=@(ViewBag.CurrentPage - 1)" 
-                               class="px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-sm font-semibold text-slate-600 hover:bg-slate-50 transition shadow-sm">
-                                <i class="fas fa-chevron-left mr-1 text-xs"></i> Trước
+                               class="inline-flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-50 hover:border-slate-300 transition-all shadow-sm active:scale-95">
+                                <i class="fas fa-chevron-left text-[10px]"></i> Trước
                             </a>
                         }
                         else
                         {
-                            <span class="px-3 py-1.5 bg-slate-100 border border-slate-200 rounded-lg text-sm font-semibold text-slate-400 cursor-not-allowed">
-                                <i class="fas fa-chevron-left mr-1 text-xs"></i> Trước
+                            <span class="inline-flex items-center gap-2 px-4 py-2 bg-slate-100 border border-slate-200 rounded-xl text-xs font-semibold text-slate-400 cursor-not-allowed shadow-none">
+                                <i class="fas fa-chevron-left text-[10px]"></i> Trước
                             </span>
                         }
 
                         @if (ViewBag.CurrentPage < ViewBag.TotalPages)
                         {
                             <a href="/AdminDashboard/Logs?search=@ViewBag.SearchKeyword&page=@(ViewBag.CurrentPage + 1)" 
-                               class="px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-sm font-semibold text-slate-600 hover:bg-slate-50 transition shadow-sm">
-                                Tiếp <i class="fas fa-chevron-right ml-1 text-xs"></i>
+                               class="inline-flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-50 hover:border-slate-300 transition-all shadow-sm active:scale-95">
+                                Tiếp <i class="fas fa-chevron-right text-[10px]"></i>
                             </a>
                         }
                         else
                         {
-                            <span class="px-3 py-1.5 bg-slate-100 border border-slate-200 rounded-lg text-sm font-semibold text-slate-400 cursor-not-allowed">
-                                Tiếp <i class="fas fa-chevron-right ml-1 text-xs"></i>
+                            <span class="inline-flex items-center gap-2 px-4 py-2 bg-slate-100 border border-slate-200 rounded-xl text-xs font-semibold text-slate-400 cursor-not-allowed shadow-none">
+                                Tiếp <i class="fas fa-chevron-right text-[10px]"></i>
                             </span>
                         }
                     </div>
                 </div>
             }
         </div>
-
     </div>
 </div>
+
+<style>
+    .animate-fade-in {
+        animation: fadeIn 0.4s ease-out forwards;
+    }
+    @@keyframes fadeIn {
+        from { opacity: 0; transform: translateY(6px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+</style>

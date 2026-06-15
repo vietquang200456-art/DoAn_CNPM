@@ -450,3 +450,4 @@ D:\Đồ Án CNPM_1\DoAn_CNPM\PharmaCheck\PharmaCheck\obj\Debug\net10.0\refint\P
 D:\Đồ Án CNPM_1\DoAn_CNPM\PharmaCheck\PharmaCheck\obj\Debug\net10.0\PharmaCheck.pdb
 D:\Đồ Án CNPM_1\DoAn_CNPM\PharmaCheck\PharmaCheck\obj\Debug\net10.0\PharmaCheck.genruntimeconfig.cache
 D:\Đồ Án CNPM_1\DoAn_CNPM\PharmaCheck\PharmaCheck\obj\Debug\net10.0\ref\PharmaCheck.dll
+D:\Đồ Án CNPM_1\DoAn_CNPM\PharmaCheck\PharmaCheck\obj\Debug\net10.0\compressed\qbwo6kup2t-{0}-okrn496hfw-okrn496hfw.gz
