@@ -144,13 +144,14 @@
                             <i class="fas fa-exchange-alt text-slate-400 text-xs"></i>Cấu Hình Tương Tác
                         </a>
                     }
-                    @if (User.Identity.IsAuthenticated)
+                    @if (User.Identity.IsAuthenticated && User.IsInRole("Doctor"))
                     {
                         <a asp-area="" asp-controller="Prescription" asp-action="Create"
                            class="nav-link px-3.5 h-full flex items-center text-sm font-medium text-slate-600 hover:text-indigo-700 gap-1.5">
                             <i class="fas fa-file-medical text-xl"></i>Kê đơn thuốc
                         </a>
-
+                    }
+                    @if(User.Identity.IsAuthenticated){
                         <a asp-area="" asp-controller="History" asp-action="Index"
                            class="nav-link px-3.5 h-full flex items-center text-sm font-medium text-slate-600 hover:text-indigo-700 gap-1.5">
                             <i class="fas fa-history text-slate-400 text-xs"></i>Lịch Sử Tra Cứu

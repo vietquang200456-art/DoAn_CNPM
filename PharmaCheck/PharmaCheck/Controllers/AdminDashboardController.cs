@@ -4,7 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore; // Đảm bảo có dòng này để dùng .Include()
+using Microsoft.EntityFrameworkCore;
 using PharmaCheck.Data;
 using PharmaCheck.Models;
 
@@ -22,13 +22,13 @@ public class AdminDashboardController : Controller
 
     public async Task<IActionResult> Index()
     {
-        // 1. MOCK DATA: Thống kê
+        // 1. DATA THỐNG KÊ (Mock + Real Count)
         ViewBag.TotalDrugs = 1248;
         ViewBag.ActiveDrugs = 1120;
         ViewBag.ExpiredWarningDrugs = 14;
-        ViewBag.TotalUsers = await _context.Users.CountAsync(); // Thay thế bằng data thật luôn cho chuyên nghiệp
+        ViewBag.TotalUsers = await _context.Users.CountAsync(); 
 
-        // 2. DATA THẬT: Logs
+        // 2. DATA THẬT: Tải nhật ký hệ thống (Audit Logs)
         var rawLogs = await _context.AuditLogs
             .OrderByDescending(al => al.CreatedAt)
             .Take(5)
@@ -53,11 +53,11 @@ public class AdminDashboardController : Controller
             }
         }).ToList();
 
-        // 3. MOCK DATA: Chart
+        // 3. MOCK DATA: Biểu đồ xu hướng
         ViewBag.ChartLabels = new string[] { "Tháng 1", "Tháng 2", "Tháng 3", "Tháng 4", "Tháng 5", "Tháng 6" };
         ViewBag.ChartData = new int[] { 85, 120, 90, 145, 130, 185 };
 
-        // 4. DATA THẬT: Thuốc mới
+        // 4. DATA THẬT: Top thuốc mới cập nhật
         var dbRecentDrugs = await _context.Drugs
             .OrderByDescending(d => d.UpdatedAt ?? d.CreatedAt)
             .Take(5)
@@ -70,9 +70,10 @@ public class AdminDashboardController : Controller
             Status = d.IsActive ? "Active" : "Inactive"
         }).ToList();
 
-        // 5. DATA THẬT: Người dùng mới (ĐÃ SỬA ĐỔI ĐỂ TƯƠNG THÍCH BẢNG ROLE MỚI) 🌟
+        // 5. DATA THẬT: Danh sách tài khoản nhân sự lâm sàng (KHÔNG HIỂN THỊ ADMIN) 🌟
         var dbUsers = await _context.Users
-            .Include(u => u.Role) // Nạp kèm bảng dữ liệu Role 
+            .Include(u => u.Role) 
+            .Where(u => u.Role == null || u.Role.Name != "Admin") // Loại bỏ tuyệt đối Admin ngay từ truy vấn gốc
             .OrderByDescending(u => u.CreatedAt)
             .Take(5)
             .ToListAsync();
@@ -81,7 +82,7 @@ public class AdminDashboardController : Controller
             Id = u.Id,
             Name = u.FullName ?? "Người dùng mới",
             Email = u.Email,
-            Role = u.Role?.Name ?? "User", // SỬA ĐỔI: Lấy thuộc tính Name từ object Role liên kết 🌟
+            Role = u.Role?.Name ?? "Doctor", // Gán mặc định nếu chưa map Role
             AvatarInitials = string.IsNullOrEmpty(u.FullName) 
                 ? "NN" 
                 : string.Concat(u.FullName.Split(' ', StringSplitOptions.RemoveEmptyEntries).Select(n => n[0])).ToUpper(),
@@ -91,16 +92,83 @@ public class AdminDashboardController : Controller
         return View();
     }
 
+    /// <summary>
+    /// API Thay đổi phân quyền thành viên lâm sàng (Doctor / Pharmacist)
+    /// </summary>
     [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> ChangeUserRole(int userId, string newRole)
+    {
+        // Kiểm tra chặn: Hệ thống hiện tại chỉ có 2 quyền lâm sàng được phép chỉ định
+        var allowedRoles = new List<string> { "Doctor", "Pharmacist" };
+        if (!allowedRoles.Contains(newRole))
+        {
+            return Json(new { success = false, message = "Vai trò phân quyền không hợp lệ hoặc bị cấm." });
+        }
+
+        try
+        {
+            // Tải thông tin người dùng kèm theo quyền hiện tại
+            var user = await _context.Users.Include(u => u.Role).FirstOrDefaultAsync(u => u.Id == userId);
+            if (user == null) 
+                return Json(new { success = false, message = "Tài khoản nhân sự không tồn tại." });
+
+            // Bảo vệ tầng sâu: Ngăn chặn can thiệp hạ quyền nếu tài khoản đích thực chất là Admin
+            if (user.Role?.Name == "Admin")
+            {
+                return Json(new { success = false, message = "Không thể sửa đổi thông tin của Quản trị viên cấp cao." });
+            }
+
+            // Tìm thực thể Role tương ứng trong cơ sở dữ liệu
+            var targetRole = await _context.Roles.FirstOrDefaultAsync(r => r.Name == newRole);
+            if (targetRole == null)
+            {
+                return Json(new { success = false, message = $"Vai trò '{newRole}' chưa được khởi tạo trong Database." });
+            }
+
+            string oldRoleName = user.Role?.Name ?? "Chưa phân quyền";
+            
+            // Tiến hành cập nhật mối quan hệ khóa ngoại
+            user.Role = targetRole; 
+            _context.Users.Update(user);
+
+            // Ghi nhận hành động vào nhật ký hệ thống (Audit Log)
+            _context.AuditLogs.Add(new AuditLog {
+                Message = $"Admin đã đổi quyền của {user.FullName ?? user.Email} từ [{oldRoleName}] sang [{newRole}].",
+                ActionType = "Edit",
+                CreatedAt = DateTime.UtcNow,
+                PerformedBy = User.Identity?.Name ?? "Admin"
+            });
+
+            await _context.SaveChangesAsync();
+            return Json(new { success = true });
+        }
+        catch (Exception ex)
+        {
+            return Json(new { success = false, message = "Lỗi xử lý Database: " + ex.Message });
+        }
+    }
+
+    /// <summary>
+    /// API Khóa / Mở khóa tài khoản nhân sự
+    /// </summary>
+    [HttpPost]
+    [ValidateAntiForgeryToken]
     public async Task<IActionResult> ToggleUserStatus(int userId, bool activate)
     {
-        var user = await _context.Users.FindAsync(userId);
+        var user = await _context.Users.Include(u => u.Role).FirstOrDefaultAsync(u => u.Id == userId);
         if (user == null) return Json(new { success = false, message = "Người dùng không tồn tại" });
+
+        // Chặn không cho khóa tài khoản Admin từ giao diện này
+        if (user.Role?.Name == "Admin")
+        {
+            return Json(new { success = false, message = "Không thể thay đổi trạng thái của tài khoản Quản trị viên." });
+        }
 
         try 
         {
             user.IsActive = activate;
-            await _context.SaveChangesAsync();
+            _context.Users.Update(user);
 
             var action = activate ? "Mở khóa" : "Khóa";
             _context.AuditLogs.Add(new AuditLog {
@@ -109,8 +177,8 @@ public class AdminDashboardController : Controller
                 CreatedAt = DateTime.UtcNow,
                 PerformedBy = User.Identity?.Name ?? "Admin"
             });
+            
             await _context.SaveChangesAsync();
-
             return Json(new { success = true });
         }
         catch (Exception ex)
@@ -145,7 +213,7 @@ public class AdminDashboardController : Controller
                 "create" => "text-green-600 bg-green-50 border-green-200",
                 "edit"   => "text-blue-600 bg-blue-50 border-blue-200",
                 "delete" => "text-red-600 bg-red-50 border-red-200",
-                "login"  => "text-indigo-600 bg-indigo-50 border-indigo-200", // Thêm màu cho login đồng bộ với Index
+                "login"  => "text-indigo-600 bg-indigo-50 border-indigo-200",
                 _        => "text-slate-600 bg-slate-50 border-slate-200"
             },
             Icon = log.ActionType?.ToLower() switch {
@@ -162,7 +230,7 @@ public class AdminDashboardController : Controller
         ViewBag.SearchKeyword = search;
 
         return View();
-    }
+    }   
 
     private string FormatAuditLogTime(DateTime utcTime)
     {

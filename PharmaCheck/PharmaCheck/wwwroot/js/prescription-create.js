@@ -5,6 +5,7 @@
 
 let rowCounter = 0;
 let globalDrugsList = []; // Lưu trữ danh sách thuốc lấy từ DB về để tìm kiếm nhanh tại Client
+let isBirthDateMode = false; // Theo dõi đang ở chế độ nhập tuổi hay ngày sinh
 
 document.addEventListener("DOMContentLoaded", function () {
     // 1. Tải trước danh sách thuốc từ server để phục vụ tính năng gõ tìm kiếm
@@ -15,8 +16,8 @@ document.addEventListener("DOMContentLoaded", function () {
     if (ageInput) {
         ageInput.addEventListener("input", function() {
             let val = parseInt(this.value);
-            if (val <= 0) {
-                this.value = 1; // Nếu nhập <= 0 thì tự động đưa về 1
+            if (isNaN(val) || val <= 0) {
+                this.value = ""; 
             } else if (val >= 150) {
                 this.value = 149; // Nếu nhập >= 150 thì tự động giới hạn ở 149
             }
@@ -28,8 +29,119 @@ document.addEventListener("DOMContentLoaded", function () {
 });
 
 /**
- * Tải danh mục thuốc từ Backend
+ * =========================================================================
+ * LOGIC TỰ ĐỘNG TÌM KIẾM VÀ GỢI Ý BỆNH NHÂN CŨ (AUTOCOMPLETE)
+ * =========================================================================
  */
+
+function toggleAgeBirthMode() {
+    isBirthDateMode = !isBirthDateMode;
+    const ageWrapper = document.getElementById("ageInputWrapper");
+    const birthWrapper = document.getElementById("birthDateInputWrapper");
+    const btn = document.getElementById("btnToggleMode");
+    const label = document.getElementById("ageBirthLabel");
+
+    if (isBirthDateMode) {
+        ageWrapper.classList.add("hidden");
+        birthWrapper.classList.remove("hidden");
+        label.innerHTML = 'Ngày Sinh Cụ Thể <span class="text-red-500">*</span>';
+        btn.innerText = "Chuyển Nhập Tuổi Nhanh";
+        document.getElementById("patientAge").value = "";
+    } else {
+        ageWrapper.classList.remove("hidden");
+        birthWrapper.classList.add("hidden");
+        label.innerHTML = 'Tuổi <span class="text-red-500">*</span>';
+        btn.innerText = "Nhập Ngày Sinh Thật";
+        document.getElementById("patientBirthDate").value = "";
+    }
+}
+
+function showPatientDropdown() {
+    const menu = document.getElementById("patientDropdownMenu");
+    if (menu && menu.children.length > 0) menu.classList.remove("hidden");
+}
+
+function hidePatientDropdown() {
+    const menu = document.getElementById("patientDropdownMenu");
+    if (menu) {
+        // Tăng delay lên 250ms để trình duyệt kịp ăn sự kiện click chuột chọn item bệnh nhân
+        setTimeout(() => { menu.classList.add("hidden"); }, 250);
+    }
+}
+
+// Click ra ngoài vùng thì ẩn danh sách gợi ý bệnh nhân
+document.addEventListener("click", function(e) {
+    const wrapper = document.getElementById("patientDropdownWrapper");
+    if (wrapper && !wrapper.contains(e.target)) {
+        hidePatientDropdown();
+    }
+});
+
+let patientSearchTimeout = null;
+function searchPatientsLive() {
+    const keyword = document.getElementById("patientName").value.trim();
+    const menu = document.getElementById("patientDropdownMenu");
+    
+    // Nếu từ khóa ngắn quá, xóa ID đã chọn và ẩn menu
+    if (keyword.length < 2) {
+        document.getElementById("selectedPatientId").value = "";
+        menu.innerHTML = "";
+        menu.classList.add("hidden");
+        return;
+    }
+
+    clearTimeout(patientSearchTimeout);
+    patientSearchTimeout = setTimeout(() => {
+        fetch(`/Prescription/GetPatientsJson?term=${encodeURIComponent(keyword)}`)
+            .then(response => response.json())
+            .then(patients => {
+                menu.innerHTML = "";
+                if (patients.length === 0) {
+                    menu.classList.add("hidden");
+                    return;
+                }
+
+                patients.forEach(p => {
+                    const item = document.createElement("div");
+                    item.className = "p-3 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-700 cursor-pointer transition flex justify-between items-center z-50";
+                    item.innerHTML = `
+                        <div class="flex flex-col">
+                            <span class="font-bold text-slate-800">${p.name}</span>
+                            <span class="text-xs text-slate-400">SĐT: ${p.phone}</span>
+                        </div>
+                        <div class="text-right text-xs text-slate-500 italic">${p.gender} - ${p.age} tuổi</div>
+                    `;
+
+                    // Khi click chọn bệnh nhân cũ: Tự động điền dữ liệu (Auto-fill) 🌟
+                    item.onclick = function() {
+                        document.getElementById("selectedPatientId").value = p.id;
+                        document.getElementById("patientName").value = p.name;
+                        document.getElementById("patientPhone").value = p.phone;
+                        document.getElementById("patientGender").value = p.gender;
+                        document.getElementById("allergies").value = p.allergies;
+                        
+                        // Chuyển về ô nhập tuổi nhanh để hiển thị số tuổi của hồ sơ cũ
+                        if (isBirthDateMode) {
+                            toggleAgeBirthMode(); 
+                        }
+                        document.getElementById("patientAge").value = p.age;
+                        
+                        menu.classList.add("hidden");
+                    };
+                    menu.appendChild(item);
+                });
+                menu.classList.remove("hidden");
+            })
+            .catch(err => console.error("Lỗi quét gợi ý bệnh nhân:", err));
+    }, 300);
+}
+
+/**
+ * =========================================================================
+ * LOGIC QUẢN LÝ DANH MỤC THUỐC & ĐƠN THUỐC ĐỘNG
+ * =========================================================================
+ */
+
 function preloadDrugsData() {
     fetch('/Prescription/GetDrugsJson')
         .then(response => response.json())
@@ -39,9 +151,6 @@ function preloadDrugsData() {
         .catch(err => console.error("Lỗi đồng bộ danh mục thuốc:", err));
 }
 
-/**
- * Thêm một hàng chọn thuốc mới với bộ tìm kiếm thông minh (Searchable Dropdown)
- */
 function addDrugRow() {
     rowCounter++;
     const currentId = rowCounter;
@@ -55,7 +164,6 @@ function addDrugRow() {
     tr.id = `drugRow_${currentId}`;
     tr.className = "group hover:bg-slate-50/80 transition-all duration-200";
     
-    // Sử dụng Custom Dropdown: Gồm 1 ô input để gõ và 1 menu ẩn chứa kết quả lọc
     tr.innerHTML = `
         <td class="py-4 pr-3 pl-2 relative">
             <div class="relative" id="dropdownWrapper_${currentId}">
@@ -68,10 +176,9 @@ function addDrugRow() {
                        class="w-full px-3 py-2.5 border border-slate-300 rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition" />
                 
                 <input type="hidden" id="drugSelect_${currentId}" value="" />
-
                 <div id="dropdownMenu_${currentId}" 
                      class="hidden absolute left-0 right-0 mt-1 max-h-60 overflow-y-auto bg-white border border-slate-200 rounded-xl shadow-xl z-50 divide-y divide-slate-50">
-                    </div>
+                </div>
             </div>
         </td>
         <td class="py-4 pr-3">
@@ -92,7 +199,6 @@ function addDrugRow() {
     
     tbody.appendChild(tr);
 
-    // Lắng nghe sự kiện click ra ngoài thì đóng dropdown ẩn đi
     document.addEventListener("click", function(e) {
         const wrapper = document.getElementById(`dropdownWrapper_${currentId}`);
         if (wrapper && !wrapper.contains(e.target)) {
@@ -101,36 +207,26 @@ function addDrugRow() {
     });
 }
 
-/**
- * Hiển thị menu tìm kiếm và nạp dữ liệu ban đầu
- */
 function showDropdown(id) {
     const menu = document.getElementById(`dropdownMenu_${id}`);
     if (menu) {
         menu.classList.remove("hidden");
-        filterDrugs(id); // Gọi bộ lọc để hiện danh sách ban đầu
+        filterDrugs(id);
     }
 }
 
-/**
- * Ẩn menu tìm kiếm
- */
 function hideDropdown(id) {
     const menu = document.getElementById(`dropdownMenu_${id}`);
     if (menu) {
-        setTimeout(() => { menu.classList.add("hidden"); }, 200); // Delay nhẹ để kịp nhận sự kiện click chọn thuốc
+        setTimeout(() => { menu.classList.add("hidden"); }, 200);
     }
 }
 
-/**
- * Thuật toán lọc tìm kiếm thuốc trực tiếp dựa trên dữ liệu bác sĩ gõ (Real-time Filtering)
- */
 function filterDrugs(id) {
     const keyword = document.getElementById(`drugSearch_${id}`).value.toLowerCase().trim();
     const menu = document.getElementById(`dropdownMenu_${id}`);
-    menu.innerHTML = ""; // Xóa dữ liệu cũ trong menu
+    menu.innerHTML = "";
 
-    // Lọc danh sách thuốc khớp với tên hoặc hoạt chất
     const filtered = globalDrugsList.filter(drug => 
         drug.name.toLowerCase().includes(keyword) || 
         (drug.ingredient && drug.ingredient.toLowerCase().includes(keyword))
@@ -141,29 +237,24 @@ function filterDrugs(id) {
         return;
     }
 
-    // Sinh cấu trúc giao diện danh sách kết quả tìm kiếm
     filtered.forEach(drug => {
         const item = document.createElement("div");
         item.className = "p-3 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-700 cursor-pointer transition flex flex-col gap-0.5";
         item.innerHTML = `
             <span class="font-bold">${drug.name}</span>
-            <span class="text-xs text-slate-400 group-hover:text-blue-500">Hoạt chất: ${drug.ingredient || 'N/A'}</span>
+            <span class="text-xs text-slate-400">Hoạt chất: ${drug.ingredient || 'N/A'}</span>
         `;
         
-        // Sự kiện khi bác sĩ bấm chọn thuốc cụ thể
         item.onclick = function() {
-            document.getElementById(`drugSearch_${id}`).value = drug.name; // Hiển thị tên lên ô nhập
-            document.getElementById(`drugSelect_${id}`).value = drug.id;     // Gán ID ngầm vào thẻ hidden input
-            menu.classList.add("hidden"); // Đóng dropdown
+            document.getElementById(`drugSearch_${id}`).value = drug.name;
+            document.getElementById(`drugSelect_${id}`).value = drug.id;
+            menu.classList.add("hidden");
         };
         
         menu.appendChild(item);
     });
 }
 
-/**
- * Xóa một dòng thuốc ra khỏi phác đồ
- */
 function removeDrugRow(id) {
     const row = document.getElementById(`drugRow_${id}`);
     if (row) row.remove();
@@ -176,30 +267,46 @@ function removeDrugRow(id) {
 }
 
 /**
- * Thu thập và tiến hành gửi đơn thuốc về Server kèm xác thực chặt chẽ
- *//**
- * Thu thập và tiến hành gửi đơn thuốc về Server theo cấu trúc DTO mới
+ * Thu thập và gửi đơn thuốc về Server - ĐÃ SỬA LỖI ĐỊNH DANH VÀ CHẾ ĐỘ NGÀY SINH THẬT 🌟
  */
 function submitPrescription() {
+    const patientId = document.getElementById("selectedPatientId").value;
     const patientName = document.getElementById("patientName").value.trim();
-    const age = parseInt(document.getElementById("patientAge").value);
+    const phoneNumber = document.getElementById("patientPhone").value.trim();
     const gender = document.getElementById("patientGender").value;
+    const allergies = document.getElementById("allergies").value.trim();
     const symptoms = document.getElementById("symptoms").value.trim();
     const diagnosis = document.getElementById("diagnosis").value.trim();
     const note = document.getElementById("prescriptionNote").value.trim();
     
-    // 1. Kiểm tra điều kiện dữ liệu hành chính diện rộng
+    // Kiểm tra các trường dữ liệu bắt buộc
     if (!patientName) { alert("⚠️ Vui lòng điền họ và tên bệnh nhân."); return; }
-    if (isNaN(age) || age <= 0 || age >= 150) { alert("⚠️ Tuổi bệnh nhân bắt buộc phải lớn hơn 0 và nhỏ hơn 150."); return; }
+    if (!phoneNumber) { alert("⚠️ Vui lòng nhập số điện thoại để định danh bệnh nhân."); return; }
     if (!diagnosis) { alert("⚠️ Vui lòng nhập thông tin chẩn đoán lâm sàng."); return; }
+
+    // XỬ LÝ KHẮC PHỤC BIẾN TUỔI VÀ NGÀY SINH THÔNG MINH ĐỘNG 🌟
+    let ageValue = 0;
+    let birthDateValue = null;
+
+    if (isBirthDateMode) {
+        birthDateValue = document.getElementById("patientBirthDate").value;
+        if (!birthDateValue) { alert("⚠️ Vui lòng chọn ngày tháng năm sinh cụ thể của bệnh nhân."); return; }
+        // Tính nhẩm tuổi tạm thời gửi lên để qua bộ lọc validate (Backend sẽ tính lại chuẩn)
+        const birthYear = new Date(birthDateValue).getFullYear();
+        ageValue = new Date().getFullYear() - birthYear;
+    } else {
+        ageValue = parseInt(document.getElementById("patientAge").value);
+        if (isNaN(ageValue) || ageValue <= 0 || ageValue >= 150) { 
+            alert("⚠️ Tuổi bệnh nhân bắt buộc phải lớn hơn 0 và nhỏ hơn 150."); 
+            return; 
+        }
+    }
 
     const details = [];
     const rows = document.querySelectorAll("#prescriptionTableBody tr");
-    
     if (rows.length === 0) { alert("⚠️ Đơn thuốc phải chứa ít nhất một loại biệt dược."); return; }
 
     let isValidDrugs = true;
-
     rows.forEach(row => {
         const rowId = row.id.split("_")[1];
         const drugId = document.getElementById(`drugSelect_${rowId}`).value;
@@ -224,11 +331,15 @@ function submitPrescription() {
         return;
     }
 
-    // 2. Đóng gói dữ liệu JSON khớp 100% với PrescriptionSubmissionDto ở Backend 🌟
+    // Đóng gói dữ liệu JSON gửi đi khớp 100% với DTO đã nâng cấp ở Backend 🌟
     const submissionData = {
+        PatientId: patientId ? parseInt(patientId) : null,
         PatientName: patientName,
-        Age: age,
+        PhoneNumber: phoneNumber,
+        Age: ageValue,
+        BirthDateStr: birthDateValue,
         Gender: gender,
+        Allergies: allergies,
         Symptoms: symptoms,
         Diagnosis: diagnosis,
         Note: note,
@@ -238,7 +349,6 @@ function submitPrescription() {
     const tokenElement = document.querySelector('input[name="__RequestVerificationToken"]');
     const verificationToken = tokenElement ? tokenElement.value : "";
 
-    // 3. Gửi Request API bằng Fetch
     fetch('/Prescription/SavePrescription', {
         method: 'POST',
         headers: {
@@ -251,7 +361,6 @@ function submitPrescription() {
     .then(result => {
         if (result.success) {
             alert("🎉 " + result.message);
-            // Có thể chuyển hướng sang trang danh sách đơn thuốc hoặc reload
             window.location.reload(); 
         } else {
             alert("❌ " + result.message);

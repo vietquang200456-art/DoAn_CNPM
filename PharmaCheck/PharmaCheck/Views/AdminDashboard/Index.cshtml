@@ -1,3 +1,4 @@
+@model dynamic
 @{
     ViewData["Title"] = "Bảng Điều Khiển Quản Trị | PharmaCheck";
 }
@@ -6,120 +7,131 @@
 
 <div class="min-h-screen bg-slate-50 p-6">
     <div class="max-w-7xl mx-auto space-y-8">
+        
+        @Html.AntiForgeryToken()
 
         <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div>
                 <h1 class="text-2xl font-bold text-slate-800 flex items-center gap-2">
                     <i class="fas fa-chart-pie text-blue-600"></i> Tổng Quan Hệ Thống
                 </h1>
-                <p class="text-slate-500 text-sm mt-1">Chào mừng trở lại, Admin. Trung tâm điều khiển PharmaCheck.</p>
+                <p class="text-slate-500 text-sm mt-1">Trung tâm điều hành và phân phối dữ liệu lâm sàng PharmaCheck.</p>
             </div>
             <div class="flex gap-3">
                 <a href="/Drug/Index"
                    class="px-4 py-2 bg-white border border-slate-200 text-slate-700 rounded-lg text-sm font-semibold hover:bg-slate-50 transition flex items-center gap-2">
-                    <i class="fas fa-pills"></i> Trang quản lý thuốc
+                    <i class="fas fa-pills text-slate-400"></i> Trang quản lý thuốc
                 </a>
                 <button onclick="window.location.reload()"
-                        class="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-semibold hover:bg-blue-700 transition flex items-center gap-2">
-                    <i class="fas fa-sync-alt"></i> Tải lại
+                        class="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-semibold hover:bg-blue-700 transition flex items-center gap-2 cursor-pointer">
+                    <i class="fas fa-sync-alt"></i> Tải lại dữ liệu
                 </button>
             </div>
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            @* Sử dụng template helper hoặc code block tùy bạn, ở đây giữ nguyên logic ViewBag *@
             <div class="bg-white p-6 rounded-xl border border-slate-100 shadow-sm hover:shadow-md transition">
-                <p class="text-xs font-bold text-slate-400 uppercase">Tổng số thuốc</p>
+                <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">Tổng số thuốc</p>
                 <h3 class="text-3xl font-extrabold text-slate-800 mt-2">@ViewBag.TotalDrugs</h3>
             </div>
             <div class="bg-white p-6 rounded-xl border border-slate-100 shadow-sm hover:shadow-md transition">
-                <p class="text-xs font-bold text-slate-400 uppercase">Đang hoạt động</p>
+                <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">Đang hoạt động</p>
                 <h3 class="text-3xl font-extrabold text-green-600 mt-2">@ViewBag.ActiveDrugs</h3>
             </div>
             <div class="bg-white p-6 rounded-xl border border-slate-100 shadow-sm hover:shadow-md transition">
-                <p class="text-xs font-bold text-slate-400 uppercase">Sắp hết hạn (3th)</p>
+                <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">Sắp hết hạn (3 tháng)</p>
                 <h3 class="text-3xl font-extrabold text-amber-600 mt-2">@ViewBag.ExpiredWarningDrugs</h3>
             </div>
             <div class="bg-white p-6 rounded-xl border border-slate-100 shadow-sm hover:shadow-md transition">
-                <p class="text-xs font-bold text-slate-400 uppercase">Tổng User</p>
+                <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">Nhân sự hệ thống</p>
                 <h3 class="text-3xl font-extrabold text-indigo-600 mt-2">@ViewBag.TotalUsers</h3>
             </div>
         </div>
 
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-100 lg:col-span-2">
-                <h3 class="font-bold text-slate-800 mb-6">Tốc độ cập nhật thuốc (6 tháng qua)</h3>
+                <h3 class="font-bold text-slate-800 mb-6 flex items-center gap-2">
+                    <i class="fas fa-chart-line text-blue-500"></i> Tốc độ cập nhật thuốc (6 tháng qua)
+                </h3>
                 <div class="h-64"><canvas id="drugTrendChart"></canvas></div>
             </div>
 
             <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-100 flex flex-col">
-                <h3 class="font-bold text-slate-800 mb-4">Nhật ký hoạt động</h3>
-                <div class="space-y-4 flex-1">
+                <h3 class="font-bold text-slate-800 mb-4 flex items-center gap-2">
+                    <i class="fas fa-history text-slate-400"></i> Nhật ký hoạt động
+                </h3>
+                <div class="space-y-4 flex-1 overflow-y-auto max-h-[250px] pr-1">
                     @if (ViewBag.SystemLogs != null)
                     {
-                        @foreach (var log in ViewBag.SystemLogs)
+                        foreach (var log in ViewBag.SystemLogs)
                         {
-                            <div class="flex items-start gap-3">
-                                <div
-                                    class="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 @log.Color bg-opacity-10 text-sm">
+                            <div class="flex items-start gap-3 text-xs">
+                                <div class="w-7 h-7 rounded-lg flex items-center justify-center shrink-0 @log.Color bg-opacity-10 text-slate-700">
                                     <i class="fas @log.Icon"></i>
                                 </div>
-                                <div>
-                                    <p class="text-sm text-slate-700 leading-tight">@log.Message</p>
-                                    <span class="text-[10px] text-slate-400 uppercase font-bold">@log.Time</span>
+                                <div class="space-y-0.5">
+                                    <p class="text-slate-700 font-medium leading-tight">@log.Message</p>
+                                    <p class="text-[10px] text-slate-400 font-mono tracking-tight uppercase">@log.Time</p>
                                 </div>
                             </div>
                         }
                     }
                 </div>
-                <a href="/AdminDashboard/Logs"
-                   class="text-xs text-blue-600 font-bold mt-4 pt-4 border-t border-slate-100 block hover:underline">
+                <a href="/AdminDashboard/Logs" class="text-xs text-blue-600 font-bold mt-4 pt-4 border-t border-slate-100 block hover:underline">
                     Xem tất cả lịch sử log <i class="fas fa-arrow-right ml-1"></i>
                 </a>
             </div>
         </div>
 
         <div class="grid grid-cols-1 xl:grid-cols-2 gap-8">
+            
             <div class="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden">
-                <div class="px-6 py-4 border-b border-slate-100 bg-slate-50/50">
-                    <h3 class="font-bold text-slate-800">Quản lý tài khoản</h3>
+                <div class="px-6 py-4 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center">
+                    <h3 class="font-bold text-slate-800 flex items-center gap-2">
+                        <i class="fas fa-users-cog text-indigo-500"></i> Phân quyền nhân sự lâm sàng
+                    </h3>
+                    <span class="text-[11px] font-medium bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded-md">Lưu ý: Không hiện Admin</span>
                 </div>
                 <div class="overflow-x-auto">
                     <table class="w-full text-sm">
-                        <thead class="bg-slate-50 text-slate-400 uppercase text-[10px]">
+                        <thead class="bg-slate-50 text-slate-400 uppercase text-[10px] tracking-wider border-b border-slate-100">
                             <tr>
                                 <th class="py-3 px-6 text-left">Thành viên</th>
-                                <th class="py-3 px-6 text-left">Quyền</th>
+                                <th class="py-3 px-6 text-left">Quyền hạn</th>
                                 <th class="py-3 px-6 text-center">Hành động</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-slate-100">
                             @foreach (var user in ViewBag.UserList)
                             {
-                                <tr class="hover:bg-slate-50 transition-colors">
+                                // ĐIỀU KIỆN CHẶN: Nếu người dùng có quyền Admin, không kết xuất ra giao diện HTML 🌟
+                                if (user.Role == "Admin") { continue; }
+
+                                <tr class="hover:bg-slate-50/80 transition-colors">
                                     <td class="py-4 px-6 font-semibold text-slate-700">@user.Name</td>
                                     <td class="py-4 px-6">
-                                        <span
-                                        class="px-2 py-1 rounded-full bg-blue-50 text-blue-700 text-[10px] font-bold uppercase">@user.Role</span>
+                                        <span class="px-2 py-0.5 rounded-md bg-blue-50 text-blue-700 text-[10px] font-bold uppercase border border-blue-100">
+                                            @user.Role
+                                        </span>
                                     </td>
                                     <td class="py-4 px-6 text-center space-x-3">
-                                        <button onclick="changeUserRole(@user.Id)"
-                                                class="text-indigo-600 font-bold text-[10px] hover:underline">
-                                            <i class="fas fa-user-tag"></i> ĐỔI QUYỀN
+                                        <button onclick="openChangeRoleModal(@user.Id, '@user.Role')"
+                                                class="text-indigo-600 font-bold text-[11px] hover:text-indigo-900 transition cursor-pointer">
+                                            <i class="fas fa-user-tag mr-1"></i> ĐỔI QUYỀN
                                         </button>
 
                                         @if (user.IsActive)
                                         {
                                             <button onclick="toggleUserStatus(@user.Id, false)"
-                                                    class="text-red-600 font-bold text-[10px] hover:underline">
-                                                <i class="fas fa-lock"></i> KHÓA
+                                                    class="text-rose-600 font-bold text-[11px] hover:text-rose-900 transition cursor-pointer">
+                                                <i class="fas fa-lock mr-0.5"></i> KHÓA
                                             </button>
                                         }
                                         else
                                         {
                                             <button onclick="toggleUserStatus(@user.Id, true)"
-                                                    class="text-green-600 font-bold text-[10px] hover:underline">
-                                                <i class="fas fa-unlock"></i> MỞ KHÓA
+                                                    class="text-emerald-600 font-bold text-[11px] hover:text-emerald-900 transition cursor-pointer">
+                                                <i class="fas fa-unlock mr-0.5"></i> MỞ KHÓA
                                             </button>
                                         }
                                     </td>
@@ -132,106 +144,78 @@
 
             <div class="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden">
                 <div class="px-6 py-4 border-b border-slate-100 bg-slate-50/50">
-                    <h3 class="font-bold text-slate-800">Thuốc mới cập nhật</h3>
+                    <h3 class="font-bold text-slate-800 flex items-center gap-2">
+                        <i class="fas fa-prescription-bottle-alt text-emerald-500"></i> Dược phẩm mới cập nhật
+                    </h3>
                 </div>
-                <table class="w-full text-sm">
-                    <thead class="bg-slate-50 text-slate-400 uppercase text-[10px]">
-                        <tr>
-                            <th class="py-3 px-6 text-left">Tên thuốc</th>
-                            <th class="py-3 px-6 text-left">Nhà sản xuất</th>
-                            <th class="py-3 px-6 text-center">Trạng thái</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-slate-100">
-                        @foreach (var drug in ViewBag.RecentDrugs)
-                        {
-                            <tr class="hover:bg-slate-50">
-                                <td class="py-4 px-6 font-semibold text-slate-700">@drug.Name</td>
-                                <td class="py-4 px-6 text-slate-500">@drug.Manufacturer</td>
-                                <td class="py-4 px-6 text-center">
-                                    <span
-                                        class="px-2 py-1 rounded-full text-[10px] font-bold @(drug.Status == "Active" ? "bg-green-50 text-green-700" : "bg-red-50 text-red-700")">
-                                        @(drug.Status == "Active" ? "HOẠT ĐỘNG" : "KHÓA")
-                                    </span>
-                                </td>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-sm">
+                        <thead class="bg-slate-50 text-slate-400 uppercase text-[10px] tracking-wider border-b border-slate-100">
+                            <tr>
+                                <th class="py-3 px-6 text-left">Tên biệt dược</th>
+                                <th class="py-3 px-6 text-left">Nhà sản xuất</th>
+                                <th class="py-3 px-6 text-center">Trạng thái</th>
                             </tr>
-                        }
-                    </tbody>
-                </table>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100">
+                            @foreach (var drug in ViewBag.RecentDrugs)
+                            {
+                                <tr class="hover:bg-slate-50/80 transition-colors">
+                                    <td class="py-4 px-6 font-semibold text-slate-700">@drug.Name</td>
+                                    <td class="py-4 px-6 text-slate-500 text-xs">@drug.Manufacturer</td>
+                                    <td class="py-4 px-6 text-center">
+                                        <span class="px-2 py-0.5 rounded-full text-[10px] font-bold @(drug.Status == "Active" ? "bg-emerald-50 text-emerald-700 border border-emerald-100" : "bg-rose-50 text-rose-700 border border-rose-100")">
+                                            @(drug.Status == "Active" ? "HOẠT ĐỘNG" : "KHÓA")
+                                        </span>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
     </div>
 </div>
 
+<div id="changeRoleModal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm hidden items-center justify-center z-50 transition-all duration-200">
+    <div class="bg-white w-full max-w-md p-6 rounded-2xl shadow-xl border border-slate-100 animate-in fade-in zoom-in-95 duration-150">
+        <div class="flex items-center gap-2 border-b border-slate-100 pb-3 mb-4">
+            <i class="fas fa-shield-alt text-indigo-600 text-lg"></i>
+            <h3 class="text-base font-bold text-slate-800">Cập nhật quyền hạn thành viên</h3>
+        </div>
+        
+        <input type="hidden" id="modalUserId" value="" />
+
+        <div class="space-y-4 py-2">
+            <p class="text-xs text-slate-500 leading-relaxed">
+                Chọn vai trò mới cho nhân sự dưới đây. Sau khi phân quyền lại, người dùng phải tải lại phiên đăng nhập để áp dụng menu chức năng mới.
+            </p>
+            <div>
+                <label class="block text-xs font-bold text-slate-600 uppercase mb-2 tracking-wider">Vai trò hệ thống</label>
+                <select id="roleSelect" class="w-full p-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 bg-white font-medium text-slate-700">
+                    <option value="Doctor">Doctor (Bác sĩ chuyên khoa)</option>
+                    <option value="Pharmacist">Pharmacist (Dược sĩ lâm sàng)</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="flex justify-end gap-3 mt-6 pt-3 border-t border-slate-50">
+            <button onclick="closeChangeRoleModal()" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl text-xs font-semibold transition cursor-pointer">
+                HỦY BỎ
+            </button>
+            <button onclick="submitChangeRole()" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-semibold shadow-sm transition cursor-pointer">
+                XÁC NHẬN CẬP NHẬT
+            </button>
+        </div>
+    </div>
+</div>
+
 <script>
-    document.addEventListener("DOMContentLoaded", function () {
-    // Lấy và phân tích dữ liệu mảng an toàn từ Razor ViewBag sang JS
-    const labels = @Json.Serialize(ViewBag.ChartLabels);
-    const chartData = @Json.Serialize(ViewBag.ChartData);
-
-    const ctx = document.getElementById('drugTrendChart').getContext('2d');
-
-    // Khởi chạy biểu đồ dạng Line mượt của Chart.js
-    new Chart(ctx, {
-    type: 'line',
-    data: {
-    labels: labels,
-    datasets: [{
-    label: 'Số lượng thuốc nhập mới',
-    data: chartData,
-    borderColor: '#0284c7', // Màu xanh ngọc y tế (medical-600)
-    backgroundColor: 'rgba(2, 132, 199, 0.1)',
-    borderWidth: 3,
-    tension: 0.3,
-    fill: true,
-    pointBackgroundColor: '#0284c7',
-    pointRadius: 4
-    }]
-    },
-    options: {
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: {
-    legend: { display: false }
-    },
-    scales: {
-    y: {
-    beginAtZero: true,
-    grid: { color: '#f1f5f9' },
-    ticks: { color: '#94a3b8', font: { size: 11 } }
-    },
-    x: {
-    grid: { display: false },
-    ticks: { color: '#94a3b8', font: { size: 11 } }
-    }
-    }
-    }
-    });
-    });
-
-    // Các hàm xử trị tương tác (Hành động giả lập khi nhấn nút trên bảng Quản lý User)
-    function changeUserRole(userId) {
-    alert("Tính năng Mock: Đổi vai trò quyền hạn cho User có ID: " + userId + "\n(Hệ thống thật sẽ hiển thị một dropdown để chọn Admin/User và lưu vào Database)");
-    }
-
-    function toggleUserStatus(userId, shouldActivate) {
-    const actionText = shouldActivate ? "Mở khóa" : "Khóa";
-    if (confirm("Bạn có chắc chắn muốn " + actionText.toLowerCase() + " tài khoản này không?")) {
-    alert("Đã gửi yêu cầu xử lý tài khoản thành viên mang mã ID: " + userId + " thành công!");
-    }
-    }
-    function toggleUserStatus(userId, shouldActivate) {
-    const actionText = shouldActivate ? "Mở khóa" : "Khóa";
-    if (confirm("Bạn có chắc chắn muốn " + actionText.toLowerCase() + " tài khoản này không?")) {
-    fetch(`/AdminDashboard/ToggleUserStatus?userId=${userId}&activate=${shouldActivate}`, {
-    method: 'POST'
-    })
-    .then(response => response.json())
-    .then(data => {
-    if (data.success) {
-    location.reload(); // Tải lại trang để cập nhật giao diện
-    }
-    });
-    }
-    }
+    window.DashboardChartLabels = @Json.Serialize(ViewBag.ChartLabels);
+    window.DashboardChartData = @Json.Serialize(ViewBag.ChartData);
 </script>
+
+@section Scripts {
+    <script src="~/js/admin-dashboard.js" asp-append-version="true"></script>
+}

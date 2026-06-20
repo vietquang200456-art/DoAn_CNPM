@@ -458,4 +458,5 @@ D:\Đồ Án CNPM_1\DoAn_CNPM\PharmaCheck\PharmaCheck\bin\Debug\net10.0\Microsof
 D:\Đồ Án CNPM_1\DoAn_CNPM\PharmaCheck\PharmaCheck\bin\Debug\net10.0\System.Security.Cryptography.Pkcs.dll
 D:\Đồ Án CNPM_1\DoAn_CNPM\PharmaCheck\PharmaCheck\bin\Debug\net10.0\runtimes\win\lib\net10.0\System.Security.Cryptography.Pkcs.dll
 D:\Đồ Án CNPM_1\DoAn_CNPM\PharmaCheck\PharmaCheck\obj\Debug\net10.0\compressed\1laii1dcjv-{0}-nlzlnqf8ds-nlzlnqf8ds.gz
-D:\Đồ Án CNPM_1\DoAn_CNPM\PharmaCheck\PharmaCheck\obj\Debug\net10.0\compressed\ygd1qskvrs-{0}-3medmzgdia-3medmzgdia.gz
+D:\Đồ Án CNPM_1\DoAn_CNPM\PharmaCheck\PharmaCheck\obj\Debug\net10.0\compressed\ygd1qskvrs-{0}-z6tp7v6z6f-z6tp7v6z6f.gz
+D:\Đồ Án CNPM_1\DoAn_CNPM\PharmaCheck\PharmaCheck\obj\Debug\net10.0\compressed\lzd3qb93aj-{0}-basqr600zr-basqr600zr.gz

@@ -7,123 +7,144 @@
 @Html.AntiForgeryToken()
 
 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-    <div
-        class="mb-8 flex items-center gap-4 bg-gradient-to-r from-blue-800 to-indigo-900 p-6 rounded-2xl text-white shadow-md">
+    <div class="mb-8 flex items-center gap-4 bg-gradient-to-r from-blue-800 to-indigo-900 p-6 rounded-2xl text-white shadow-md">
         <div class="p-3 bg-white/10 rounded-xl text-blue-300">
             <i class="fas fa-file-medical text-3xl"></i>
         </div>
         <div>
             <h1 class="text-2xl font-extrabold tracking-tight">Trợ Lý Kê Đơn Lâm Sàng</h1>
-            <p class="text-blue-200 text-sm mt-0.5">Khởi tạo phác đồ điều trị và đơn thuốc biệt dược cho bệnh nhân
-                nội/ngoại trú.</p>
+            <p class="text-blue-200 text-sm mt-0.5">Khởi tạo phác đồ điều trị và đơn thuốc biệt dược cho bệnh nhân nội/ngoại trú.</p>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        
+        <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm h-fit space-y-5">
+            <h3 class="text-base font-bold text-slate-900 border-b border-slate-100 pb-3 flex items-center gap-2">
+                <i class="fas fa-user-injured text-blue-600"></i> Hành Chính & Bệnh Án
+            </h3>
+            
+            <input type="hidden" id="selectedPatientId" value="" />
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div class="relative" id="patientDropdownWrapper">
+                    <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Họ và tên bệnh nhân <span class="text-red-500">*</span></label>
+                    <input type="text" id="patientName" placeholder="Ví dụ: Nguyễn Văn A" autocomplete="off"
+                           onfocus="showPatientDropdown()"
+                           oninput="searchPatientsLive()"
+                           class="w-full px-4 py-3 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition" />
+                    
+                    <div id="patientDropdownMenu" 
+                         class="hidden absolute left-0 right-0 mt-1 max-h-60 overflow-y-auto bg-white border border-slate-200 rounded-xl shadow-xl z-50 divide-y divide-slate-100">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Số điện thoại <span class="text-red-500">*</span></label>
+                    <input type="text" id="patientPhone" placeholder="Dùng để định danh trùng lặp" 
+                           class="w-full px-4 py-3 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition" />
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                    <div class="flex justify-between items-center mb-2">
+                        <label id="ageBirthLabel" class="block text-xs font-bold text-slate-700 uppercase tracking-wider">Tuổi <span class="text-red-500">*</span></label>
+                        <button type="button" onclick="toggleAgeBirthMode()" id="btnToggleMode" class="text-[11px] text-blue-600 hover:underline font-semibold cursor-pointer">
+                            Nhập Ngày Sinh Thật
+                        </button>
+                    </div>
+                    <div id="ageInputWrapper">
+                        <input type="number" id="patientAge" min="1" max="149" placeholder="Tuổi" 
+                               class="w-full px-4 py-3 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition" />
+                    </div>
+                    <div id="birthDateInputWrapper" class="hidden">
+                        <input type="date" id="patientBirthDate" 
+                               class="w-full px-4 py-3 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition" />
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Giới tính <span class="text-red-500">*</span></label>
+                    <select id="patientGender" class="w-full px-4 py-3 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition bg-white">
+                        <option value="Nam">Nam</option>
+                        <option value="Nữ">Nữ</option>
+                        <option value="Khác">Khác</option>
+                    </select>
+                </div>
+            </div>
+
+            <div>
+                <label class="block text-xs font-bold text-red-700 uppercase tracking-wider mb-2 flex items-center gap-1">
+                    <i class="fas fa-exclamation-triangle"></i> Tiền sử dị ứng thuốc
+                </label>
+                <input type="text" id="allergies" placeholder="Dị ứng Penicillin, Paracetamol... (Nếu có)" 
+                       class="w-full px-4 py-3 border border-red-200 bg-red-50/10 rounded-xl text-sm text-red-900 placeholder-red-400 focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 transition" />
+            </div>
+
+            <div>
+                <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Triệu chứng lâm sàng</label>
+                <input type="text" id="symptoms" placeholder="Ví dụ: Sốt cao, ho khan..." 
+                       class="w-full px-4 py-3 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition" />
+            </div>
+            <div>
+                <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Chẩn đoán bệnh <span class="text-red-500">*</span></label>
+                <textarea id="diagnosis" rows="3" placeholder="Ví dụ: Viêm amidan cấp mủ..." 
+                          class="w-full px-4 py-3 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition resize-none"></textarea>
+            </div>
+            <div>
+                <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Lời dặn của bác sĩ (Ghi chú đơn)</label>
+                <input type="text" id="prescriptionNote" placeholder="Ví dụ: Uống thuốc sau ăn no..." 
+                       class="w-full px-4 py-3 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition" />
             </div>
         </div>
 
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            <!-- Cột trái: Thông tin bệnh nhân & Bệnh án -->
-            <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm h-fit space-y-5">
-                <h3 class="text-base font-bold text-slate-900 border-b border-slate-100 pb-3 flex items-center gap-2">
-                    <i class="fas fa-user-injured text-blue-600"></i> Hành Chính & Bệnh Án
-                </h3>
-
+        <div class="lg:col-span-2 bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col">
+            <div class="p-6 border-b border-slate-200 bg-slate-50/50 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div>
-                    <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Họ và tên bệnh nhân
-                        <span class="text-red-500">*</span></label>
-                        <input type="text" id="patientName" placeholder="Ví dụ: Nguyễn Văn A"
-                               class="w-full px-4 py-3 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition" />
-                    </div>
+                    <h3 class="text-base font-bold text-slate-900 flex items-center gap-2">
+                        <i class="fas fa-pills text-emerald-600"></i> Danh Sách Thuốc Chỉ Định
+                    </h3>
+                    <p class="text-xs text-slate-500 mt-0.5">Vui lòng chọn thuốc, điền số lượng và hướng dẫn sử dụng chi tiết.</p>
+                </div>
+                <button type="button" onclick="addDrugRow()"
+                        class="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs px-4 py-2.5 rounded-xl transition shadow-md hover:shadow-blue-600/10 active:scale-95 cursor-pointer self-start sm:self-auto">
+                    <i class="fas fa-plus-circle"></i> Thêm Dòng Thuốc
+                </button>
+            </div>
 
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div>
-                            <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Tuổi <span
-                                class="text-red-500">*</span></label>
-                                <input type="number" id="patientAge" min="1" max="149" placeholder="Tuổi"
-                                       class="w-full px-4 py-3 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition" />
-                            </div>
-                            <div>
-                                <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Giới tính <span
-                                    class="text-red-500">*</span></label>
-                                    <select id="patientGender"
-                                            class="w-full px-4 py-3 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition bg-white">
-                                        <option value="Nam">Nam</option>
-                                        <option value="Nữ">Nữ</option>
-                                        <option value="Khác">Khác</option>
-                                    </select>
-                                </div>
-                            </div>
+            <div class="p-6 overflow-x-auto min-h-[300px] flex-grow">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="border-b border-slate-200 text-xs font-bold text-slate-500 uppercase tracking-wider">
+                            <th class="pb-3 pl-2 w-5/12">Tên Thuốc / Hoạt Chất</th>
+                            <th class="pb-3 w-2/12">Số Lượng</th>
+                            <th class="pb-3 w-4/12">Hướng Dẫn Sử Dụng (Liều dùng, cách dùng)</th>
+                            <th class="pb-3 text-center w-12"></th>
+                        </tr>
+                    </thead>
+                    <tbody id="prescriptionTableBody" class="divide-y divide-slate-100">
+                    </tbody>
+                </table>
 
-                            <div>
-                                <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Triệu chứng lâm
-                                    sàng</label>
-                                    <input type="text" id="symptoms" placeholder="Ví dụ: Ho khan, sốt cao 39 độ về chiều..."
-                                           class="w-full px-4 py-3 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition" />
-                                </div>
-
-                                <div>
-                                    <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Chẩn đoán bệnh <span
-                                        class="text-red-500">*</span></label>
-                                        <textarea id="diagnosis" rows="3" placeholder="Ví dụ: Viêm amidan cấp mủ / Trào ngược dạ dày..."
-                                                  class="w-full px-4 py-3 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition resize-none"></textarea>
-                                    </div>
-
-                                    <div>
-                                        <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Lời dặn của bác sĩ
-                                            (Ghi chú đơn)</label>
-                                            <input type="text" id="prescriptionNote" placeholder="Ví dụ: Nghỉ ngơi tại giường, uống nhiều nước..."
-                                                   class="w-full px-4 py-3 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition" />
-                                        </div>
-                                    </div>
-
-                                    <div class="lg:col-span-2 bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col">
-                                        <div
-                                            class="p-6 border-b border-slate-200 bg-slate-50/50 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                                            <div>
-                                                <h3 class="text-base font-bold text-slate-900 flex items-center gap-2">
-                                                    <i class="fas fa-pills text-emerald-600"></i> Danh Sách Thuốc Chỉ Định
-                                                </h3>
-                                                <p class="text-xs text-slate-500 mt-0.5">Vui lòng chọn thuốc, điền số lượng và hướng dẫn sử dụng chi
-                                                    tiết.</p>
-                                                </div>
-                                                <button type="button" onclick="addDrugRow()"
-                                                        class="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs px-4 py-2.5 rounded-xl transition shadow-md hover:shadow-blue-600/10 active:scale-95 cursor-pointer self-start sm:self-auto">
-                                                    <i class="fas fa-plus-circle"></i> Thêm Dòng Thuốc
-                                                </button>
-                                            </div>
-
-                                            <div class="p-6 overflow-x-auto min-h-[300px] flex-grow">
-                                                <table class="w-full text-left border-collapse">
-                                                    <thead>
-                                                        <tr class="border-b border-slate-200 text-xs font-bold text-slate-500 uppercase tracking-wider">
-                                                            <th class="pb-3 pl-2 w-5/12">Tên Thuốc / Hoạt Chất</th>
-                                                            <th class="pb-3 w-2/12">Số Lượng</th>
-                                                            <th class="pb-3 w-4/12">Hướng Dẫn Sử Dụng (Liều dùng, cách dùng)</th>
-                                                            <th class="pb-3 text-center w-12"></th>
-                                                        </tr>
-                                                    </thead>
-                                                    <tbody id="prescriptionTableBody" class="divide-y divide-slate-100">
-                                                    </tbody>
-                                                </table>
-
-                                                <div id="emptyState" class="flex flex-col items-center justify-center text-center py-12 text-slate-400">
-                                                    <i class="fas fa-prescription text-4xl mb-3 text-slate-300"></i>
-                                                    <p class="text-sm">Chưa có thuốc nào được chỉ định.</p>
-                                                    <span class="text-xs mt-1 text-slate-400">Bấm nút "Thêm Dòng Thuốc" ở trên để bắt đầu.</span>
-                                                </div>
-                                            </div>
-                                            <div class="p-4 bg-slate-50 border-t border-slate-200 flex items-center justify-end gap-3">
-                                                <a href="@Url.Action("Index", "Home")"
-                                                   class="px-5 py-2.5 border border-slate-300 text-slate-700 bg-white rounded-xl font-semibold text-xs hover:bg-slate-50 hover:text-slate-900 transition cursor-pointer">
-                                                    Quay Lại
-                                                </a>
-                                                <button type="button" onclick="submitPrescription()"
-                                                        class="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl transition shadow-md hover:shadow-emerald-600/10 active:scale-95 flex items-center gap-2 cursor-pointer">
-                                                    <i class="fas fa-check-circle"></i> Hoàn Thành & Lưu Đơn
-                                                </button>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                @section Scripts {
-                                    <script src="~/js/prescription-create.js" asp-append-version="true"></script>
-                                }
+                <div id="emptyState" class="flex flex-col items-center justify-center text-center py-12 text-slate-400">
+                    <i class="fas fa-prescription text-4xl mb-3 text-slate-300"></i>
+                    <p class="text-sm">Chưa có thuốc nào được chỉ định.</p>
+                    <span class="text-xs mt-1 text-slate-400">Bấm nút "Thêm Dòng Thuốc" ở trên để bắt đầu.</span>
+                </div>
+            </div>
+            
+            <div class="p-4 bg-slate-50 border-t border-slate-200 flex items-center justify-end gap-3">
+                <a href="@Url.Action("Index", "Drug")"
+                   class="px-5 py-2.5 border border-slate-300 text-slate-700 bg-white rounded-xl font-semibold text-xs hover:bg-slate-50 hover:text-slate-900 transition cursor-pointer">
+                    Quay Lại
+                </a>
+                <button type="button" onclick="submitPrescription()"
+                        class="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl transition shadow-md hover:shadow-emerald-600/10 active:scale-95 flex items-center gap-2 cursor-pointer">
+                    <i class="fas fa-check-circle"></i> Hoàn Thành & Lưu Đơn
+                </button>
+            </div>
+        </div>
+        
+    </div> </div> 
+@section Scripts {
+    <script src="~/js/prescription-create.js" asp-append-version="true"></script>
+}

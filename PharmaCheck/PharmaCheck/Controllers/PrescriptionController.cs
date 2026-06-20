@@ -51,11 +51,41 @@ public class PrescriptionController : Controller
 
         var drugs = await query
             .OrderBy(d => d.Name)
-            .Take(30) // Tăng giới hạn lên một chút để tìm kiếm thoải mái hơn
+            .Take(30)
             .Select(d => new { id = d.Id, name = d.Name, ingredient = d.ActiveIngredient })
             .ToListAsync();
 
         return Json(drugs);
+    }
+
+    /// <summary>
+    /// API gợi ý tìm kiếm hồ sơ bệnh nhân cũ dựa trên Tên hoặc Số điện thoại (Bổ sung để chạy Autocomplete) 🌟
+    /// </summary>
+    [HttpGet]
+    public async Task<IActionResult> GetPatientsJson(string term = "")
+    {
+        if (string.IsNullOrEmpty(term) || term.Trim().Length < 2)
+        {
+            return Json(new List<object>());
+        }
+
+        var normalized = term.ToLower().Trim();
+        var patients = await _context.Patients
+            .Where(p => p.FullName.ToLower().Contains(normalized) || p.PhoneNumber.Contains(normalized))
+            .Take(10)
+            .Select(p => new
+            {
+                id = p.Id,
+                name = p.FullName,
+                phone = p.PhoneNumber ?? "Chưa có",
+                gender = p.Gender,
+                allergies = p.Allergies ?? "",
+                // Tính toán số tuổi dựa trên ngày sinh trong DB để trả về hiển thị
+                age = DateTime.UtcNow.Year - p.BirthDate.Year
+            })
+            .ToListAsync();
+
+        return Json(patients);
     }
 
     /// <summary>
@@ -65,20 +95,20 @@ public class PrescriptionController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> SavePrescription([FromBody] PrescriptionSubmissionDto dto)
     {
+        if (dto == null)
+        {
+            return Json(new { success = false, message = "Dữ liệu đơn thuốc gửi lên trống." });
+        }
+
+        // 1. Kiểm tra tính hợp lệ dữ liệu đầu vào (Validation)
+        if (string.IsNullOrEmpty(dto.PatientName?.Trim())) return Json(new { success = false, message = "Vui lòng nhập họ tên bệnh nhân." });
+        if (string.IsNullOrEmpty(dto.PhoneNumber?.Trim())) return Json(new { success = false, message = "Vui lòng nhập số điện thoại định danh bệnh nhân." });
+        if (string.IsNullOrEmpty(dto.Diagnosis?.Trim())) return Json(new { success = false, message = "Vui lòng nhập chẩn đoán lâm sàng." });
+        if (dto.Details == null || !dto.Details.Any()) return Json(new { success = false, message = "Đơn thuốc phải chứa ít nhất một loại biệt dược." });
+
         using var transaction = await _context.Database.BeginTransactionAsync();
         try
         {
-            if (dto == null)
-            {
-                return Json(new { success = false, message = "Dữ liệu đơn thuốc gửi lên trống." });
-            }
-
-            // 1. Kiểm tra tính hợp lệ dữ liệu đầu vào (Validation)
-            if (string.IsNullOrEmpty(dto.PatientName?.Trim())) return Json(new { success = false, message = "Vui lòng nhập họ tên bệnh nhân." });
-            if (dto.Age <= 0 || dto.Age >= 150) return Json(new { success = false, message = "Tuổi bệnh nhân không hợp lệ (Phải từ 1 đến 149)." });
-            if (string.IsNullOrEmpty(dto.Diagnosis?.Trim())) return Json(new { success = false, message = "Vui lòng nhập chẩn đoán lâm sàng." });
-            if (dto.Details == null || !dto.Details.Any()) return Json(new { success = false, message = "Đơn thuốc phải chứa ít nhất một loại biệt dược." });
-
             // 2. Xác định ID Bác sĩ đang đăng nhập thao tác hệ thống
             int currentUserId;
             var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
@@ -93,40 +123,82 @@ public class PrescriptionController : Controller
                 else return Json(new { success = false, message = "Không thể định danh tài khoản bác sĩ đang thao tác." });
             }
 
-            // 3. XỬ LÝ LƯU THÔNG TIN BỆNH NHÂN (PATIENT)
-            // Tìm kiếm xem bệnh nhân đã từng khám ở hệ thống chưa để tránh nhân bản dữ liệu (Trùng Tên & Số điện thoại nếu có)
-            var patientNameNorm = dto.PatientName.Trim();
-            var patient = await _context.Patients
-                .FirstOrDefaultAsync(p => p.FullName.ToLower() == patientNameNorm.ToLower());
+            // 3. XỬ LÝ LƯU THÔNG TIN BỆNH NHÂN (PATIENT) - ĐÃ ĐƯỢC SỬA LỖI TOÀN DIỆN 🌟
+            Patient patient = null;
+            var phoneNorm = dto.PhoneNumber.Trim();
+
+            // Bước A: Nếu Frontend gửi kèm PatientId cụ thể (Bác sĩ chọn từ Dropdown)
+            if (dto.PatientId.HasValue && dto.PatientId.Value > 0)
+            {
+                patient = await _context.Patients.FindAsync(dto.PatientId.Value);
+            }
+
+            // Bước B: Nếu không có ID hoặc không tìm thấy, quét diện rộng bằng Số điện thoại duy nhất
+            if (patient == null)
+            {
+                patient = await _context.Patients
+                    .FirstOrDefaultAsync(p => p.PhoneNumber == phoneNorm);
+            }
+
+            // Bước C: Tính toán và phân tích ngày sinh chi tiết hoặc tuổi quy đổi
+            DateTime calculatedBirthDate;
+            if (!string.IsNullOrEmpty(dto.BirthDateStr))
+            {
+                // Nhập Ngày sinh thật: Phân tích định dạng chuỗi "YYYY-MM-DD" từ Frontend gửi sang
+                if (!DateTime.TryParse(dto.BirthDateStr, out calculatedBirthDate))
+                {
+                    return Json(new { success = false, message = "Định dạng Ngày sinh chi tiết không hợp lệ." });
+                }
+            }
+            else
+            {
+                // Nhập tuổi nhanh: Giữ nguyên cơ chế tính lùi năm mặc định (01/01/XXXX)
+                calculatedBirthDate = new DateTime(DateTime.UtcNow.Year - dto.Age, 1, 1);
+            }
 
             if (patient == null)
             {
-                // Nếu chưa có, tiến hành tạo mới hồ sơ gốc cho bệnh nhân này
-                // Tính toán năm sinh tượng trưng dựa trên số tuổi hiện tại nhập vào
-                var calculatedBirthDate = new DateTime(DateTime.UtcNow.Year - dto.Age, 1, 1);
-                
+                // Trường hợp 3.1: Bệnh nhân mới hoàn toàn -> Thêm mới hồ sơ gốc
                 patient = new Patient
                 {
-                    FullName = patientNameNorm,
-                    BirthDate = calculatedBirthDate,
+                    FullName = dto.PatientName.Trim(),
+                    BirthDate = calculatedBirthDate,  // Đã sửa: Lưu chuẩn ngày tháng chi tiết 🌟
                     Gender = dto.Gender ?? "Chưa rõ",
+                    PhoneNumber = phoneNorm,          // Đã sửa: Lưu Số điện thoại vào DB 🌟
+                    Allergies = dto.Allergies?.Trim(),// Đã sửa: Lưu Tiền sử dị ứng thuốc 🌟
                     CreatedAt = DateTime.UtcNow
                 };
                 _context.Patients.Add(patient);
-                await _context.SaveChangesAsync(); // Lưu để lấy PatientId tự tăng
+                await _context.SaveChangesAsync(); // Đồng bộ ngay để sinh mã Patient.Id tự tăng
+            }
+            else
+            {
+                // Trường hợp 3.2: Bệnh nhân đã tồn tại -> Cập nhật thông tin hành chính mới nhất
+                patient.FullName = dto.PatientName.Trim();
+                patient.BirthDate = calculatedBirthDate;
+                patient.Gender = dto.Gender ?? "Chưa rõ";
+                patient.PhoneNumber = phoneNorm; 
+                
+                if (!string.IsNullOrEmpty(dto.Allergies))
+                {
+                    patient.Allergies = dto.Allergies.Trim();
+                }
+
+                _context.Patients.Update(patient);
+                await _context.SaveChangesAsync();
             }
 
             // 4. XỬ LÝ TẠO HỒ SƠ BỆNH ÁN LƯỢT KHÁM (MEDICAL RECORD)
             var medicalRecord = new MedicalRecord
             {
-                PatientId = patient.Id,
+                PatientId = patient.Id, // Đảm bảo lấy chính xác Id dù mới hay cũ
                 DoctorId = currentUserId,
                 Symptoms = dto.Symptoms ?? "Không ghi nhận triệu chứng đặc biệt",
                 Diagnosis = dto.Diagnosis.Trim(),
                 ExaminedAt = DateTime.UtcNow
             };
             _context.MedicalRecords.Add(medicalRecord);
-            await _context.SaveChangesAsync(); // Lưu để lấy MedicalRecordId tự tăng
+            await _context.SaveChangesAsync();
 
             // 5. XỬ LÝ RA ĐƠN THUỐC VÀ CHI TIẾT ĐƠN (PRESCRIPTION)
             var prescription = new Prescription
@@ -145,7 +217,7 @@ public class PrescriptionController : Controller
             _context.Prescriptions.Add(prescription);
             await _context.SaveChangesAsync();
 
-            // 6. Hoàn tất chuỗi ghi dữ liệu an toàn vào Database
+            // 6. Hoàn tất chuỗi ghi dữ liệu an toàn vào Database thông qua Transaction
             await transaction.CommitAsync();
 
             // 7. Ghi nhận nhật ký hệ thống (Audit Log)
@@ -165,7 +237,7 @@ public class PrescriptionController : Controller
         }
         catch (Exception ex)
         {
-            await transaction.RollbackAsync(); // Thu hồi toàn bộ lệnh thêm sửa nếu dính lỗi giữa chừng
+            await transaction.RollbackAsync(); // Hủy bỏ toàn bộ thao tác nếu có bất kỳ lỗi phát sinh
             return Json(new { success = false, message = $"Lỗi hệ thống khi đồng bộ bệnh án: {ex.Message}" });
         }
     }
@@ -176,9 +248,13 @@ public class PrescriptionController : Controller
 /// </summary>
 public class PrescriptionSubmissionDto
 {
+    public int? PatientId { get; set; } 
     public string PatientName { get; set; } = string.Empty;
+    public string PhoneNumber { get; set; } = string.Empty; 
     public int Age { get; set; }
+    public string? BirthDateStr { get; set; } 
     public string? Gender { get; set; }
+    public string? Allergies { get; set; } 
     public string? Symptoms { get; set; }
     public string Diagnosis { get; set; } = string.Empty;
     public string? Note { get; set; }
