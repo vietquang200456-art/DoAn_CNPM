@@ -74,6 +74,10 @@
               "suppressParent": "All",
               "target": "Package",
               "version": "[10.0.8, )"
+            },
+            "Microsoft.ML": {
+              "target": "Package",
+              "version": "[5.0.0, )"
             }
           },
           "imports": [

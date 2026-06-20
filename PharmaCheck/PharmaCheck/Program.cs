@@ -6,6 +6,8 @@ using System.Globalization;
 using OfficeOpenXml;
 
 var builder = WebApplication.CreateBuilder(args);
+// Đăng ký dạng Singleton để dùng chung bộ nhớ mô hình AI cho toàn server, tối ưu tốc độ
+builder.Services.AddSingleton<IDrugAiService, DrugAiService>();
 // CÚ PHÁP ĐÚNG CHUẨN DÀNH RIÊNG CHO EPPLUS 8+ ⭐
 OfficeOpenXml.ExcelPackage.License.SetNonCommercialPersonal("Viet Quang");
 // 1. Cấu hình Dịch vụ (Services)
@@ -41,7 +43,12 @@ builder.Services.AddSession(options =>
 });
 
 var app = builder.Build();
-
+// Gọi AI tự động quét DB để học dữ liệu khi vừa start web
+using (var scope = app.Services.CreateScope())
+{
+    var aiService = scope.ServiceProvider.GetRequiredService<IDrugAiService>();
+    aiService.TrainModelFromDb();
+}
 // 2. Thiết lập Culture toàn cục cho VN (Hiển thị dd/MM/yyyy)
 var cultureInfo = new CultureInfo("vi-VN");
 CultureInfo.DefaultThreadCurrentCulture = cultureInfo;

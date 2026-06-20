@@ -1,6 +1,7 @@
 /**
  * Quản lý logic form kê đơn thuốc động và tìm kiếm thông minh
  * Dự án: PharmaCheck
+ * Tích hợp bộ não AI cảnh báo rủi ro tương tác thuốc ngầm lâm sàng 🌟
  */
 
 let rowCounter = 0;
@@ -14,10 +15,10 @@ document.addEventListener("DOMContentLoaded", function () {
     // 2. Ép ràng buộc kiểm tra tuổi trực tiếp khi người dùng nhập liệu (Input Event)
     const ageInput = document.getElementById("patientAge");
     if (ageInput) {
-        ageInput.addEventListener("input", function() {
+        ageInput.addEventListener("input", function () {
             let val = parseInt(this.value);
             if (isNaN(val) || val <= 0) {
-                this.value = ""; 
+                this.value = "";
             } else if (val >= 150) {
                 this.value = 149; // Nếu nhập >= 150 thì tự động giới hạn ở 149
             }
@@ -70,7 +71,7 @@ function hidePatientDropdown() {
 }
 
 // Click ra ngoài vùng thì ẩn danh sách gợi ý bệnh nhân
-document.addEventListener("click", function(e) {
+document.addEventListener("click", function (e) {
     const wrapper = document.getElementById("patientDropdownWrapper");
     if (wrapper && !wrapper.contains(e.target)) {
         hidePatientDropdown();
@@ -81,7 +82,7 @@ let patientSearchTimeout = null;
 function searchPatientsLive() {
     const keyword = document.getElementById("patientName").value.trim();
     const menu = document.getElementById("patientDropdownMenu");
-    
+
     // Nếu từ khóa ngắn quá, xóa ID đã chọn và ẩn menu
     if (keyword.length < 2) {
         document.getElementById("selectedPatientId").value = "";
@@ -113,19 +114,19 @@ function searchPatientsLive() {
                     `;
 
                     // Khi click chọn bệnh nhân cũ: Tự động điền dữ liệu (Auto-fill) 🌟
-                    item.onclick = function() {
+                    item.onclick = function () {
                         document.getElementById("selectedPatientId").value = p.id;
                         document.getElementById("patientName").value = p.name;
                         document.getElementById("patientPhone").value = p.phone;
                         document.getElementById("patientGender").value = p.gender;
                         document.getElementById("allergies").value = p.allergies;
-                        
+
                         // Chuyển về ô nhập tuổi nhanh để hiển thị số tuổi của hồ sơ cũ
                         if (isBirthDateMode) {
-                            toggleAgeBirthMode(); 
+                            toggleAgeBirthMode();
                         }
                         document.getElementById("patientAge").value = p.age;
-                        
+
                         menu.classList.add("hidden");
                     };
                     menu.appendChild(item);
@@ -138,7 +139,7 @@ function searchPatientsLive() {
 
 /**
  * =========================================================================
- * LOGIC QUẢN LÝ DANH MỤC THUỐC & ĐƠN THUỐC ĐỘNG
+ * LOGIC QUẢN LÝ DANH MỤC THUỐC & ĐƠN THUỐC ĐỘNG (ĐÃ TÍCH HỢP AI KIỂM TRA NGẦM) 🌟
  * =========================================================================
  */
 
@@ -154,16 +155,16 @@ function preloadDrugsData() {
 function addDrugRow() {
     rowCounter++;
     const currentId = rowCounter;
-    
+
     const tbody = document.getElementById("prescriptionTableBody");
     const emptyState = document.getElementById("emptyState");
-    
+
     if (emptyState) emptyState.classList.add("hidden");
 
     const tr = document.createElement("tr");
     tr.id = `drugRow_${currentId}`;
     tr.className = "group hover:bg-slate-50/80 transition-all duration-200";
-    
+
     tr.innerHTML = `
         <td class="py-4 pr-3 pl-2 relative">
             <div class="relative" id="dropdownWrapper_${currentId}">
@@ -173,7 +174,7 @@ function addDrugRow() {
                        autocomplete="off"
                        onfocus="showDropdown(${currentId})"
                        oninput="filterDrugs(${currentId})"
-                       class="w-full px-3 py-2.5 border border-slate-300 rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition" />
+                       class="drug-name-input w-full px-3 py-2.5 border border-slate-300 rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition" />
                 
                 <input type="hidden" id="drugSelect_${currentId}" value="" />
                 <div id="dropdownMenu_${currentId}" 
@@ -196,10 +197,10 @@ function addDrugRow() {
             </button>
         </td>
     `;
-    
+
     tbody.appendChild(tr);
 
-    document.addEventListener("click", function(e) {
+    document.addEventListener("click", function (e) {
         const wrapper = document.getElementById(`dropdownWrapper_${currentId}`);
         if (wrapper && !wrapper.contains(e.target)) {
             hideDropdown(currentId);
@@ -227,8 +228,8 @@ function filterDrugs(id) {
     const menu = document.getElementById(`dropdownMenu_${id}`);
     menu.innerHTML = "";
 
-    const filtered = globalDrugsList.filter(drug => 
-        drug.name.toLowerCase().includes(keyword) || 
+    const filtered = globalDrugsList.filter(drug =>
+        drug.name.toLowerCase().includes(keyword) ||
         (drug.ingredient && drug.ingredient.toLowerCase().includes(keyword))
     );
 
@@ -244,13 +245,21 @@ function filterDrugs(id) {
             <span class="font-bold">${drug.name}</span>
             <span class="text-xs text-slate-400">Hoạt chất: ${drug.ingredient || 'N/A'}</span>
         `;
-        
-        item.onclick = function() {
-            document.getElementById(`drugSearch_${id}`).value = drug.name;
+
+        // SỰ KIỆN CLICK CHỌN THUỐC: Thực hiện đồng bộ lập tức thông qua Trigger AI
+        item.onclick = function () {
+            const searchInput = document.getElementById(`drugSearch_${id}`);
+            searchInput.value = drug.name;
             document.getElementById(`drugSelect_${id}`).value = drug.id;
             menu.classList.add("hidden");
+
+            searchInput.dispatchEvent(new Event('input'));
+            searchInput.dispatchEvent(new Event('change'));
+
+            // Thay vì truyền tham số lắt léo gây sai dòng, hãy gọi bộ điều phối trung tâm quét toàn đơn 🌟
+            triggerClinicalAiCheck();
         };
-        
+
         menu.appendChild(item);
     });
 }
@@ -258,16 +267,162 @@ function filterDrugs(id) {
 function removeDrugRow(id) {
     const row = document.getElementById(`drugRow_${id}`);
     if (row) row.remove();
-    
+
     const tbody = document.getElementById("prescriptionTableBody");
     if (tbody && tbody.children.length === 0) {
         const emptyState = document.getElementById("emptyState");
         if (emptyState) emptyState.classList.remove("hidden");
     }
+
+    // Sau khi xóa một dòng thuốc, quét lại AI một lượt để xóa các cảnh báo liên quan của thuốc đó
+    clearOldAiAlerts();
+    reEvaluateAllDrugsByAi();
 }
 
 /**
- * Thu thập và gửi đơn thuốc về Server - ĐÃ SỬA LỖI ĐỊNH DANH VÀ CHẾ ĐỘ NGÀY SINH THẬT 🌟
+ * =========================================================================
+ * BỘ NÃO AI ENGINE XỬ LÝ KIỂM TRA NGẦM SỰ CỐ TƯƠNG TÁC LÂM SÀNG 🧠🌟
+ * =========================================================================
+ */
+
+function triggerClinicalAiCheck() {
+    // Mỗi khi kích hoạt, xóa toàn bộ Toast cũ để render lại từ đầu, tránh bị lặp đè Toast cũ
+    clearOldAiAlerts();
+
+    // 1. Lấy ra danh sách tất cả tên thuốc đang có trên giao diện (bỏ các ô trống)
+    const drugNames = Array.from(document.querySelectorAll(".drug-name-input"))
+        .map(input => input.value.trim())
+        .filter(name => name !== "");
+
+    // Nếu có ít hơn 2 thuốc thì không thể có tương tác, thoát luôn
+    if (drugNames.length < 2) return;
+
+    // Tập hợp để lưu trữ các cặp đã check, tránh gửi trùng (Ví dụ: đã check A-B thì không check B-A)
+    const checkedPairs = new Set();
+
+    // 2. Thuật toán tổ hợp chập 2 (Cặp duy nhất)
+    for (let i = 0; i < drugNames.length; i++) {
+        for (let j = i + 1; j < drugNames.length; j++) {
+            const drugA = drugNames[i];
+            const drugB = drugNames[j];
+
+            // Tạo key định danh duy nhất cho cặp thuốc (sắp xếp theo bảng chữ cái)
+            const pairKey = [drugA.toLowerCase(), drugB.toLowerCase()].sort().join("##");
+
+            // Nếu cặp này đã nằm trong hàng đợi hoặc đã gửi rồi thì bỏ qua
+            if (checkedPairs.has(pairKey)) continue;
+            checkedPairs.add(pairKey);
+
+            // 3. Tiến hành gọi API kiểm tra cặp thuốc duy nhất này
+            fetch(`/api/ClinicalAi/analyze?drugA=${encodeURIComponent(drugA)}&drugB=${encodeURIComponent(drugB)}`)
+                .then(res => res.json())
+                .then(data => {
+                    // Chỉ hiển thị cảnh báo nếu thực sự có tương tác rủi ro (Cấp >= 2)
+                    if (data.severityLevel >= 2) {
+                        displayAiAlertToast(data, drugA, drugB);
+                    }
+                })
+                .catch(err => console.error("Lỗi phân tích tương tác lâm sàng:", err));
+        }
+    }
+}
+
+// Giờ đây hàm đánh giá lại đơn thuốc chỉ cần gọi duy nhất một lệnh điều phối trung tâm
+function reEvaluateAllDrugsByAi() {
+    triggerClinicalAiCheck();
+}
+
+/**
+ * Hiển thị Banner cảnh báo nổi dạng Toast bằng Tailwind CSS cực đẹp 🎨
+ */
+function displayAiAlertToast(data, drugA, drugB) {
+    // Tạo vùng chứa Toast Container ở góc màn hình nếu chưa có sẵn
+    let container = document.getElementById("aiAlertContainer");
+    if (!container) {
+        container = document.createElement("div");
+        container.id = "aiAlertContainer";
+        container.className = "fixed bottom-5 right-5 space-y-3 z-50 max-w-md w-full px-4 sm:px-0";
+        document.body.appendChild(container);
+    }
+
+    // Tạo một thẻ Toast Alert độc lập
+    const toast = document.createElement("div");
+
+    // Động hóa hoàn toàn CSS màu sắc viền dựa vào màu sắc lớp Class động trả về từ Controller
+    toast.className = `p-4 rounded-2xl border shadow-lg flex gap-3 animate-in fade-in slide-in-from-bottom-5 duration-300 bg-white ${data.colorClass.split(' ')[2] || 'border-blue-200'}`;
+
+    // Phân cấp Icon động và màu sắc tiêu đề Toast theo cấp độ nghiêm trọng thực tế
+    let badgeText = "";
+    let iconClass = "fa-circle-info";
+    let iconBgColor = "bg-blue-50 text-blue-600";
+    let titleTextColor = "text-blue-700";
+
+    switch (parseInt(data.severityLevel)) {
+        case 5:
+            badgeText = `Cảnh báo nguy kịch (Cấp 5/5)`;
+            iconClass = "fa-skull-crossbones";
+            iconBgColor = "bg-red-100 text-red-600";
+            titleTextColor = "text-red-700";
+            break;
+        case 4:
+            badgeText = `Cảnh báo nghiêm trọng (Cấp 4/5)`;
+            iconClass = "fa-triangle-exclamation";
+            iconBgColor = "bg-orange-100 text-orange-600";
+            titleTextColor = "text-orange-700";
+            break;
+        case 3:
+            badgeText = `Cảnh báo trung bình (Cấp 3/5)`;
+            iconClass = "fa-circle-exclamation";
+            iconBgColor = "bg-yellow-100 text-yellow-600";
+            titleTextColor = "text-yellow-700";
+            break;
+        case 2:
+            badgeText = `Lưu ý tương tác (Cấp 2/5)`;
+            iconClass = "fa-circle-info";
+            iconBgColor = "bg-blue-100 text-blue-600";
+            titleTextColor = "text-blue-700";
+            break;
+        default:
+            badgeText = `Tương tác nhẹ (Cấp 1/5)`;
+            iconClass = "fa-circle-check";
+            iconBgColor = "bg-green-100 text-green-600";
+            titleTextColor = "text-green-700";
+    }
+
+    toast.innerHTML = `
+        <div class="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${iconBgColor}">
+            <i class="fas ${iconClass} text-lg"></i>
+        </div>
+        <div class="flex-1 space-y-1">
+            <div class="flex items-center justify-between">
+                <span class="text-xs font-extrabold uppercase tracking-wider ${titleTextColor}">${badgeText}</span>
+                <button onclick="this.parentElement.parentElement.parentElement.remove()" class="text-slate-400 hover:text-slate-600 text-xs">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <p class="text-xs font-bold text-slate-800 leading-tight">Xung đột giữa: ${drugA} và ${drugB}</p>
+            <p class="text-[11px] text-slate-600 leading-relaxed mt-1">${data.description}</p>
+            <div class="bg-slate-50 p-2 rounded-lg border border-slate-100 mt-2 text-[10px] text-slate-500 italic leading-snug">
+                <strong>Khuyến cáo:</strong> ${data.recommendation}
+            </div>
+        </div>
+    `;
+
+    container.appendChild(toast);
+
+    // Tự động biến mất sau 15 giây để tránh làm rác màn hình của Bác sĩ
+    setTimeout(() => { if (toast && toast.parentElement) toast.remove(); }, 15000);
+}
+
+function clearOldAiAlerts() {
+    const container = document.getElementById("aiAlertContainer");
+    if (container) container.innerHTML = "";
+}
+
+/**
+ * =========================================================================
+ * THU THẬP VÀ ĐỒNG BỘ DỮ LIỆU ĐƠN THUỐC VỀ SERVER
+ * =========================================================================
  */
 function submitPrescription() {
     const patientId = document.getElementById("selectedPatientId").value;
@@ -278,27 +433,26 @@ function submitPrescription() {
     const symptoms = document.getElementById("symptoms").value.trim();
     const diagnosis = document.getElementById("diagnosis").value.trim();
     const note = document.getElementById("prescriptionNote").value.trim();
-    
+
     // Kiểm tra các trường dữ liệu bắt buộc
     if (!patientName) { alert("⚠️ Vui lòng điền họ và tên bệnh nhân."); return; }
     if (!phoneNumber) { alert("⚠️ Vui lòng nhập số điện thoại để định danh bệnh nhân."); return; }
     if (!diagnosis) { alert("⚠️ Vui lòng nhập thông tin chẩn đoán lâm sàng."); return; }
 
-    // XỬ LÝ KHẮC PHỤC BIẾN TUỔI VÀ NGÀY SINH THÔNG MINH ĐỘNG 🌟
+    // XỬ LÝ KHẮC PHỤC BIẾN TUỔI VÀ NGÀY SINH THÔNG MINH ĐỘNG
     let ageValue = 0;
     let birthDateValue = null;
 
     if (isBirthDateMode) {
         birthDateValue = document.getElementById("patientBirthDate").value;
         if (!birthDateValue) { alert("⚠️ Vui lòng chọn ngày tháng năm sinh cụ thể của bệnh nhân."); return; }
-        // Tính nhẩm tuổi tạm thời gửi lên để qua bộ lọc validate (Backend sẽ tính lại chuẩn)
         const birthYear = new Date(birthDateValue).getFullYear();
         ageValue = new Date().getFullYear() - birthYear;
     } else {
         ageValue = parseInt(document.getElementById("patientAge").value);
-        if (isNaN(ageValue) || ageValue <= 0 || ageValue >= 150) { 
-            alert("⚠️ Tuổi bệnh nhân bắt buộc phải lớn hơn 0 và nhỏ hơn 150."); 
-            return; 
+        if (isNaN(ageValue) || ageValue <= 0 || ageValue >= 150) {
+            alert("⚠️ Tuổi bệnh nhân bắt buộc phải lớn hơn 0 và nhỏ hơn 150.");
+            return;
         }
     }
 
@@ -312,7 +466,7 @@ function submitPrescription() {
         const drugId = document.getElementById(`drugSelect_${rowId}`).value;
         const quantity = document.getElementById(`quantity_${rowId}`).value.trim();
         const usageInstruction = document.getElementById(`instruction_${rowId}`).value.trim();
-        
+
         if (!drugId || !quantity || !usageInstruction) {
             isValidDrugs = false;
             row.classList.add("bg-red-50/50");
@@ -331,7 +485,7 @@ function submitPrescription() {
         return;
     }
 
-    // Đóng gói dữ liệu JSON gửi đi khớp 100% với DTO đã nâng cấp ở Backend 🌟
+    // Đóng gói dữ liệu JSON gửi đi khớp 100% với DTO
     const submissionData = {
         PatientId: patientId ? parseInt(patientId) : null,
         PatientName: patientName,
@@ -357,17 +511,17 @@ function submitPrescription() {
         },
         body: JSON.stringify(submissionData)
     })
-    .then(response => response.json())
-    .then(result => {
-        if (result.success) {
-            alert("🎉 " + result.message);
-            window.location.reload(); 
-        } else {
-            alert("❌ " + result.message);
-        }
-    })
-    .catch(error => {
-        console.error("Lỗi đồng bộ đơn thuốc:", error);
-        alert("❌ Khóa kết nối hệ thống trong quá trình xử lý dữ liệu.");
-    });
+        .then(response => response.json())
+        .then(result => {
+            if (result.success) {
+                alert("🎉 " + result.message);
+                window.location.reload();
+            } else {
+                alert("❌ " + result.message);
+            }
+        })
+        .catch(error => {
+            console.error("Lỗi đồng bộ đơn thuốc:", error);
+            alert("❌ Khóa kết nối hệ thống trong quá trình xử lý dữ liệu.");
+        });
 }
