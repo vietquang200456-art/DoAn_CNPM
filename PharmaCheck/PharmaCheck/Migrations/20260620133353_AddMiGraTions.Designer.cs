@@ -12,8 +12,8 @@ using PharmaCheck.Data;
 namespace PharmaCheck.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20260610194621_AddTargetDrugIdToSearchHistory")]
-    partial class AddTargetDrugIdToSearchHistory
+    [Migration("20260620133353_AddMiGraTions")]
+    partial class AddMiGraTions
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -235,6 +235,169 @@ namespace PharmaCheck.Migrations
                     b.ToTable("DrugInteractions");
                 });
 
+            modelBuilder.Entity("PharmaCheck.Models.MedicalRecord", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Diagnosis")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("DoctorId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("ExaminedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("PatientId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Symptoms")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PatientId");
+
+                    b.ToTable("MedicalRecords");
+                });
+
+            modelBuilder.Entity("PharmaCheck.Models.Patient", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Allergies")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("BirthDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("FullName")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Gender")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Patients");
+                });
+
+            modelBuilder.Entity("PharmaCheck.Models.Prescription", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("MedicalRecordId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Note")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("MedicalRecordId");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("Prescriptions");
+                });
+
+            modelBuilder.Entity("PharmaCheck.Models.PrescriptionDetail", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("DrugId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("PrescriptionId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Quantity")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("UsageInstruction")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DrugId");
+
+                    b.HasIndex("PrescriptionId");
+
+                    b.ToTable("PrescriptionDetails");
+                });
+
+            modelBuilder.Entity("PharmaCheck.Models.Role", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Roles");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            Description = "Quản trị viên hệ thống",
+                            Name = "Admin"
+                        },
+                        new
+                        {
+                            Id = 2,
+                            Description = "Bác sĩ lâm sàng kê đơn",
+                            Name = "Doctor"
+                        },
+                        new
+                        {
+                            Id = 3,
+                            Description = "Dược sĩ quản lý kho thuốc",
+                            Name = "Pharmacist"
+                        });
+                });
+
             modelBuilder.Entity("PharmaCheck.Models.SearchHistory", b =>
                 {
                     b.Property<int>("Id")
@@ -313,9 +476,14 @@ namespace PharmaCheck.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("Role")
-                        .IsRequired()
+                    b.Property<string>("ResetToken")
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("ResetTokenExpiry")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("RoleId")
+                        .HasColumnType("int");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime2");
@@ -325,6 +493,8 @@ namespace PharmaCheck.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("RoleId");
 
                     b.ToTable("Users");
                 });
@@ -367,6 +537,55 @@ namespace PharmaCheck.Migrations
                     b.Navigation("TargetDrug");
                 });
 
+            modelBuilder.Entity("PharmaCheck.Models.MedicalRecord", b =>
+                {
+                    b.HasOne("PharmaCheck.Models.Patient", "Patient")
+                        .WithMany("MedicalRecords")
+                        .HasForeignKey("PatientId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Patient");
+                });
+
+            modelBuilder.Entity("PharmaCheck.Models.Prescription", b =>
+                {
+                    b.HasOne("PharmaCheck.Models.MedicalRecord", "MedicalRecord")
+                        .WithMany("Prescriptions")
+                        .HasForeignKey("MedicalRecordId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("PharmaCheck.Models.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("MedicalRecord");
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("PharmaCheck.Models.PrescriptionDetail", b =>
+                {
+                    b.HasOne("PharmaCheck.Models.Drug", "Drug")
+                        .WithMany()
+                        .HasForeignKey("DrugId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("PharmaCheck.Models.Prescription", "Prescription")
+                        .WithMany("Details")
+                        .HasForeignKey("PrescriptionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Drug");
+
+                    b.Navigation("Prescription");
+                });
+
             modelBuilder.Entity("PharmaCheck.Models.SearchHistory", b =>
                 {
                     b.HasOne("PharmaCheck.Models.Disease", "Disease")
@@ -402,6 +621,17 @@ namespace PharmaCheck.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("PharmaCheck.Models.User", b =>
+                {
+                    b.HasOne("PharmaCheck.Models.Role", "Role")
+                        .WithMany("Users")
+                        .HasForeignKey("RoleId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Role");
+                });
+
             modelBuilder.Entity("PharmaCheck.Models.Disease", b =>
                 {
                     b.Navigation("DrugDiseaseContraindications");
@@ -416,6 +646,26 @@ namespace PharmaCheck.Migrations
                     b.Navigation("DrugInteractionsAsTargetDrug");
 
                     b.Navigation("SearchHistories");
+                });
+
+            modelBuilder.Entity("PharmaCheck.Models.MedicalRecord", b =>
+                {
+                    b.Navigation("Prescriptions");
+                });
+
+            modelBuilder.Entity("PharmaCheck.Models.Patient", b =>
+                {
+                    b.Navigation("MedicalRecords");
+                });
+
+            modelBuilder.Entity("PharmaCheck.Models.Prescription", b =>
+                {
+                    b.Navigation("Details");
+                });
+
+            modelBuilder.Entity("PharmaCheck.Models.Role", b =>
+                {
+                    b.Navigation("Users");
                 });
 
             modelBuilder.Entity("PharmaCheck.Models.User", b =>

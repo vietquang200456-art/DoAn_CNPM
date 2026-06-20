@@ -42,10 +42,7 @@ namespace PharmaCheck.Controllers
                 return View(new List<Drug>());
             }
         }
-
-        /// <summary>
         /// API endpoint: Tìm kiếm gợi ý thuốc (Chỉ cho phép khi đã login)
-        /// </summary>
         [Authorize]
         [HttpGet]
         public async Task<IActionResult> SearchDrugs(string term)

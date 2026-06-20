@@ -2,7 +2,7 @@
 
 @{
     ViewData["Title"] = "Quản Lý Tương Tác & Chống Chỉ Định | PharmaCheck";
-    bool isAdmin = User.IsInRole("Admin");
+    bool isAdmin = User.IsInRole("Admin") || User.IsInRole("Pharmacist");
 }
 
 <div class="bg-gradient-to-r from-blue-700 via-blue-600 to-indigo-800 text-white py-8 shadow-md">

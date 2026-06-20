@@ -1,4 +1,4 @@
-using System;
+using System.ComponentModel.DataAnnotations;
 
 namespace PharmaCheck.Models;
 
@@ -6,15 +6,19 @@ public class AuditLog
 {
     public int Id { get; set; }
     
-    // Nội dung hành động (Ví dụ: "Admin 'vietquang' đã cập nhật thông tin thuốc Paracetamol")
+    [Required]
     public string Message { get; set; } = string.Empty;
     
-    // Thời gian xảy ra hành động
-    public DateTime CreatedAt { get; set; } = DateTime.Now;
+    // Lưu trữ chuẩn UTC để tránh sai lệch múi giờ
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     
-    // Loại hành động để hiển thị Icon/Color tương ứng (Ví dụ: "Edit", "Delete", "Create", "System")
-    public string ActionType { get; set; } = "System";
+    public string ActionType { get; set; } = "System"; // "Edit", "Delete", "Create", "System"
     
-    // Người thực hiện hành động (nếu có)
     public string? PerformedBy { get; set; }
+
+    // Helper giúp hiển thị giờ Việt Nam ở View
+    public string GetLocalTime() 
+    {
+        return CreatedAt.AddHours(7).ToString("dd/MM/yyyy HH:mm:ss");
+    }
 }

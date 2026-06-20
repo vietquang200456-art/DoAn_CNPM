@@ -14,7 +14,7 @@ using PharmaCheck.Models.ViewModels;
 
 namespace PharmaCheck.Controllers;
 
-[Authorize(Roles = "Admin")]
+[Authorize(Roles = "Admin,Pharmacist")]
 public class InteractionController : Controller
 {
     private readonly ApplicationDbContext _context;

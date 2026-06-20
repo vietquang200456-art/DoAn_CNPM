@@ -6,7 +6,7 @@
 
 <div class="min-h-screen bg-slate-50 p-6">
     <div class="max-w-7xl mx-auto space-y-8">
-        
+
         <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div>
                 <h1 class="text-2xl font-bold text-slate-800 flex items-center gap-2">
@@ -15,10 +15,12 @@
                 <p class="text-slate-500 text-sm mt-1">Chào mừng trở lại, Admin. Trung tâm điều khiển PharmaCheck.</p>
             </div>
             <div class="flex gap-3">
-                <a href="/Drug/Index" class="px-4 py-2 bg-white border border-slate-200 text-slate-700 rounded-lg text-sm font-semibold hover:bg-slate-50 transition flex items-center gap-2">
+                <a href="/Drug/Index"
+                   class="px-4 py-2 bg-white border border-slate-200 text-slate-700 rounded-lg text-sm font-semibold hover:bg-slate-50 transition flex items-center gap-2">
                     <i class="fas fa-pills"></i> Trang quản lý thuốc
                 </a>
-                <button onclick="window.location.reload()" class="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-semibold hover:bg-blue-700 transition flex items-center gap-2">
+                <button onclick="window.location.reload()"
+                        class="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-semibold hover:bg-blue-700 transition flex items-center gap-2">
                     <i class="fas fa-sync-alt"></i> Tải lại
                 </button>
             </div>
@@ -53,10 +55,13 @@
             <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-100 flex flex-col">
                 <h3 class="font-bold text-slate-800 mb-4">Nhật ký hoạt động</h3>
                 <div class="space-y-4 flex-1">
-                    @if (ViewBag.SystemLogs != null) {
-                        @foreach (var log in ViewBag.SystemLogs) {
+                    @if (ViewBag.SystemLogs != null)
+                    {
+                        @foreach (var log in ViewBag.SystemLogs)
+                        {
                             <div class="flex items-start gap-3">
-                                <div class="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 @log.Color bg-opacity-10 text-sm">
+                                <div
+                                    class="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 @log.Color bg-opacity-10 text-sm">
                                     <i class="fas @log.Icon"></i>
                                 </div>
                                 <div>
@@ -67,7 +72,8 @@
                         }
                     }
                 </div>
-                <a href="/AdminDashboard/Logs" class="text-xs text-blue-600 font-bold mt-4 pt-4 border-t border-slate-100 block hover:underline">
+                <a href="/AdminDashboard/Logs"
+                   class="text-xs text-blue-600 font-bold mt-4 pt-4 border-t border-slate-100 block hover:underline">
                     Xem tất cả lịch sử log <i class="fas fa-arrow-right ml-1"></i>
                 </a>
             </div>
@@ -78,26 +84,50 @@
                 <div class="px-6 py-4 border-b border-slate-100 bg-slate-50/50">
                     <h3 class="font-bold text-slate-800">Quản lý tài khoản</h3>
                 </div>
-                <table class="w-full text-sm">
-                    <thead class="bg-slate-50 text-slate-400 uppercase text-[10px]">
-                        <tr>
-                            <th class="py-3 px-6 text-left">Thành viên</th>
-                            <th class="py-3 px-6 text-left">Quyền</th>
-                            <th class="py-3 px-6 text-center">Hành động</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-slate-100">
-                        @foreach (var user in ViewBag.UserList) {
-                            <tr class="hover:bg-slate-50">
-                                <td class="py-4 px-6 font-semibold text-slate-700">@user.Name</td>
-                                <td class="py-4 px-6"><span class="px-2 py-1 rounded-full bg-blue-50 text-blue-700 text-[10px] font-bold uppercase">@user.Role</span></td>
-                                <td class="py-4 px-6 text-center space-x-2">
-                                    <button onclick="changeUserRole(@user.Id)" class="text-indigo-600 font-bold text-[10px] hover:underline">ĐỔI QUYỀN</button>
-                                </td>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-sm">
+                        <thead class="bg-slate-50 text-slate-400 uppercase text-[10px]">
+                            <tr>
+                                <th class="py-3 px-6 text-left">Thành viên</th>
+                                <th class="py-3 px-6 text-left">Quyền</th>
+                                <th class="py-3 px-6 text-center">Hành động</th>
                             </tr>
-                        }
-                    </tbody>
-                </table>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100">
+                            @foreach (var user in ViewBag.UserList)
+                            {
+                                <tr class="hover:bg-slate-50 transition-colors">
+                                    <td class="py-4 px-6 font-semibold text-slate-700">@user.Name</td>
+                                    <td class="py-4 px-6">
+                                        <span
+                                        class="px-2 py-1 rounded-full bg-blue-50 text-blue-700 text-[10px] font-bold uppercase">@user.Role</span>
+                                    </td>
+                                    <td class="py-4 px-6 text-center space-x-3">
+                                        <button onclick="changeUserRole(@user.Id)"
+                                                class="text-indigo-600 font-bold text-[10px] hover:underline">
+                                            <i class="fas fa-user-tag"></i> ĐỔI QUYỀN
+                                        </button>
+
+                                        @if (user.IsActive)
+                                        {
+                                            <button onclick="toggleUserStatus(@user.Id, false)"
+                                                    class="text-red-600 font-bold text-[10px] hover:underline">
+                                                <i class="fas fa-lock"></i> KHÓA
+                                            </button>
+                                        }
+                                        else
+                                        {
+                                            <button onclick="toggleUserStatus(@user.Id, true)"
+                                                    class="text-green-600 font-bold text-[10px] hover:underline">
+                                                <i class="fas fa-unlock"></i> MỞ KHÓA
+                                            </button>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
             </div>
 
             <div class="bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden">
@@ -113,12 +143,14 @@
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-slate-100">
-                        @foreach (var drug in ViewBag.RecentDrugs) {
+                        @foreach (var drug in ViewBag.RecentDrugs)
+                        {
                             <tr class="hover:bg-slate-50">
                                 <td class="py-4 px-6 font-semibold text-slate-700">@drug.Name</td>
                                 <td class="py-4 px-6 text-slate-500">@drug.Manufacturer</td>
                                 <td class="py-4 px-6 text-center">
-                                    <span class="px-2 py-1 rounded-full text-[10px] font-bold @(drug.Status == "Active" ? "bg-green-50 text-green-700" : "bg-red-50 text-red-700")">
+                                    <span
+                                        class="px-2 py-1 rounded-full text-[10px] font-bold @(drug.Status == "Active" ? "bg-green-50 text-green-700" : "bg-red-50 text-red-700")">
                                         @(drug.Status == "Active" ? "HOẠT ĐỘNG" : "KHÓA")
                                     </span>
                                 </td>
@@ -131,61 +163,75 @@
     </div>
 </div>
 
-                        <script>
-                            document.addEventListener("DOMContentLoaded", function () {
-                            // Lấy và phân tích dữ liệu mảng an toàn từ Razor ViewBag sang JS
-                            const labels = @Json.Serialize(ViewBag.ChartLabels);
-                            const chartData = @Json.Serialize(ViewBag.ChartData);
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+    // Lấy và phân tích dữ liệu mảng an toàn từ Razor ViewBag sang JS
+    const labels = @Json.Serialize(ViewBag.ChartLabels);
+    const chartData = @Json.Serialize(ViewBag.ChartData);
 
-                            const ctx = document.getElementById('drugTrendChart').getContext('2d');
+    const ctx = document.getElementById('drugTrendChart').getContext('2d');
 
-                            // Khởi chạy biểu đồ dạng Line mượt của Chart.js
-                            new Chart(ctx, {
-                            type: 'line',
-                            data: {
-                            labels: labels,
-                            datasets: [{
-                            label: 'Số lượng thuốc nhập mới',
-                            data: chartData,
-                            borderColor: '#0284c7', // Màu xanh ngọc y tế (medical-600)
-                            backgroundColor: 'rgba(2, 132, 199, 0.1)',
-                            borderWidth: 3,
-                            tension: 0.3,
-                            fill: true,
-                            pointBackgroundColor: '#0284c7',
-                            pointRadius: 4
-                            }]
-                            },
-                            options: {
-                            responsive: true,
-                            maintainAspectRatio: false,
-                            plugins: {
-                            legend: { display: false }
-                            },
-                            scales: {
-                            y: {
-                            beginAtZero: true,
-                            grid: { color: '#f1f5f9' },
-                            ticks: { color: '#94a3b8', font: { size: 11 } }
-                            },
-                            x: {
-                            grid: { display: false },
-                            ticks: { color: '#94a3b8', font: { size: 11 } }
-                            }
-                            }
-                            }
-                            });
-                            });
+    // Khởi chạy biểu đồ dạng Line mượt của Chart.js
+    new Chart(ctx, {
+    type: 'line',
+    data: {
+    labels: labels,
+    datasets: [{
+    label: 'Số lượng thuốc nhập mới',
+    data: chartData,
+    borderColor: '#0284c7', // Màu xanh ngọc y tế (medical-600)
+    backgroundColor: 'rgba(2, 132, 199, 0.1)',
+    borderWidth: 3,
+    tension: 0.3,
+    fill: true,
+    pointBackgroundColor: '#0284c7',
+    pointRadius: 4
+    }]
+    },
+    options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+    legend: { display: false }
+    },
+    scales: {
+    y: {
+    beginAtZero: true,
+    grid: { color: '#f1f5f9' },
+    ticks: { color: '#94a3b8', font: { size: 11 } }
+    },
+    x: {
+    grid: { display: false },
+    ticks: { color: '#94a3b8', font: { size: 11 } }
+    }
+    }
+    }
+    });
+    });
 
-                            // Các hàm xử trị tương tác (Hành động giả lập khi nhấn nút trên bảng Quản lý User)
-                            function changeUserRole(userId) {
-                            alert("Tính năng Mock: Đổi vai trò quyền hạn cho User có ID: " + userId + "\n(Hệ thống thật sẽ hiển thị một dropdown để chọn Admin/User và lưu vào Database)");
-                            }
+    // Các hàm xử trị tương tác (Hành động giả lập khi nhấn nút trên bảng Quản lý User)
+    function changeUserRole(userId) {
+    alert("Tính năng Mock: Đổi vai trò quyền hạn cho User có ID: " + userId + "\n(Hệ thống thật sẽ hiển thị một dropdown để chọn Admin/User và lưu vào Database)");
+    }
 
-                            function toggleUserStatus(userId, shouldActivate) {
-                            const actionText = shouldActivate ? "Mở khóa" : "Khóa";
-                            if (confirm("Bạn có chắc chắn muốn " + actionText.toLowerCase() + " tài khoản này không?")) {
-                            alert("Đã gửi yêu cầu xử lý tài khoản thành viên mang mã ID: " + userId + " thành công!");
-                            }
-                            }
-                        </script>
+    function toggleUserStatus(userId, shouldActivate) {
+    const actionText = shouldActivate ? "Mở khóa" : "Khóa";
+    if (confirm("Bạn có chắc chắn muốn " + actionText.toLowerCase() + " tài khoản này không?")) {
+    alert("Đã gửi yêu cầu xử lý tài khoản thành viên mang mã ID: " + userId + " thành công!");
+    }
+    }
+    function toggleUserStatus(userId, shouldActivate) {
+    const actionText = shouldActivate ? "Mở khóa" : "Khóa";
+    if (confirm("Bạn có chắc chắn muốn " + actionText.toLowerCase() + " tài khoản này không?")) {
+    fetch(`/AdminDashboard/ToggleUserStatus?userId=${userId}&activate=${shouldActivate}`, {
+    method: 'POST'
+    })
+    .then(response => response.json())
+    .then(data => {
+    if (data.success) {
+    location.reload(); // Tải lại trang để cập nhật giao diện
+    }
+    });
+    }
+    }
+</script>

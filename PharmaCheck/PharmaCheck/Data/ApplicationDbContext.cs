@@ -17,11 +17,21 @@ namespace PharmaCheck.Data
         public DbSet<DrugDiseaseContraindication> DrugDiseaseContraindications { get; set; }
         public DbSet<SearchHistory> SearchHistories { get; set; }
         public DbSet<AuditLog> AuditLogs { get; set; }
-
+        public DbSet<Prescription> Prescriptions { get; set; }
+        public DbSet<PrescriptionDetail> PrescriptionDetails { get; set; }
+        public DbSet<Role> Roles { get; set; }
+        public DbSet<Patient> Patients { get; internal set; }
+        public DbSet<MedicalRecord> MedicalRecords { get; internal set; }
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
 
+            // Tự động chèn 3 nhóm quyền vào DB khi chạy Migration ⭐
+            modelBuilder.Entity<Role>().HasData(
+                new Role { Id = 1, Name = "Admin", Description = "Quản trị viên hệ thống" },
+                new Role { Id = 2, Name = "Doctor", Description = "Bác sĩ lâm sàng kê đơn" },
+                new Role { Id = 3, Name = "Pharmacist", Description = "Dược sĩ quản lý kho thuốc" }
+            );
             // =============================================================
             // 1. Cấu hình các mối quan hệ cho DrugInteraction
             // =============================================================
@@ -44,9 +54,9 @@ namespace PharmaCheck.Data
             {
                 // Mối quan hệ với Thuốc thứ nhất (DrugId) -> Trỏ về tập hợp SearchHistories trong Drug
                 entity.HasOne(sh => sh.Drug)
-                      .WithMany(d => d.SearchHistories) 
+                      .WithMany(d => d.SearchHistories)
                       .HasForeignKey(sh => sh.DrugId)
-                      .OnDelete(DeleteBehavior.Restrict); 
+                      .OnDelete(DeleteBehavior.Restrict);
 
                 // Mối quan hệ với Thuốc thứ hai (TargetDrugId) nếu có tra cứu cặp tương tác
                 entity.HasOne(sh => sh.TargetDrug)
@@ -59,7 +69,7 @@ namespace PharmaCheck.Data
                       .WithMany() // Để trống vì không cần tạo tập hợp ngược trong Disease
                       .HasForeignKey(sh => sh.DiseaseId)
                       .OnDelete(DeleteBehavior.Restrict);
-                      
+
                 // Mối quan hệ với User (UserId) thực hiện tìm kiếm
                 entity.HasOne(sh => sh.User)
                       .WithMany() // Thay đổi thành .WithMany(u => u.SearchHistories) nếu trong class User của bạn có lưu tập hợp này

@@ -82,6 +82,10 @@ build_metadata.AdditionalFiles.CssScope =
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcRHJ1Z1xsaXN0ZHJ1Zy5jc2h0bWw=
 build_metadata.AdditionalFiles.CssScope = 
 
+[D:/Đồ Án CNPM_1/DoAn_CNPM/PharmaCheck/PharmaCheck/Views/Drug/Search.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcRHJ1Z1xTZWFyY2guY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
 [D:/Đồ Án CNPM_1/DoAn_CNPM/PharmaCheck/PharmaCheck/Views/History/Index.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcSGlzdG9yeVxJbmRleC5jc2h0bWw=
 build_metadata.AdditionalFiles.CssScope = 
@@ -132,6 +136,10 @@ build_metadata.AdditionalFiles.CssScope =
 
 [D:/Đồ Án CNPM_1/DoAn_CNPM/PharmaCheck/PharmaCheck/Views/Interaction/_DrugInteractionsTable.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3NcSW50ZXJhY3Rpb25cX0RydWdJbnRlcmFjdGlvbnNUYWJsZS5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[D:/Đồ Án CNPM_1/DoAn_CNPM/PharmaCheck/PharmaCheck/Views/Prescription/Create.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3NcUHJlc2NyaXB0aW9uXENyZWF0ZS5jc2h0bWw=
 build_metadata.AdditionalFiles.CssScope = 
 
 [D:/Đồ Án CNPM_1/DoAn_CNPM/PharmaCheck/PharmaCheck/Views/Shared/Error.cshtml]

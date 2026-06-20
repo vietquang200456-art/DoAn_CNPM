@@ -2,21 +2,22 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using PharmaCheck.Data;
 using PharmaCheck.Services;
+using System.Globalization;
+using OfficeOpenXml;
 
 var builder = WebApplication.CreateBuilder(args);
-
-// Add services to the container.
+// CÚ PHÁP ĐÚNG CHUẨN DÀNH RIÊNG CHO EPPLUS 8+ ⭐
+OfficeOpenXml.ExcelPackage.License.SetNonCommercialPersonal("Viet Quang");
+// 1. Cấu hình Dịch vụ (Services)
 builder.Services.AddControllersWithViews();
 
-// Kết nối SQL Server
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseSqlServer(
-        builder.Configuration.GetConnectionString("DefaultConnection")));
-// Đăng ký dịch vụ ghi nhật ký hệ thống
+    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+
 builder.Services.AddScoped<IAuditLogService, AuditLogService>();
-// Đăng ký dịch vụ gửi email
 builder.Services.AddTransient<IEmailService, EmailService>();
-// Cấu hình Cookie Authentication
+
+// Authentication
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(options =>
     {
@@ -31,7 +32,7 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
         options.Cookie.Name = "PharmaCheckAuth";
     });
 
-// Cấu hình Session
+// Session
 builder.Services.AddSession(options =>
 {
     options.IdleTimeout = TimeSpan.FromMinutes(30);
@@ -40,9 +41,13 @@ builder.Services.AddSession(options =>
 });
 
 var app = builder.Build();
-// Kích hoạt Session Middleware (Phải đặt TRƯỚC UseAuthorization)
-app.UseSession();
-// Configure the HTTP request pipeline.
+
+// 2. Thiết lập Culture toàn cục cho VN (Hiển thị dd/MM/yyyy)
+var cultureInfo = new CultureInfo("vi-VN");
+CultureInfo.DefaultThreadCurrentCulture = cultureInfo;
+CultureInfo.DefaultThreadCurrentUICulture = cultureInfo;
+
+// 3. Cấu hình HTTP Pipeline
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Home/Error");
@@ -53,8 +58,8 @@ app.UseHttpsRedirection();
 app.UseStaticFiles();
 app.UseRouting();
 
-// Thêm Authentication và Session middleware
-app.UseSession();
+// Cấu hình Middleware theo đúng thứ tự
+app.UseSession(); 
 app.UseAuthentication();
 app.UseAuthorization();
 

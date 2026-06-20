@@ -1,0 +1,141 @@
+@model PharmaCheck.Models.DrugPagedListViewModel
+@{
+    ViewData["Title"] = "Tra cứu thuốc biệt dược";
+    int totalPages = (int)Math.Ceiling((double)Model.TotalRecords / Model.PageSize);
+}
+
+<div class="container mx-auto px-4 py-6 max-w-7xl font-sans antialiased text-slate-800">
+    
+    <div class="border-b border-slate-200 pb-4 mb-6">
+        <h1 class="text-2xl font-bold text-slate-900 flex items-center gap-2">
+            💊 Kho Từ Điển & Tra Cứu Thông Tin Thuốc
+        </h1>
+        <p class="text-sm text-slate-500 mt-1">Hệ thống tra cứu thông tin biệt dược, hoạt chất lâm sàng dành cho nhân viên y tế</p>
+    </div>
+
+    <div class="bg-white border border-slate-200 rounded-xl p-4 shadow-sm mb-6">
+        <form method="get" asp-controller="Drug" asp-action="Search" class="flex flex-col sm:flex-row gap-3">
+            <div class="relative flex-1">
+                <span class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-slate-400">🔍</span>
+                <input type="text" name="searchTerm" value="@Model.SearchTerm" 
+                       class="w-full text-sm rounded-lg border-slate-300 focus:border-blue-500 focus:ring-blue-500 pl-9 p-2.5 shadow-sm" 
+                       placeholder="Nhập tên thuốc, hoạt chất hoặc nhà sản xuất cần tra cứu...">
+            </div>
+            <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-medium text-sm px-6 py-2.5 rounded-lg transition shadow-sm whitespace-nowrap">
+                Tìm kiếm
+            </button>
+            @if (!string.IsNullOrEmpty(Model.SearchTerm))
+            {
+                <a asp-controller="Drug" asp-action="Search" class="bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium text-sm px-4 py-2.5 rounded-lg transition flex items-center justify-center text-center">
+                    Xóa bộ lọc
+                </a>
+            }
+        </form>
+    </div>
+
+    @if (Model.Drugs == null || !Model.Drugs.Any())
+    {
+        <div class="text-center py-16 bg-slate-50 border border-slate-200 rounded-xl">
+            <span class="text-4xl">🍃</span>
+            <p class="font-medium text-slate-500 mt-2">Không tìm thấy loại thuốc nào khớp với từ khóa tra cứu.</p>
+        </div>
+    }
+    else
+    {
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            @foreach (var drug in Model.Drugs)
+            {
+                <div class="bg-white border border-slate-200 rounded-xl p-5 shadow-sm hover:shadow-md transition flex flex-col justify-between">
+                    <div>
+                        <div class="flex justify-between items-start gap-2 mb-2">
+                            <h3 class="text-lg font-bold text-blue-700 leading-tight">@drug.Name</h3>
+                            <span class="text-[10px] font-medium bg-slate-100 text-slate-600 border border-slate-200 px-2 py-0.5 rounded-full whitespace-nowrap">
+                                🏭 @drug.Manufacturer
+                            </span>
+                        </div>
+                        
+                        <div class="text-xs text-slate-500 font-medium mb-3 flex items-center gap-1">
+                            <span class="text-slate-400">🧪 Hoạt chất:</span> @drug.ActiveIngredient
+                        </div>
+
+                        <hr class="border-slate-100 my-2">
+
+                        <div class="space-y-2 mt-2 text-sm">
+                            <div>
+                                <strong class="text-xs font-semibold text-slate-900 block">🎯 Chỉ định & Chức năng:</strong>
+                                <p class="text-slate-600 line-clamp-2 text-xs">@drug.Function</p>
+                            </div>
+                            <div>
+                                <strong class="text-xs font-semibold text-slate-900 block">📏 Liều lượng & Cách dùng:</strong>
+                                <p class="text-slate-600 line-clamp-2 text-xs">@drug.Dosage</p>
+                            </div>
+                            @if (!string.IsNullOrEmpty(drug.Contraindications))
+                            {
+                                <div class="bg-rose-50 p-2 rounded border border-rose-100">
+                                    <strong class="text-xs font-semibold text-rose-800 block">🚫 Chống chỉ định lâm sàng:</strong>
+                                    <p class="text-rose-700 line-clamp-2 text-xs">@drug.Contraindications</p>
+                                </div>
+                            }
+                        </div>
+                    </div>
+
+                    <div class="mt-4 pt-3 border-t border-slate-100 flex justify-end">
+                        <button type="button" onclick="viewDetailedDrug(@drug.Id)" 
+                                class="text-xs text-blue-600 hover:text-blue-800 font-semibold flex items-center gap-1 py-1 px-2 hover:bg-blue-50 rounded-md transition">
+                            Xem chi tiết đầy đủ ➜
+                        </button>
+                    </div>
+                </div>
+            }
+        </div>
+
+        @if (totalPages > 1)
+        {
+            <div class="flex items-center justify-center gap-1 mt-8 border-t border-slate-200 pt-4">
+                @if (Model.CurrentPage > 1)
+                {
+                    <a asp-action="Search" asp-route-page="@(Model.CurrentPage - 1)" asp-route-searchTerm="@Model.SearchTerm" 
+                       class="px-3 py-1.5 border border-slate-300 rounded-md text-sm font-medium text-slate-700 hover:bg-slate-50 transition">
+                        Trước
+                    </a>
+                }
+
+                @for (int i = 1; i <= totalPages; i++)
+                {
+                    if (i == Model.CurrentPage)
+                    {
+                        <span class="px-3 py-1.5 bg-blue-600 text-white rounded-md text-sm font-semibold shadow-sm">@i</span>
+                    }
+                    else
+                    {
+                        <a asp-action="Search" asp-route-page="@i" asp-route-searchTerm="@Model.SearchTerm" 
+                           class="px-3 py-1.5 border border-slate-300 rounded-md text-sm font-medium text-slate-700 hover:bg-slate-50 transition">@i</a>
+                    }
+                }
+
+                @if (Model.CurrentPage < totalPages)
+                {
+                    <a asp-action="Search" asp-route-page="@(Model.CurrentPage + 1)" asp-route-searchTerm="@Model.SearchTerm" 
+                       class="px-3 py-1.5 border border-slate-300 rounded-md text-sm font-medium text-slate-700 hover:bg-slate-50 transition">
+                        Sau
+                    </a>
+                }
+            </div>
+        }
+    }
+</div>
+
+<div id="detailModal" class="fixed inset-0 z-50 overflow-y-auto hidden bg-slate-900 bg-opacity-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto border border-slate-200">
+        <div class="p-5 border-b border-slate-100 flex items-center justify-between sticky top-0 bg-white">
+            <h2 id="modalDrugName" class="text-xl font-bold text-slate-900">Chi tiết thông tin thuốc</h2>
+            <button type="button" onclick="closeModal()" class="text-slate-400 hover:text-slate-600 text-2xl font-semibold">&times;</button>
+        </div>
+        <div class="p-6 space-y-4 text-sm" id="modalBody">
+            </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/js/drug-search.js" asp-append-version="true"></script>
+}

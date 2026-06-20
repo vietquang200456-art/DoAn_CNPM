@@ -2,11 +2,11 @@
 
 @{
     ViewData["Title"] = "Danh Mục Thuốc | PharmaCheck";
-    // Kiểm tra quyền Admin
-    bool isAdmin = User.IsInRole("Admin");
+    // ĐỔI TẠI ĐÂY: Cho phép cả Admin và Pharmacist được hiển thị các tính năng chỉnh sửa dữ liệu 🌟
+    bool isManager = User.IsInRole("Admin") || User.IsInRole("Pharmacist");
 }
 
-@* Bước sửa lỗi 1: Thêm Antiforgery Token vào đầu trang để bảo vệ các request AJAX POST *@
+@* Antiforgery Token bảo vệ các request AJAX POST *@
 @Html.AntiForgeryToken()
 
 <div class="relative bg-gradient-to-r from-blue-700 via-blue-600 to-indigo-800 text-white py-12 overflow-hidden shadow-lg">
@@ -24,11 +24,11 @@
                     Quản Lý Danh Mục Thuốc
                 </h1>
                 <p class="text-blue-100 max-w-2xl font-light text-sm sm:text-base leading-relaxed">
-                    @(isAdmin ? "Hệ thống quản trị tối cao: Hỗ trợ khởi tạo, hiệu chỉnh, khóa hoặc loại bỏ thông tin các hoạt chất lâm sàng." : "Trung tâm tra cứu y khoa công cộng: Hỗ trợ rà soát thông tin chi tiết và cơ chế dược lý của các nhóm biệt dược.")
+                    @(isManager ? "Hệ thống quản trị danh mục: Hỗ trợ khởi tạo, hiệu chỉnh, khóa hoặc loại bỏ thông tin các hoạt chất lâm sàng." : "Trung tâm tra cứu y khoa công cộng: Hỗ trợ rà soát thông tin chi tiết và cơ chế dược lý của các nhóm biệt dược.")
                 </p>
             </div>
             
-            @if (isAdmin)
+            @if (isManager)
             {
                 <div class="shrink-0">
                     <button onclick="openDrugModal()"
@@ -41,7 +41,33 @@
     </div>
 </div>
 
-<section id="features" class="py-12 bg-slate-50/50">
+@if (isManager)
+{
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-6">
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-emerald-50 border border-emerald-200 p-4 rounded-2xl shadow-sm">
+            <div class="flex items-center gap-3">
+                <div class="p-2.5 bg-emerald-600 rounded-xl text-white shadow-md shadow-emerald-600/10 shrink-0">
+                    <i class="fas fa-file-excel text-lg"></i>
+                </div>
+                <div>
+                    <h4 class="text-sm font-bold text-slate-900">Nhập danh mục thuốc nhanh từ Excel</h4>
+                    <p class="text-xs text-slate-500 mt-0.5">Hệ thống sẽ tự động đối chiếu tên thuốc, cập nhật hoạt chất mới và bỏ qua dữ liệu trùng.</p>
+                </div>
+            </div>
+            
+            <div class="flex items-center gap-3 flex-wrap md:flex-nowrap">
+                <input type="file" id="excelFileInput" accept=".xlsx" 
+                       class="text-xs text-slate-500 file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-white file:text-emerald-700 file:shadow-sm file:border-slate-200 hover:file:bg-slate-100 transition cursor-pointer border border-dashed border-emerald-300 p-1.5 rounded-xl bg-white/50 w-full sm:w-auto" />
+                <button type="button" id="uploadExcelBtn" onclick="uploadExcelFile()" 
+                        class="w-full sm:w-auto bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs px-5 py-3 rounded-xl transition duration-200 shadow-md hover:shadow-emerald-600/20 active:scale-[0.98] cursor-pointer whitespace-nowrap">
+                    <i class="fas fa-cloud-upload-alt mr-1"></i> Xác nhận nạp dữ liệu
+                </button>
+            </div>
+        </div>
+    </div>
+}
+
+<section id="features" class="py-8 bg-slate-50/50">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-1 overflow-hidden">
             <partial name="~/Views/Drug/listdrug.cshtml" />
@@ -49,7 +75,7 @@
     </div>
 </section>
 
-@if (isAdmin)
+@if (isManager)
 {
     <section id="features" class="py-12 bg-white border-t border-slate-200">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -82,317 +108,11 @@
     </div>
 }
 
-<script>
-    // ==========================================
-    // KHAI BÁO BIẾN TOÀN CỤC (GLOBAL VARIABLES)
-    // ==========================================
-    let currentDeleteId = 0;      
-    let currentDeleteName = '';    
-    let isSearching = false;       
-
-    // Truyền trạng thái quyền từ C# sang JavaScript để kiểm soát client-side
-    const IS_ADMIN = @(isAdmin ? "true" : "false");
-
-    // ==========================================
-    // QUẢN LÝ MODAL THÊM/SỬA THUỐC
-    // ==========================================
-    
-    function openDrugModal() {
-        if (!IS_ADMIN) return; 
-        resetForm(); 
-        document.getElementById('drugModal')?.classList.remove('hidden'); 
-        document.getElementById('modalTitle').textContent = 'Thêm Thuốc Mới'; 
-        document.getElementById('saveBtnText').textContent = 'Lưu'; 
-    }
-
-    function editDrug(id) {
-        if (!IS_ADMIN) {
-            alert('Bạn không có quyền chỉnh sửa thông tin thuốc.');
-            return;
-        }
-        if (!id || id === 0) return;
-
-        fetch(`/Drug/GetDrugById?id=${id}`)
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    fillFormWithData(data.data); 
-                    document.getElementById('drugModal')?.classList.remove('hidden'); 
-                    document.getElementById('modalTitle').textContent = 'Chỉnh Sửa Thuốc'; 
-                    document.getElementById('saveBtnText').textContent = 'Cập Nhật'; 
-                } else {
-                    alert('Lỗi: ' + data.message);
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                alert('Lỗi khi lấy dữ liệu thuốc từ hệ thống');
-            });
-    }
-
-    /**
-     * Xem chi tiết thông tin thuốc (Cả Admin và User đều sử dụng được)
-     */
-    function viewDrug(id) {
-        if (!id || id === 0) return;
-        
-        fetch(`/Drug/GetDrugById?id=${id}`)
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    fillFormWithData(data.data);
-                    
-                    const modal = document.getElementById('drugModal');
-                    const saveBtn = document.getElementById('saveDrugBtn');
-                    
-                    if (modal) {
-                        modal.classList.remove('hidden');
-                        document.getElementById('modalTitle').textContent = 'Chi Tiết Thông Tin Thuốc';
-                        
-                        if (saveBtn) {
-                            if (!IS_ADMIN) {
-                                saveBtn.classList.add('hidden');
-                            } else {
-                                saveBtn.classList.remove('hidden');
-                                document.getElementById('saveBtnText').textContent = 'Cập Nhật';
-                            }
-                        }
-                    }
-                } else {
-                    alert('Lỗi: ' + data.message);
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                alert('Khởi tạo thông tin thất bại.');
-            });
-    }
-
-    function closeDrugModal() {
-        const modal = document.getElementById('drugModal');
-        if (modal) {
-            modal.classList.add('hidden');
-            resetForm();
-        }
-    }
-
-    // ==========================================
-    // QUẢN LÝ MODAL XÁC NHẬN XÓA
-    // ==========================================
-
-    function confirmDeleteDrug(id, drugName) {
-        if (!IS_ADMIN) return;
-        if (!id || id === 0) return;
-        currentDeleteId = id; 
-        currentDeleteName = drugName;
-        document.getElementById('deleteItemName').textContent = drugName; 
-        document.getElementById('deleteModal')?.classList.remove('hidden'); 
-    }
-
-    function closeDeleteModal() {
-        if (!IS_ADMIN) return;
-        document.getElementById('deleteModal')?.classList.add('hidden'); 
-        currentDeleteId = 0; 
-        currentDeleteName = '';
-    }
-
-    // Sự kiện click đóng Modal khi click ra ngoài vùng trống
-    document.addEventListener('click', function (e) {
-        const drugModal = document.getElementById('drugModal');
-        const deleteModal = document.getElementById('deleteModal');
-
-        if (e.target === drugModal) {
-            drugModal.classList.add('hidden');
-            resetForm();
-        }
-        if (IS_ADMIN && e.target === deleteModal) {
-            deleteModal.classList.add('hidden');
-        }
-    });
-
-    // ==========================================
-    // QUẢN LÝ FORM VÀ ĐỒNG BỘ DỮ LIỆU
-    // ==========================================
-
-    function resetForm() {
-        const form = document.getElementById('drugForm');
-        if (!form) return;
-        
-        form.reset(); 
-        if(document.getElementById('drugId')) document.getElementById('drugId').value = '0'; 
-        if(document.getElementById('statusActive')) document.getElementById('statusActive').checked = true; 
-        document.getElementById('formMessage')?.classList.add('hidden');
-        
-        const saveBtn = document.getElementById('saveDrugBtn');
-        if (saveBtn && IS_ADMIN) saveBtn.classList.remove('hidden');
-    }
-
-    function fillFormWithData(data) {
-        if (!document.getElementById('drugForm')) return;
-
-        // Bọc cứu hộ an toàn bằng toán tử ?. để tránh tuyệt đối lỗi Null gãy hàm JS
-        if(document.getElementById('drugId')) document.getElementById('drugId').value = data.id ?? data.Id ?? 0;
-        if(document.getElementById('drugName')) document.getElementById('drugName').value = data.name ?? data.Name ?? '';
-        if(document.getElementById('activeIngredient')) document.getElementById('activeIngredient').value = data.activeIngredient ?? data.ActiveIngredient ?? '';
-        if(document.getElementById('dosage')) document.getElementById('dosage').value = data.dosage ?? data.Dosage ?? '';
-        if(document.getElementById('manufacturer')) document.getElementById('manufacturer').value = data.manufacturer ?? data.Manufacturer ?? '';
-        
-        // Thử map đổ dữ liệu Công Dụng vào id "drugUse" trước, nếu không có thì thử "function"
-        const inputFunction = document.getElementById('drugUse') || document.getElementById('function');
-        if (inputFunction) inputFunction.value = data.function ?? data.Function ?? '';
-
-        if(document.getElementById('sideEffects')) document.getElementById('sideEffects').value = data.sideEffects ?? data.SideEffects ?? '';
-        if(document.getElementById('contraindications')) document.getElementById('contraindications').value = data.contraindications ?? data.Contraindications ?? '';
-        if(document.getElementById('description')) document.getElementById('description').value = data.description ?? data.Description ?? '';
-
-        const isActiveVal = (data.isActive !== undefined) ? data.isActive : data.IsActive;
-        if (isActiveVal) {
-            if(document.getElementById('statusActive')) document.getElementById('statusActive').checked = true;
-        } else {
-            if(document.getElementById('statusInactive')) document.getElementById('statusInactive').checked = true;
-        }
-    }
-
-    async function saveDrug() {
-        const saveBtn = document.getElementById('saveDrugBtn');
-        const btnText = document.getElementById('saveBtnText');
-        const msgDiv = document.getElementById('formMessage');
-
-        // THU THẬP DỮ LIỆU AN TOÀN CHỐNG CRASH
-        const drugData = {
-            Id: parseInt(document.getElementById('drugId')?.value) || 0,
-            Name: document.getElementById('drugName')?.value?.trim() || "",
-            ActiveIngredient: document.getElementById('activeIngredient')?.value?.trim() || "",
-            Dosage: document.getElementById('dosage')?.value?.trim() || "",
-            Manufacturer: document.getElementById('manufacturer')?.value?.trim() || "",
-            Function: (document.getElementById('drugUse') || document.getElementById('function'))?.value?.trim() || "",
-            SideEffects: document.getElementById('sideEffects')?.value?.trim() || "",
-            Contraindications: document.getElementById('contraindications')?.value?.trim() || "",
-            Description: document.getElementById('description')?.value?.trim() || "",
-            IsActive: document.getElementById('statusActive')?.checked || false
-        };
-
-        if (!drugData.Name || !drugData.ActiveIngredient || !drugData.Dosage || !drugData.Function) {
-            showMsg("Vui lòng điền đầy đủ các thông tin thuốc bắt buộc (*)", "bg-amber-100 text-amber-800 border-amber-200");
-            return;
-        }
-
-        if (saveBtn) saveBtn.disabled = true;
-        if (btnText) btnText.innerText = "Đang lưu...";
-        if (msgDiv) msgDiv.classList.add('hidden');
-
-        try {
-            const response = await fetch('/Drug/SaveDrug', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]')?.value || ''
-                },
-                body: JSON.stringify(drugData)
-            });
-
-            if (response.ok) {
-                showMsg("🎉 Cập nhật thông tin thuốc thành công!", "bg-green-100 text-green-800 border-green-200");
-                setTimeout(() => { location.reload(); }, 1200);
-            } else {
-                const errorResult = await response.text();
-                console.error("🔴 Chi tiết lỗi ModelState từ Back-end C# trả về:\n", errorResult);
-                showMsg("❌ Không thể lưu dữ liệu. Vui lòng kiểm tra lại cấu hình hoặc xem tab Console!", "bg-red-100 text-red-800 border-red-200");
-                if (saveBtn) saveBtn.disabled = false;
-                if (btnText) btnText.innerText = "Lưu";
-            }
-        } catch (error) {
-            console.error("🔴 Lỗi kết nối mạng:", error);
-            showMsg("⚠️ Có lỗi mạng xảy ra khi lưu thông tin!", "bg-red-100 text-red-800 border-red-200");
-            if (saveBtn) saveBtn.disabled = false;
-            if (btnText) btnText.innerText = "Lưu";
-        }
-    }
-
-    function showMsg(message, className) {
-        const msgDiv = document.getElementById('formMessage');
-        if (msgDiv) {
-            msgDiv.className = `px-4 py-3 rounded-lg text-sm font-medium transition-all duration-300 ${className}`;
-            msgDiv.innerText = message;
-            msgDiv.classList.remove('hidden');
-        }
-    }
-
-    function deleteDrugConfirmed() {
-        if (!IS_ADMIN || currentDeleteId === 0) return;
-
-        const tokenInput = document.querySelector('input[name="__RequestVerificationToken"]');
-        if (!tokenInput) {
-            alert('Lỗi bảo mật: Không tìm thấy Token xác thực (AntiForgeryToken).');
-            return;
-        }
-        const token = tokenInput.value;
-
-        const deleteBtn = document.getElementById('confirmDeleteBtn');
-        deleteBtn.disabled = true; 
-        const originalText = deleteBtn.innerHTML;
-        deleteBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Đang xóa...';
-
-        fetch('/Drug/DeleteDrug', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded',
-                'RequestVerificationToken': token
-            },
-            body: new URLSearchParams({ id: currentDeleteId })
-        })
-        .then(response => {
-            if (!response.ok) throw new Error(`Mã trạng thái từ máy chủ: ${response.status}`);
-            return response.json();
-        })
-        .then(data => {
-            deleteBtn.disabled = false;
-            deleteBtn.innerHTML = originalText;
-
-            if (data.success) {
-                alert(data.message);
-                closeDeleteModal();
-                location.reload(); 
-            } else {
-                alert('Lỗi từ hệ thống: ' + data.message);
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            deleteBtn.disabled = false;
-            deleteBtn.innerHTML = originalText;
-            alert('Không thể thực hiện kết nối máy chủ để xóa thuốc. Lỗi: ' + error.message);
-        });
-    }
-
-    // ==========================================
-    // LOGIC XỬ LÝ TÌM KIẾM VÀ BỘ LỌC (SEARCH & FILTER)
-    // ==========================================
-    function goToPage(page) {
-        if (page < 1) return;
-
-        const searchTerm = document.getElementById('drugSearch')?.value || '';
-        const status = document.getElementById('statusFilter')?.value || '';
-
-        let url = `/Drug/Index?page=${page}`;
-        if (searchTerm) url += `&searchTerm=${encodeURIComponent(searchTerm.trim())}`;
-        if (status) url += `&status=${encodeURIComponent(status)}`;
-
-        window.location.href = url;
-    }
-
-    function searchAndFilter() {
-        goToPage(1);
-    }
-
-    document.getElementById('drugSearch')?.addEventListener('keydown', function (e) {
-        if (e.key === 'Enter') {
-            e.preventDefault(); 
-            searchAndFilter();  
-        }
-    });
-
-    document.getElementById('statusFilter')?.addEventListener('change', function (e) {
-        searchAndFilter();
-    });
-</script>
+@section Scripts {
+    <script>
+        // Cầu nối truyền trạng thái phân quyền từ Razor sang file JS độc lập 🌟
+        // Sử dụng isManager để tệp Javascript biết tài khoản Dược sĩ cũng có quyền sửa/xóa
+        window.IS_ADMIN = @(isManager ? "true" : "false");
+    </script>
+    <script src="~/js/drug-index.js" asp-append-version="true"></script>
+}

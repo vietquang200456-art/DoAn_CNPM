@@ -29,6 +29,7 @@ public class DiseaseController : Controller
     /// Hiển thị danh sách bệnh lý với hỗ trợ tìm kiếm, lọc và phân trang
     /// </summary>
     [HttpGet]
+    [Authorize(Roles = "Admin,Pharmacist")] // Chỉ Admin và Pharmacist mới được phép truy cập vào trang quản lý danh sách bệnh lý
     public async Task<IActionResult> Index(string searchTerm = "", string status = "", int page = 1)
     {
         try
@@ -120,12 +121,9 @@ public class DiseaseController : Controller
             return Json(new { success = false, message = ex.Message });
         }
     }
-
-    /// <summary>
     /// Lưu bệnh lý mới hoặc cập nhật bệnh lý hiện có (CHỈ ADMIN)
-    /// </summary>
     [HttpPost]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = "Admin,Pharmacist")] // Chỉ Admin và Pharmacist mới được phép thêm/sửa bệnh lý
     public async Task<IActionResult> SaveDisease([FromBody] Disease model)
     {
         try
@@ -210,7 +208,7 @@ public class DiseaseController : Controller
     /// Xóa bệnh lý dựa theo ID (CHỈ ADMIN)
     /// </summary>
     [HttpPost]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = "Admin,Pharmacist")]
     public async Task<IActionResult> DeleteDisease(int id)
     {
         try
@@ -241,10 +239,7 @@ public class DiseaseController : Controller
             return Json(new { success = false, message = $"Lỗi hệ thống: {ex.Message}" });
         }
     }
-
-    /// <summary>
     /// API để lấy danh sách bệnh lý khi tìm kiếm/lọc (AJAX) - Đã đồng bộ parameter sang 'status'
-    /// </summary>
     [HttpGet]
     public async Task<IActionResult> GetDiseasesPartial(string searchTerm = "", string status = "", int page = 1)
     {
