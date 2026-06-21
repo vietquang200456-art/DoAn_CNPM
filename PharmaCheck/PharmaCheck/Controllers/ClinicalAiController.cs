@@ -56,20 +56,21 @@ public class ClinicalAiController : ControllerBase
         }
         else
         {
-            // Trường hợp 2: DB không có dữ liệu -> Gọi mô hình AI để kiểm tra ngầm
-            var prediction = _aiService.PredictInteraction(cleanDrugA, cleanDrugB);
+            // Trường hợp 2: DB không có dữ liệu -> Gọi mô hình AI (BioBERT) bất đồng bộ 🌟
+            // Đã thêm 'await' và đổi tên hàm thành 'PredictInteractionAsync' để hết lỗi gạch đỏ
+            var prediction = await _aiService.PredictInteractionAsync(cleanDrugA, cleanDrugB);
             
-            // Đặt bộ lọc ngưỡng (Threshold): Chỉ tin cậy AI nếu nó dự đoán rủi ro rất cao (Cấp 4, 5)
-            if (prediction.PredictedSeverity >= 4)
+            // Đặt bộ lọc ngưỡng (Threshold): Chỉ tin cậy AI nếu nó dự đoán rủi ro rất cao (Cấp 4, 5) và độ tin cậy tốt
+            if (prediction.PredictedSeverity >= 4 && prediction.Confidence >= 0.6)
             {
                 severity = prediction.PredictedSeverity;
-                description = $"[AI Dự Đoán Lâm Sàng]: Phát hiện nguy cơ xung đột nghiêm trọng mức độ {severity} giữa 2 hoạt chất này.";
+                // Tận dụng thuộc tính dữ liệu thực tế từ BioBERT để hiển thị lên Toast
+                description = $"[AI BioBERT Dự Đoán]: {prediction.Reason}";
                 recommendation = "Khuyến cáo bác sĩ nên cân nhắc thay thế một trong hai thuốc hoặc giãn cách thời gian sử dụng.";
             }
             else
             {
                 // Nếu AI chỉ đoán lờ mờ (Cấp 2, 3) hoặc kết luận an toàn -> Ép về Cấp 1 (An toàn hoàn toàn)
-                // Điều này giúp loại bỏ hoàn toàn các cảnh báo bậy bạ như cặp Glucophage và Losec
                 severity = 1; 
                 description = "Không phát hiện tương tác rủi ro lâm sàng.";
                 recommendation = "Các hoạt chất an toàn để phối hợp chỉ định trong đơn thuốc.";
