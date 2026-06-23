@@ -6,6 +6,9 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Net.Http;
+using System.Text;
+using System.Text.Json;
 using PharmaCheck.Data;
 using PharmaCheck.Models;
 using PharmaCheck.Services;
@@ -18,11 +21,13 @@ public class PrescriptionController : Controller
 {
     private readonly ApplicationDbContext _context;
     private readonly IAuditLogService _logService;
+    private readonly IHttpClientFactory _httpClientFactory;
 
-    public PrescriptionController(ApplicationDbContext context, IAuditLogService logService)
+    public PrescriptionController(ApplicationDbContext context, IAuditLogService logService, IHttpClientFactory httpClientFactory)
     {
         _context = context;
         _logService = logService;
+        _httpClientFactory = httpClientFactory;
     }
 
     /// <summary>
@@ -241,6 +246,114 @@ public class PrescriptionController : Controller
             return Json(new { success = false, message = $"Lỗi hệ thống khi đồng bộ bệnh án: {ex.Message}" });
         }
     }
+
+    /// <summary>
+/// API kiểm tra tương tác thuốc ngầm kết hợp DB và Python FastAPI AI
+/// </summary>
+[HttpPost]
+public async Task<IActionResult> CheckInteractions([FromBody] List<int> drugIds)
+{
+    if (drugIds == null || drugIds.Count < 2)
+    {
+        return Json(new List<InteractionAlertResponse>());
+    }
+
+    var uniqueIds = drugIds.Distinct().ToList();
+    var drugs = await _context.Drugs
+        .Where(d => uniqueIds.Contains(d.Id))
+        .ToDictionaryAsync(d => d.Id, d => d);
+
+    var alerts = new List<InteractionAlertResponse>();
+    var dbInteractions = await _context.DrugInteractions
+        .Include(di => di.SourceDrug)
+        .Include(di => di.TargetDrug)
+        .Where(di => uniqueIds.Contains(di.SourceDrugId) && uniqueIds.Contains(di.TargetDrugId))
+        .ToListAsync();
+
+    var client = _httpClientFactory.CreateClient();
+
+    for (int i = 0; i < uniqueIds.Count; i++)
+    {
+        for (int j = i + 1; j < uniqueIds.Count; j++)
+        {
+            var idA = uniqueIds[i];
+            var idB = uniqueIds[j];
+
+            if (!drugs.TryGetValue(idA, out var drugA) || !drugs.TryGetValue(idB, out var drugB))
+                continue;
+
+            // 1. Kiểm tra DB trước
+            var dbInteraction = dbInteractions.FirstOrDefault(di => 
+                (di.SourceDrugId == idA && di.TargetDrugId == idB) || 
+                (di.SourceDrugId == idB && di.TargetDrugId == idA));
+
+            if (dbInteraction != null)
+            {
+                if (dbInteraction.SeverityLevel >= 2)
+                {
+                    alerts.Add(new InteractionAlertResponse {
+                        DrugA_Name = drugA.Name, DrugB_Name = drugB.Name,
+                        SeverityLevel = (uint)dbInteraction.SeverityLevel,
+                        ColorClass = GetBadgeColor((uint)dbInteraction.SeverityLevel),
+                        Description = dbInteraction.Description,
+                        Recommendation = dbInteraction.Recommendation,
+                        Source = "System"
+                    });
+                }
+                continue;
+            }
+
+            // 2. Gọi Python AI
+            try
+            {
+                var ingredientA = string.IsNullOrEmpty(drugA.ActiveIngredient) ? drugA.Name : drugA.ActiveIngredient;
+                var ingredientB = string.IsNullOrEmpty(drugB.ActiveIngredient) ? drugB.Name : drugB.ActiveIngredient;
+
+                var requestPayload = new { drug_a = ingredientA, drug_b = ingredientB };
+                var jsonContent = new StringContent(JsonSerializer.Serialize(requestPayload), Encoding.UTF8, "application/json");
+
+                var response = await client.PostAsync("http://127.0.0.1:8000/api/ai/predict", jsonContent);
+                
+                if (response.IsSuccessStatusCode)
+                {
+                    var responseString = await response.Content.ReadAsStringAsync();
+                    var aiResult = JsonSerializer.Deserialize<PythonAiPredictResponse>(responseString, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                    
+                    if (aiResult != null && aiResult.PredictedSeverity >= 2)
+                    {
+                        alerts.Add(new InteractionAlertResponse
+                        {
+                            DrugA_Name = drugA.Name,
+                            DrugB_Name = drugB.Name,
+                            SeverityLevel = aiResult.PredictedSeverity,
+                            ColorClass = GetBadgeColor(aiResult.PredictedSeverity),
+                            Description = $"[AI Dự Đoán]: {aiResult.Reason}",
+                            Recommendation = "Khuyến cáo bác sĩ nên cân nhắc thay đổi phác đồ.",
+                            Source = "AI"
+                        });
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[Lỗi AI API] {ex.Message}");
+            }
+        }
+    }
+    return Json(alerts);
+}
+
+    private string GetBadgeColor(uint severity)
+    {
+        return severity switch
+        {
+            5 => "bg-red-100 text-red-800 border-red-300",
+            4 => "bg-orange-100 text-orange-800 border-orange-300",
+            3 => "bg-yellow-100 text-yellow-800 border-yellow-300",
+            2 => "bg-blue-100 text-blue-800 border-blue-300",
+            _ => "bg-green-100 text-green-800 border-green-300"
+        };
+    }
 }
 
 /// <summary>
@@ -266,4 +379,28 @@ public class PrescriptionDetailDto
     public int DrugId { get; set; }
     public string Quantity { get; set; } = string.Empty;
     public string UsageInstruction { get; set; } = string.Empty;
+}
+
+public class InteractionAlertResponse
+{
+    public string DrugA_Name { get; set; } = string.Empty;
+    public string DrugB_Name { get; set; } = string.Empty;
+    public uint SeverityLevel { get; set; }
+    public string ColorClass { get; set; } = string.Empty;
+    public string Description { get; set; } = string.Empty;
+    public string Recommendation { get; set; } = string.Empty;
+    public string Source { get; set; } = string.Empty; // "System" hoặc "AI"
+}
+
+// ĐỐI TƯỢNG MAP DỮ LIỆU TỪ PYTHON AI
+public class PythonAiPredictResponse
+{
+    [System.Text.Json.Serialization.JsonPropertyName("severity_level")]
+    public uint PredictedSeverity { get; set; }
+
+    [System.Text.Json.Serialization.JsonPropertyName("reason")]
+    public string Reason { get; set; } = string.Empty;
+
+    [System.Text.Json.Serialization.JsonPropertyName("prediction")]
+    public string Prediction { get; set; } = string.Empty;
 }

@@ -3676,11 +3676,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "D:\\Đồ Án CNPM_1\\DoAn_CNPM\\PharmaCheck\\PharmaCheck\\PharmaCheck.csproj",
+      "projectUniqueName": "D:\\DoAn_CNPM\\PharmaCheck\\PharmaCheck\\PharmaCheck.csproj",
       "projectName": "PharmaCheck",
-      "projectPath": "D:\\Đồ Án CNPM_1\\DoAn_CNPM\\PharmaCheck\\PharmaCheck\\PharmaCheck.csproj",
+      "projectPath": "D:\\DoAn_CNPM\\PharmaCheck\\PharmaCheck\\PharmaCheck.csproj",
       "packagesPath": "C:\\Users\\ASUS\\.nuget\\packages\\",
-      "outputPath": "D:\\Đồ Án CNPM_1\\DoAn_CNPM\\PharmaCheck\\PharmaCheck\\obj\\",
+      "outputPath": "D:\\DoAn_CNPM\\PharmaCheck\\PharmaCheck\\obj\\",
       "projectStyle": "PackageReference",
       "fallbackFolders": [
         "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"

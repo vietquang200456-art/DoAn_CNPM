@@ -237,6 +237,25 @@ public class DrugController : Controller
         }
     }
 
+
+    [HttpPost]
+[IgnoreAntiforgeryToken] // <-- Thêm dòng này để chặn lỗi 405/400 khi gọi AJAX ngầm
+public async Task<IActionResult> IncreaseViewCount(int id)
+{
+    var drug = await _context.Drugs.FindAsync(id);
+    if (drug == null)
+    {
+        return Json(new { success = false, message = "Không tìm thấy thuốc." });
+    }
+
+    drug.ViewCount = ((int?)drug.ViewCount ?? 0) + 1;
+    
+    _context.Drugs.Update(drug);
+    await _context.SaveChangesAsync(); 
+
+    return Json(new { success = true });
+}
+
     #endregion
 
     #region 💾 KHÔNG GIAN THAY ĐỔI DỮ LIỆU (CHỈ ADMIN VÀ PHARMACIST ĐƯỢC PHÉP)

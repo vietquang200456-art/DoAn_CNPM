@@ -196,7 +196,7 @@ namespace PharmaCheck.Controllers
             );
 
             TempData["SuccessMessage"] = "Đã đăng xuất thành công.";
-            return RedirectToAction("Index", "Home");
+            return RedirectToAction("Login", "Account");
         }
 
         /// Hiển thị trang Đăng ký

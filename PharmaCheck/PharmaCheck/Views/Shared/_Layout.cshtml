@@ -1,4 +1,5 @@
-﻿<!DOCTYPE html>
+﻿@* Views/Shared/_Layout.cshtml *@
+<!DOCTYPE html>
 <html lang="vi">
 
 <head>
@@ -9,362 +10,62 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
-        theme: {
-        extend: {
-        colors: {
-        'medical': {
-        50: '#f0f9ff',
-        100: '#e0f2fe',
-        200: '#bae6fd',
-        300: '#7dd3fc',
-        400: '#38bdf8',
-        500: '#0ea5e9',
-        600: '#0284c7',
-        700: '#0369a1',
-        800: '#075985',
-        900: '#0c3d66'
-        },
-        'danger': '#dc2626',
-        'warning': '#f59e0b',
-        'success': '#10b981'
-        }
-        }
-        }
+            theme: {
+                extend: {
+                    colors: {
+                        'medical': {
+                            50: '#f0f9ff', 100: '#e0f2fe', 200: '#bae6fd', 300: '#7dd3fc',
+                            400: '#38bdf8', 500: '#0ea5e9', 600: '#0284c7', 700: '#0369a1',
+                            800: '#075985', 900: '#0c3d66'
+                        },
+                        'danger': '#dc2626',
+                        'warning': '#f59e0b',
+                        'success': '#10b981'
+                    }
+                }
+            }
         }
     </script>
 
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
-
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 
     <style>
         * {
-        scrollbar-width: thin;
-        scrollbar-color: rgba(3, 105, 161, 0.5) rgba(226, 232, 240, 1);
+            scrollbar-width: thin;
+            scrollbar-color: rgba(3, 105, 161, 0.5) rgba(226, 232, 240, 1);
         }
+        *::-webkit-scrollbar { width: 8px; height: 8px; }
+        *::-webkit-scrollbar-track { background: rgba(226, 232, 240, 1); }
+        *::-webkit-scrollbar-thumb { background: rgba(3, 105, 161, 0.5); border-radius: 4px; }
+        
+        .transition-all { transition: all 0.3s ease; }
+        .card-hover { transition: all 0.3s ease; }
+        .card-hover:hover { transform: translateY(-2px); box-shadow: 0 10px 25px rgba(3, 105, 161, 0.15); }
 
-        *::-webkit-scrollbar {
-        width: 8px;
-        height: 8px;
-        }
-
-        *::-webkit-scrollbar-track {
-        background: rgba(226, 232, 240, 1);
-        }
-
-        *::-webkit-scrollbar-thumb {
-        background: rgba(3, 105, 161, 0.5);
-        border-radius: 4px;
-        }
-
-        .transition-all {
-        transition: all 0.3s ease;
-        }
-
-        .card-hover {
-        transition: all 0.3s ease;
-        }
-
-        .card-hover:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 10px 25px rgba(3, 105, 161, 0.15);
-        }
-
-        /* Hiệu ứng gạch chân mềm mại cho các nút điều hướng */
-        .nav-link {
-        position: relative;
-        transition: color 0.25s ease;
-        }
-
+        .nav-link { position: relative; transition: color 0.25s ease; }
         .nav-link::after {
-        content: '';
-        position: absolute;
-        bottom: 0;
-        left: 50%;
-        width: 0;
-        height: 2px;
-        background-color: #0369a1;
-        transition: all 0.25s ease;
-        transform: translateX(-50%);
+            content: ''; position: absolute; bottom: 0; left: 50%; width: 0; height: 2px;
+            background-color: #0369a1; transition: all 0.25s ease; transform: translateX(-50%);
         }
-
-        .nav-link:hover::after {
-        width: 80%;
-        }
+        .nav-link:hover::after { width: 80%; }
     </style>
 </head>
 
 <body class="bg-slate-50 text-gray-900 flex flex-col min-h-screen">
-    <header class="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-slate-100 shadow-sm">
-        <nav class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-between items-center h-16">
-
-                <div class="flex items-center gap-2">
-                    <a asp-area="" asp-controller="Home" asp-action="Index" class="flex items-center gap-2.5 group">
-                        <div
-                            class="bg-gradient-to-br from-medical-600 to-medical-800 text-white p-2 rounded-xl shadow-md shadow-medical-200 group-hover:scale-105 transition-transform">
-                            <i class="fas fa-pills text-lg"></i>
-                        </div>
-                        <span
-                        class="text-xl font-black bg-gradient-to-r from-medical-700 to-medical-900 bg-clip-text text-transparent tracking-tight">PharmaCheck</span>
-                    </a>
-                </div>
-
-                <div class="hidden lg:flex items-center gap-1 h-full">
-                    <a asp-area="" asp-controller="Home" asp-action="Index"
-                       class="nav-link px-3.5 h-full flex items-center text-sm font-medium text-slate-600 hover:text-indigo-700 gap-1.5">
-                        <i class="fas fa-home text-slate-400 text-xs"></i>Trang Chủ
-                    </a>
-                    @if(User.Identity.IsAuthenticated && User.IsInRole("Admin") || User.IsInRole("Pharmacist"))
-                    {
-                        <a asp-area="" asp-controller="Drug" asp-action="Index"
-                           class="nav-link px-3.5 h-full flex items-center text-sm font-medium text-slate-600 hover:text-indigo-700 gap-1.5">
-                            <i class="fas fa-pills text-slate-400 text-xs"></i>Quản Lý Danh Mục Thuốc
-                        </a>
-                        <a asp-area="" asp-controller="Disease" asp-action="Index"
-                       class="nav-link px-3.5 h-full flex items-center text-sm font-medium text-slate-600 hover:text-indigo-700 gap-1.5">
-                        <i class="fas fa-heartbeat text-slate-400 text-xs"></i>Danh Mục Bệnh Lý
-                    </a>
-                    }
-                    else
-                    {
-                        <a asp-area="" asp-controller="Drug" asp-action="Search"
-                           class="nav-link px-3.5 h-full flex items-center text-sm font-medium text-slate-600 hover:text-indigo-700 gap-1.5">
-                            <i class="fas fa-pills text-slate-400 text-xs"></i>Danh Mục Thuốc
-                        </a>
-                    }
-                    <a asp-area="" asp-controller="Home" asp-action="Check"
-                       class="flex items-center gap-3 px-4 py-2.5 rounded-xl text-slate-700 hover:bg-indigo-50 hover:text-indigo-700 font-medium transition-colors">
-                        <i class="fas fa-stethoscope text-sm w-5 text-slate-400"></i>Phòng Tra Cứu
-                    </a>
-                    @if (User.IsInRole("Admin") || User.IsInRole("Pharmacist"))
-                    {
-                        <a asp-area="" asp-controller="Interaction" asp-action="Index"
-                           class="nav-link px-3.5 h-full flex items-center text-sm font-medium text-slate-600 hover:text-indigo-700 gap-1.5">
-                            <i class="fas fa-exchange-alt text-slate-400 text-xs"></i>Cấu Hình Tương Tác
-                        </a>
-                    }
-                    @if (User.Identity.IsAuthenticated && User.IsInRole("Doctor"))
-                    {
-                        <a asp-area="" asp-controller="Prescription" asp-action="Create"
-                           class="nav-link px-3.5 h-full flex items-center text-sm font-medium text-slate-600 hover:text-indigo-700 gap-1.5">
-                            <i class="fas fa-file-medical text-xl"></i>Kê đơn thuốc
-                        </a>
-                    }
-                    @if(User.Identity.IsAuthenticated){
-                        <a asp-area="" asp-controller="History" asp-action="Index"
-                           class="nav-link px-3.5 h-full flex items-center text-sm font-medium text-slate-600 hover:text-indigo-700 gap-1.5">
-                            <i class="fas fa-history text-slate-400 text-xs"></i>Lịch Sử Tra Cứu
-                        </a>
-                    }
-                    <a asp-area="" asp-controller="Home" asp-action="Privacy"
-                       class="nav-link px-3.5 h-full flex items-center text-sm font-medium text-slate-600 hover:text-indigo-700 gap-1.5">
-                        <i class="fas fa-shadow-alt text-slate-400 text-xs"></i>Bảo Mật
-                    </a>
-                    @if(User.Identity.IsAuthenticated && (User.IsInRole("Doctor") || User.IsInRole("Pharmacist"))){
-                        <a asp-controller="Account" asp-action="Profile"
-                           class="nav-link px-3.5 h-full flex items-center text-sm font-medium text-slate-600 hover:text-indigo-700 gap-1.5">
-                            <i class="fas fa-user text-slate-400 text-xs"></i>Hồ Sơ
-                        </a>
-                    }
-                    @if (User.IsInRole("Admin"))
-                    {
-                        <a asp-area="" asp-controller="AdminDashboard" asp-action="Index"
-                           class="nav-link px-3.5 h-full flex items-center text-sm font-medium text-slate-600 hover:text-indigo-700 gap-1.5 ">
-                            <i class="fas fa-chart-pie text-slate-500 text-xs"></i>Dashboard Admin
-                        </a>
-                    }
-                </div>
-
-                <div class="hidden md:flex items-center gap-3">
-                    @if (User.Identity.IsAuthenticated)
-                    {
-                        <div class="flex items-center gap-3 border-l border-slate-200 pl-3">
-                            <div class="text-right">
-                                <p class="text-sm font-semibold text-slate-800 leading-none">@User.Identity.Name</p>
-                                <span
-                                    class="text-[11px] font-medium bg-medical-100 text-medical-800 px-2 py-0.5 rounded-full inline-block mt-1 uppercase tracking-wider">
-                                    @(User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value ?? "Nhân viên")
-                                </span>
-                            </div>
-                            <form asp-controller="Account" asp-action="Logout" method="post" class="inline">
-                                <button type="submit"
-                                        class="px-3.5 py-2 text-sm font-semibold text-red-600 hover:text-red-700 border border-red-200 hover:border-red-300 hover:bg-red-50/50 rounded-xl transition-all duration-200 cursor-pointer">
-                                    <i class="fas fa-sign-out-alt mr-1"></i>Đăng xuất
-                                </button>
-                            </form>
-                        </div>
-                    }
-                    else
-                    {
-                        <a asp-controller="Account" asp-action="Login"
-                           class="px-4 py-2 text-sm font-semibold text-medical-700 hover:text-medical-800 border border-medical-200 hover:border-medical-300 hover:bg-medical-50/50 rounded-xl transition-all duration-200">
-                            <i class="fas fa-sign-in-alt mr-1.5"></i>Đăng nhập
-                        </a>
-                        <a asp-controller="Account" asp-action="Register"
-                           class="px-4 py-2 text-sm font-semibold text-white bg-gradient-to-r from-medical-600 to-medical-700 hover:from-medical-700 hover:to-medical-800 rounded-xl shadow-md shadow-medical-100 hover:shadow-none transition-all duration-200 cursor-pointer">
-                            <i class="fas fa-user-plus mr-1.5"></i>Đăng ký
-                        </a>
-                    }
-                </div>
-
-                <button class="lg:hidden p-2 rounded-xl text-slate-600 hover:bg-slate-100 transition-colors"
-                        onclick="document.getElementById('mobileMenu').classList.toggle('hidden')">
-                    <i class="fas fa-bars text-xl"></i>
-                </button>
-            </div>
-
-            <div id="mobileMenu" class="hidden lg:hidden border-t border-slate-100 py-3 space-y-1">
-                <a asp-area="" asp-controller="Home" asp-action="Index"
-                   class="flex items-center gap-3 px-4 py-2.5 rounded-xl text-slate-700 hover:bg-medical-50 hover:text-medical-700 font-medium transition-colors">
-                    <i class="fas fa-home text-sm w-5 text-slate-400"></i>Trang Chủ
-                </a>
-                <a asp-area="" asp-controller="Drug" asp-action="Index"
-                   class="flex items-center gap-3 px-4 py-2.5 rounded-xl text-slate-700 hover:bg-medical-50 hover:text-medical-700 font-medium transition-colors">
-                    <i class="fas fa-pills text-sm w-5 text-slate-400"></i>Quản Lý Thuốc
-                </a>
-                <a asp-area="" asp-controller="Disease" asp-action="Index"
-                   class="flex items-center gap-3 px-4 py-2.5 rounded-xl text-slate-700 hover:bg-medical-50 hover:text-medical-700 font-medium transition-colors">
-                    <i class="fas fa-heartbeat text-sm w-5 text-slate-400"></i>Quản Lý Bệnh Lý
-                </a>
-                <a asp-area="" asp-controller="Home" asp-action="Check"
-                       class="flex items-center gap-3 px-4 py-2.5 rounded-xl text-slate-700 hover:bg-indigo-50 hover:text-indigo-700 font-medium transition-colors">
-                        <i class="fas fa-stethoscope text-sm w-5 text-slate-400"></i>Phòng Tra Cứu
-                    </a>
-                @if (User.IsInRole("Admin"))
-                {
-                    <a asp-area="" asp-controller="Interaction" asp-action="Index"
-                       class="flex items-center gap-3 px-4 py-2.5 rounded-xl text-slate-700 hover:bg-medical-50 hover:text-medical-700 font-medium transition-colors">
-                        <i class="fas fa-exchange-alt text-sm w-5 text-slate-400"></i>Cấu Hình Tương Tác
-                    </a>
-                }
-                <a asp-area="" asp-controller="Home" asp-action="Privacy"
-                   class="flex items-center gap-3 px-4 py-2.5 rounded-xl text-slate-700 hover:bg-medical-50 hover:text-medical-700 font-medium transition-colors">
-                    <i class="fas fa-shield-alt text-sm w-5 text-slate-400"></i>Bảo Mật
-                </a>
-
-                @if (User.Identity.IsAuthenticated && User.IsInRole("User"))
-                {
-                    <a asp-area="" asp-controller="History" asp-action="Index"
-                       class="flex items-center gap-3 px-4 py-2.5 rounded-xl text-slate-700 hover:bg-medical-50 hover:text-medical-700 font-medium transition-colors">
-                        <i class="fas fa-history text-sm w-5 text-slate-400"></i>Lịch Sử Tra Cứu
-                    </a>
-                    <a asp-controller="Account" asp-action="Profile"
-                       class="flex items-center gap-3 px-4 py-2.5 rounded-xl text-slate-700 hover:bg-medical-50 hover:text-medical-700 font-medium transition-colors">
-                        <i class="fas fa-user text-sm w-5 text-slate-400"></i>Hồ Sơ
-                    </a>
-                }
-                @if (User.IsInRole("Admin"))
-                    {
-                        <a asp-area="" asp-controller="AdminDashboard" asp-action="Index"
-                           class="nav-link px-3.5 h-full flex items-center text-sm font-medium text-slate-600 hover:text-indigo-700 gap-1.5 ">
-                            <i class="fas fa-chart-pie text-slate-500 text-xs"></i>Dashboard Admin
-                        </a>
-                    }
-                <div class="pt-4 mt-2 border-t border-slate-100 flex flex-col gap-2 px-4">
-                    @if (User.Identity.IsAuthenticated)
-                    {
-                        <div class="bg-slate-50 p-3 rounded-xl mb-1 flex justify-between items-center">
-                            <div>
-                                <p class="text-sm font-bold text-slate-800">@User.Identity.Name</p>
-                                <span class="text-[10px] font-semibold text-medical-700 uppercase">
-                                    @(User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value ?? "Nhân viên")
-                                </span>
-                            </div>
-                        </div>
-                        <form asp-controller="Account" asp-action="Logout" method="post" class="w-full">
-                            <button type="submit"
-                                    class="w-full py-2.5 text-center text-sm font-semibold text-red-600 bg-red-50 rounded-xl hover:bg-red-100 transition-colors cursor-pointer">
-                                <i class="fas fa-sign-out-alt mr-1.5"></i>Đăng xuất
-                            </button>
-                        </form>
-                    }
-                    else
-                    {
-                        <a asp-controller="Account" asp-action="Login"
-                           class="w-full py-2.5 text-center text-sm font-semibold text-medical-700 bg-medical-50 rounded-xl hover:bg-medical-100 transition-colors">
-                            <i class="fas fa-sign-in-alt mr-1.5"></i>Đăng nhập
-                        </a>
-                        <a asp-controller="Account" asp-action="Register"
-                           class="w-full py-2.5 text-center text-sm font-semibold text-white bg-medical-600 rounded-xl hover:bg-medical-700 transition-colors">
-                            <i class="fas fa-user-plus mr-1.5"></i>Đăng ký
-                        </a>
-                    }
-                </div>
-            </div>
-        </nav>
-    </header>
+    
+    @* 🌟 GỌI HEADER PARTIAL *@
+    <partial name="_Header" />
 
     <main class="flex-grow">
         @RenderBody()
     </main>
 
-    <footer class="bg-slate-900 text-slate-300">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-8 mb-8">
-                <div class="col-span-2 md:col-span-1">
-                    <div class="flex items-center gap-2 mb-4">
-                        <div class="bg-medical-600 text-white p-2 rounded-lg">
-                            <i class="fas fa-pills"></i>
-                        </div>
-                        <h3 class="text-lg font-bold text-white">PharmaCheck</h3>
-                    </div>
-                    <p class="text-slate-400 text-sm leading-relaxed">
-                        Hệ thống tra cứu tương tác thuốc - bệnh dành cho phòng khám chuyên nghiệp.
-                    </p>
-                </div>
+    @* 🌟 GỌI FOOTER PARTIAL *@
+    <partial name="_Footer" />
 
-                <div>
-                    <h4 class="font-semibold text-white mb-4 text-sm tracking-wider uppercase">Liên Kết</h4>
-                    <ul class="space-y-2.5 text-sm">
-                        <li><a href="/home/index" class="text-slate-400 hover:text-white transition-colors">Trang Chủ</a></li>
-                        <li><a href="/drug/index" class="text-slate-400 hover:text-white transition-colors">Danh mục Thuốc</a></li>
-                        <li><a href="/Home/Check" class="text-slate-400 hover:text-white transition-colors">Tra Cứu Tương Tác</a></li>
-                    </ul>
-                </div>
-
-                <div>
-                    <h4 class="font-semibold text-white mb-4 text-sm tracking-wider uppercase">Hỗ Trợ</h4>
-                    <ul class="space-y-2.5 text-sm">
-                        <li><a href="#" class="text-slate-400 hover:text-white transition-colors">Hướng Dẫn</a></li>
-                        <li><a href="#" class="text-slate-400 hover:text-white transition-colors">Liên Hệ</a></li>
-                        <li><a href="#" class="text-slate-400 hover:text-white transition-colors">FAQ</a></li>
-                    </ul>
-                </div>
-
-                <div>
-                    <h4 class="font-semibold text-white mb-4 text-sm tracking-wider uppercase">Pháp Lý</h4>
-                    <ul class="space-y-2.5 text-sm">
-                        <li><a asp-area="" asp-controller="Home" asp-action="Privacy"
-                                   class="text-slate-400 hover:text-white transition-colors">Chính Sách Bảo Mật</a></li>
-                            <li><a href="#" class="text-slate-400 hover:text-white transition-colors">Điều Khoản Dịch Vụ</a>
-                            </li>
-                            <li><a href="#" class="text-slate-400 hover:text-white transition-colors">Trách Nhiệm Pháp
-                                Lý</a></li>
-                            </ul>
-                        </div>
-                    </div>
-
-                    <div class="border-t border-slate-800 pt-8 mt-8">
-                        <div class="flex flex-col md:flex-row justify-between items-center gap-4">
-                            <p class="text-slate-500 text-sm text-center md:text-left">
-                                &copy; 2026 PharmaCheck. Tất cả quyền được bảo lưu. | Phân phối với mục đích y tế chuyên nghiệp.
-                            </p>
-                            <div class="flex gap-4">
-                                <a href="https://www.facebook.com/viet.quang.185529" class="text-slate-500 hover:text-white transition-colors"><i
-                                    class="fab fa-facebook text-xl"></i></a>
-                                    <a href="#" class="text-slate-500 hover:text-white transition-colors"><i
-                                        class="fab fa-twitter text-xl"></i></a>
-                                        <a href="#" class="text-slate-500 hover:text-white transition-colors"><i
-                                            class="fab fa-linkedin text-xl"></i></a>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </footer>
-                        <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
-                        <script src="~/js/site.js" asp-append-version="true"></script>
-                        @await RenderSectionAsync("Scripts", required: false)
-                    </body>
-
-                </html>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

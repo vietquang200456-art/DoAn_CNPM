@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration; // Thêm thư viện này để đọc appsettings
 using PharmaCheck.Data;
 using PharmaCheck.Models;
 using PharmaCheck.Services;
@@ -16,11 +17,14 @@ public class ClinicalAiController : ControllerBase
 {
     private readonly IDrugAiService _aiService;
     private readonly ApplicationDbContext _context;
+    private readonly IConfiguration _configuration; // Khai báo biến đọc file cấu hình
 
-    public ClinicalAiController(IDrugAiService aiService, ApplicationDbContext context)
+    // Inject thêm IConfiguration vào Constructor
+    public ClinicalAiController(IDrugAiService aiService, ApplicationDbContext context, IConfiguration configuration)
     {
         _aiService = aiService;
         _context = context;
+        _configuration = configuration;
     }
 
     [HttpGet("analyze")]
@@ -56,8 +60,11 @@ public class ClinicalAiController : ControllerBase
         }
         else
         {
-            // Trường hợp 2: DB không có dữ liệu -> Gọi mô hình AI (BioBERT) bất đồng bộ 🌟
-            // Đã thêm 'await' và đổi tên hàm thành 'PredictInteractionAsync' để hết lỗi gạch đỏ
+            // Lấy URL của Server AI (Ngrok khi deploy/chạy production hoặc Localhost khi dev) từ appsettings.json
+            string aiServerUrl = _configuration["AppSettings:AiServerUrl"] ?? "http://127.0.0.1:8000";
+
+            // Trường hợp 2: DB không có dữ liệu -> Gọi mô hình AI (BioBERT) bất đồng bộ
+            // Mẹo: Nếu hàm PredictInteractionAsync của bạn đã tự đọc cấu hình trong Service, bạn có thể giữ nguyên không cần truyền 'aiServerUrl' vào.
             var prediction = await _aiService.PredictInteractionAsync(cleanDrugA, cleanDrugB);
             
             // Đặt bộ lọc ngưỡng (Threshold): Chỉ tin cậy AI nếu nó dự đoán rủi ro rất cao (Cấp 4, 5) và độ tin cậy tốt
